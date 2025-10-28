@@ -211,7 +211,12 @@ Always respond with valid JSON format as requested.`;
   }
 
   /**
-   * Parse text-based response as fallback
+   * Parse a text-based response to extract structured information.
+   *
+   * This function processes the input string by splitting it into lines and categorizing the content into key highlights, action items, and insights based on specific keywords. It uses a loop to identify sections and collects relevant items, ensuring that only a limited number of each type is returned for brevity.
+   *
+   * @param content - A string containing the text-based response to be parsed.
+   * @returns An object containing the title, key highlights, action items, and insights extracted from the input content.
    */
   private static parseTextResponse(content: string): {
     title: string;
