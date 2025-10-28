@@ -58,7 +58,7 @@ class BranchManager {
   }
 
   /**
-   * Get default configuration
+   * Returns the default configuration object.
    */
   getDefaultConfig() {
     return {
@@ -83,7 +83,14 @@ class BranchManager {
   }
 
   /**
-   * Create a new branch with proper naming
+   * Create a new branch with proper naming.
+   *
+   * This function validates the branch type against the configuration, generates a branch name, checks for existing branches, and attempts to switch to the specified base branch while pulling the latest changes. If the base branch is not found, it defaults to the 'main' branch. Finally, it creates the new branch and logs relevant information. If any errors occur during the process, they are caught and logged.
+   *
+   * @param type - The type of the branch to create.
+   * @param description - A description for the new branch.
+   * @param baseBranch - The base branch to switch to before creating the new branch (defaults to 'develop').
+   * @returns The name of the created branch or null if an error occurred.
    */
   createBranch(type, description, baseBranch = 'develop') {
     console.log(`🌿 Creating ${type} branch: ${description}`);
@@ -131,7 +138,7 @@ class BranchManager {
   }
 
   /**
-   * Generate proper branch name
+   * Generate a proper branch name based on type and description.
    */
   generateBranchName(type, description) {
     const prefix = this.config.naming[type];
@@ -145,7 +152,7 @@ class BranchManager {
   }
 
   /**
-   * Check if branch exists
+   * Check if a Git branch exists.
    */
   branchExists(branchName) {
     try {
@@ -159,7 +166,9 @@ class BranchManager {
   }
 
   /**
-   * List all branches with status
+   * List all branches with status.
+   *
+   * This function retrieves and displays the status of local and remote Git branches. It first fetches local branches and filters out any empty entries. Then, it retrieves remote branches while excluding the 'HEAD' reference. The current branch is identified, and each branch is displayed with its corresponding status and type. The function also handles errors during execution and logs an appropriate message.
    */
   listBranches() {
     console.log('🌿 Branch Status:');
@@ -216,7 +225,7 @@ class BranchManager {
   }
 
   /**
-   * Get branch type from name
+   * Get branch type from name based on configured prefixes.
    */
   getBranchType(branchName) {
     for (const [type, prefix] of Object.entries(this.config.naming)) {
@@ -228,7 +237,7 @@ class BranchManager {
   }
 
   /**
-   * Get branch icon
+   * Get the corresponding branch icon based on the type.
    */
   getBranchIcon(type) {
     const icons = {
@@ -245,7 +254,11 @@ class BranchManager {
   }
 
   /**
-   * Clean up merged branches
+   * Clean up merged branches.
+   *
+   * This function identifies and deletes local and remote branches that have been merged into the main branch, excluding the main and develop branches. It first retrieves the list of merged branches, logs the branches found, and attempts to delete each local branch. It then retrieves the remote branches and attempts to delete them as well, logging any errors encountered during the deletion process.
+   *
+   * @throws Error If an error occurs during the execution of git commands.
    */
   cleanupMergedBranches() {
     console.log('🧹 Cleaning up merged branches...');
@@ -305,7 +318,14 @@ class BranchManager {
   }
 
   /**
-   * Validate branch naming convention
+   * Validate branch naming convention.
+   *
+   * This function checks if the provided branchName adheres to the specified naming conventions.
+   * It verifies that the branch name starts with a valid type defined in the configuration,
+   * checks the length constraints, and ensures that it contains only allowed characters (lowercase letters, numbers, and hyphens).
+   * If any of these conditions are not met, it logs an appropriate error message and returns false; otherwise, it confirms the validity of the branch name.
+   *
+   * @param {string} branchName - The name of the branch to validate.
    */
   validateBranchName(branchName) {
     console.log(`🔍 Validating branch name: ${branchName}`);
@@ -404,7 +424,14 @@ class BranchManager {
   }
 
   /**
-   * Switch to branch with safety checks
+   * Switch to branch with safety checks.
+   *
+   * This function attempts to switch to a specified branch after performing several safety checks.
+   * It first verifies if the branch exists using the branchExists method. Then, it checks for any uncommitted changes
+   * by executing a git status command. If there are uncommitted changes, it logs a warning and returns false.
+   * If all checks pass, it switches to the branch and pulls the latest changes from the remote repository.
+   *
+   * @param {string} branchName - The name of the branch to switch to.
    */
   switchToBranch(branchName) {
     console.log(`🔄 Switching to branch: ${branchName}`);
@@ -441,7 +468,16 @@ class BranchManager {
   }
 
   /**
-   * Merge branch with proper workflow
+   * Merge branch with proper workflow.
+   *
+   * This function merges the specified sourceBranch into the targetBranch using the specified mergeType.
+   * It first validates the existence of both branches, then switches to the target branch, pulls the latest changes,
+   * and performs the merge operation. If the mergeType is 'squash', it commits the changes with a message.
+   * Finally, it pushes the merged changes to the remote repository and logs the success or error message.
+   *
+   * @param {string} sourceBranch - The name of the source branch to merge from.
+   * @param {string} [targetBranch='develop'] - The name of the target branch to merge into.
+   * @param {string} [mergeType='squash'] - The type of merge to perform ('squash' or regular).
    */
   mergeBranch(sourceBranch, targetBranch = 'develop', mergeType = 'squash') {
     console.log(`🔀 Merging ${sourceBranch} into ${targetBranch}`);
@@ -485,6 +521,17 @@ class BranchManager {
 
   /**
    * Create pull request
+   *
+   * This function creates a pull request from the specified source branch to the target branch.
+   * It first attempts to push the source branch to the remote repository. If the title or body
+   * of the pull request is not provided, it generates them based on the branch type and other
+   * relevant information. Finally, it executes a command to create the pull request using the
+   * GitHub CLI and logs the outcome.
+   *
+   * @param {string} sourceBranch - The name of the source branch to create the pull request from.
+   * @param {string} [targetBranch='develop'] - The name of the target branch to create the pull request to.
+   * @param {string} [title=''] - The title of the pull request.
+   * @param {string} [body=''] - The body content of the pull request.
    */
   createPullRequest(
     sourceBranch,
@@ -523,7 +570,7 @@ class BranchManager {
   }
 
   /**
-   * Generate PR body template
+   * Generate PR body template.
    */
   generatePRBody(sourceBranch, targetBranch) {
     const type = this.getBranchType(sourceBranch);
@@ -551,7 +598,11 @@ ${description}
   }
 
   /**
-   * Run branch health check
+   * Run branch health check.
+   *
+   * This function checks the health of branches in a repository by verifying if any branches are behind the main branch or if there are unmerged branches. It collects issues found during the checks and logs the results. If any issues are detected, they are reported; otherwise, a success message is logged. The function returns an object indicating the health status and any issues found.
+   *
+   * @returns An object containing a boolean `healthy` indicating if the branches are in good condition and an array of `issues` found during the check.
    */
   runHealthCheck() {
     console.log('🏥 Running branch health check...');
@@ -601,7 +652,9 @@ ${description}
   }
 
   /**
-   * Show current configuration
+   * Show current configuration.
+   *
+   * This function displays the current configuration for the Branch Manager, including the source of the configuration file, branch settings, naming conventions, workflow settings, additional settings, and integrations. It checks for the existence of the configuration file and logs the appropriate message. The function iterates over various configuration sections, formatting and displaying the relevant information for each.
    */
   showConfig() {
     console.log('⚙️  Branch Manager Configuration\n');
@@ -663,7 +716,7 @@ ${description}
   }
 
   /**
-   * Show help information
+   * Show help information for the Branch Manager Git Workflow Automation.
    */
   showHelp() {
     console.log(`
