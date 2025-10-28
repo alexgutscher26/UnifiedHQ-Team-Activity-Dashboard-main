@@ -51,7 +51,7 @@ class ReviewMonitor {
   }
 
   /**
-   * Calculate review metrics
+   * Calculate review metrics.
    */
   calculateMetrics() {
     console.log('📈 Calculating review metrics...');
@@ -116,7 +116,7 @@ class ReviewMonitor {
   }
 
   /**
-   * Generate recommendations
+   * Generate recommendations based on review metrics.
    */
   generateRecommendations() {
     const recommendations = [];
@@ -158,7 +158,7 @@ class ReviewMonitor {
   }
 
   /**
-   * Analyze trends
+   * Analyzes historical data to identify trends.
    */
   analyzeTrends() {
     // This would analyze historical data to identify trends
@@ -171,7 +171,7 @@ class ReviewMonitor {
   }
 
   /**
-   * Generate markdown report
+   * Generate markdown report from the provided metrics and recommendations.
    */
   generateMarkdownReport(report) {
     let markdown = '# 📊 Review Metrics Report\n\n';
@@ -212,7 +212,7 @@ class ReviewMonitor {
   }
 
   /**
-   * Run monitoring
+   * Runs the monitoring process and generates a report.
    */
   async run() {
     console.log('🚀 Starting review monitoring...');
