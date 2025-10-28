@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 /**
  * Performance comparison script for activity feeds

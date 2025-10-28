@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 /**
  * Performance monitoring script for activity feeds

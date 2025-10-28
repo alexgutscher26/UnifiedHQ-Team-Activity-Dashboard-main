@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 /**
  * Daily Summary Troubleshooting Script
