@@ -224,7 +224,7 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
    * @param level - The current nesting level of the navigation item, defaulting to 0.
    * @returns A JSX element representing the rendered navigation item.
    */
-  const renderNavItem = (item: AccessibleNavItem, level: number = 0) => {
+  const renderNavItem = (item: AccessibleNavItem, level = 0) => {
     const isExpanded = expandedItems.has(item.id);
     const isActive = activeItem === item.id;
     const hasChildren = item.children && item.children.length > 0;

@@ -75,7 +75,7 @@ export const useScrollThrottle = (
  */
 export const useScrollDebounce = (
   callback: (event: Event) => void,
-  delay: number = 100
+  delay = 100
 ) => {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -271,7 +271,7 @@ export const useScrollVisibility = (
  */
 export const useScrollLazyLoad = (
   elementRef: React.RefObject<HTMLElement>,
-  threshold: number = 0.1,
+  threshold = 0.1,
   config: ScrollOptimizationConfig = {}
 ) => {
   const [shouldLoad, setShouldLoad] = useState(false);

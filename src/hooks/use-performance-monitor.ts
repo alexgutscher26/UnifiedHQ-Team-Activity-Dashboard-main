@@ -199,7 +199,7 @@ export const useVirtualScroll = (
   itemCount: number,
   itemHeight: number,
   containerHeight: number,
-  overscan: number = 5
+  overscan = 5
 ) => {
   const [scrollTop, setScrollTop] = useState(0);
 
