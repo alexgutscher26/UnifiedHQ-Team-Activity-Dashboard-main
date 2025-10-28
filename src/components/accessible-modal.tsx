@@ -192,7 +192,7 @@ interface AccessibleAlertDialogProps {
 /**
  * Renders an accessible alert dialog component.
  *
- * The AccessibleAlertDialog component manages the dialog's open state, announces the title and description when opened, and handles focus trapping. It provides action and cancel buttons, invoking the respective callbacks on user interaction. The dialog can be customized with different labels and variants, ensuring a user-friendly experience.
+ * The AccessibleAlertDialog component manages the dialog's open state and announces the title and description when opened. It utilizes focus management to trap focus within the dialog while open and restores focus when closed. The component provides action and cancel buttons, invoking the respective callbacks on user interaction, and allows customization of labels and variants for a user-friendly experience.
  *
  * @param {boolean} open - Indicates whether the dialog is open or closed.
  * @param {function} onOpenChange - Callback function to handle changes in the dialog's open state.

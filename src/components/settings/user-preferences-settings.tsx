@@ -302,7 +302,7 @@ export function UserPreferencesSettings({
                   Display the navigation sidebar by default
                 </p>
               </div>
-              <Switch id='showSidebar' defaultChecked={true} />
+              <Switch id='showSidebar' defaultChecked />
             </div>
 
             <div className='flex items-center justify-between'>
@@ -312,7 +312,7 @@ export function UserPreferencesSettings({
                   Use grid layout instead of list view
                 </p>
               </div>
-              <Switch id='gridLayout' defaultChecked={true} />
+              <Switch id='gridLayout' defaultChecked />
             </div>
           </div>
         </CardContent>
