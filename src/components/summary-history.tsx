@@ -1148,7 +1148,7 @@ export function SummaryHistory({
 
       {/* Detailed View Modal */}
       <Dialog
-        open={!!selectedSummary}
+        open={Boolean(selectedSummary)}
         onOpenChange={() => setSelectedSummary(null)}
       >
         <DialogContent className='max-w-4xl max-h-[80vh] bg-slate-800 border-slate-700'>

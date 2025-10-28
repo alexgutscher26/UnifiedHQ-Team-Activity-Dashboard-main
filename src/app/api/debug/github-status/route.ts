@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       userId,
-      githubConnected: !!connection,
+      githubConnected: Boolean(connection),
       selectedRepositories: selectedRepos.length,
       repositories: selectedRepos.map(repo => ({
         id: repo.repoId,

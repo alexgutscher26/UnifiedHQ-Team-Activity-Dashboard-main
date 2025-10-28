@@ -255,7 +255,7 @@ Always respond with valid JSON format as requested.`;
         line.startsWith('•') ||
         line.match(/^\d+\./)
       ) {
-        const item = line.replace(/^[-•\d.\s]+/, '').trim();
+        const item = line.replace(/^[-•\d.\s]+/u, '').trim();
         if (item) {
           switch (currentSection) {
             case 'highlights':
@@ -312,7 +312,7 @@ Always respond with valid JSON format as requested.`;
 
       // Handle both streaming and non-streaming responses
       if ('choices' in response) {
-        return !!response.choices[0]?.message?.content;
+        return Boolean(response.choices[0]?.message?.content);
       } else {
         return false; // Streaming responses not supported for validation
       }

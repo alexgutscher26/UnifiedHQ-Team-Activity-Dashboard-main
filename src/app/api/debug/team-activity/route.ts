@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
           userId,
           userName: user.name,
           userEmail: user.email,
-          hasGitHubConnection: !!connection,
+          hasGitHubConnection: Boolean(connection),
           selectedRepositories: selectedRepos.length,
           recentActivities: activities.map(activity => ({
             id: activity.id,

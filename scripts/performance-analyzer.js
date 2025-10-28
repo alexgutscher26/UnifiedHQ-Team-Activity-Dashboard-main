@@ -64,7 +64,15 @@ class PerformanceAnalyzer {
   }
 
   /**
-   * Calculate trend for a specific metric
+   * Calculate trend for a specific metric.
+   *
+   * This function processes an array of reports to extract values based on the provided metricPath.
+   * It computes the percentage change between the first and last values, determining the trend direction
+   * as 'improving', 'degrading', or 'stable' based on the calculated change. The function returns an
+   * object containing the trend direction, absolute change, first and last values, and the array of values.
+   *
+   * @param {Array} reports - The array of report objects to analyze.
+   * @param {string} metricPath - The path to the metric within the report objects.
    */
   calculateTrend (reports, metricPath) {
     const values = reports.map(report => {
@@ -156,12 +164,13 @@ class PerformanceAnalyzer {
    * Generate recommendations based on analysis of reports and trends.
    *
    * This function evaluates the latest report's summary to identify performance, memory, stability, and UX issues.
-   * It generates tailored recommendations based on specific thresholds for render time, memory usage, and error counts,
-   * as well as trends indicating degradation in performance or memory usage.
+   * It generates tailored recommendations based on specific thresholds for average render time, memory usage, and error counts,
+   * as well as trends in render time and memory usage, if available. Each recommendation includes a category, priority,
+   * issue description, suggested actions, impact, and estimated improvement.
    *
    * @param reports - An array of report objects containing performance metrics.
    * @param trends - An object containing trend data for render time and memory usage.
-   * @returns An array of recommendation objects based on the analysis.
+   * @returns An array of recommendation objects based on the analysis of reports and trends.
    */
   generateRecommendations (reports, trends) {
     const recommendations = []
@@ -247,7 +256,7 @@ class PerformanceAnalyzer {
   }
 
   /**
-   * Generate performance alerts
+   * Generate performance alerts based on summary metrics.
    */
   generateAlerts (summary) {
     const alerts = []
@@ -394,10 +403,10 @@ class PerformanceAnalyzer {
   /**
    * Calculate overall performance score.
    *
-   * This function evaluates the performance score based on various metrics from the analysis report. It deducts points for average render time, average memory usage, and total errors. Additionally, it considers trends and alerts, applying further deductions based on their severity. The final score is constrained to a minimum of 0.
+   * This function evaluates the performance score based on various metrics from the analysis report. It deducts points for average render time, average memory usage, and total errors. Additionally, it considers trends and alerts, applying further deductions based on their severity. The final score is constrained to a minimum of zero.
    *
    * @param analysisReport - An object containing performance metrics, trends, and alerts.
-   * @returns The calculated overall performance score, which is a non-negative integer.
+   * @returns The calculated overall performance score, which is a non-negative number.
    */
   calculateOverallScore (analysisReport) {
     let score = 100
@@ -444,7 +453,11 @@ class PerformanceAnalyzer {
   }
 
   /**
-   * Run complete analysis
+   * Run complete analysis.
+   *
+   * This function initiates a performance analysis by loading reports, checking if any reports are available,
+   * generating an analysis report, printing it, and saving the report. If no reports are found, it prompts the user
+   * to run a monitoring command. Errors during the process are caught and logged, terminating the process with an error message.
    */
   async runAnalysis () {
     console.log('🔍 Starting performance analysis...\n')

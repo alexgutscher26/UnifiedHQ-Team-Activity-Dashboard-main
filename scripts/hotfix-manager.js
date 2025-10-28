@@ -14,7 +14,7 @@ class HotfixManager {
   }
 
   /**
-   * Load hotfix configuration
+   * Load hotfix configuration from a YAML file.
    */
   loadConfig () {
     const configPath = path.join(
@@ -52,6 +52,15 @@ class HotfixManager {
 
   /**
    * Create hotfix branch
+   *
+   * This function generates a hotfix branch name based on the provided description and severity level.
+   * It first formats the description and appends a timestamp to create a unique branch name.
+   * The function checks if the branch already exists, switches to the main branch, pulls the latest changes,
+   * and then creates the new hotfix branch. If any errors occur during this process, they are logged,
+   * and the function returns null.
+   *
+   * @param {string} description - The description for the hotfix branch.
+   * @param {string} [severity='high'] - The severity level of the hotfix.
    */
   createHotfixBranch (description, severity = 'high') {
     console.log(`🚨 Creating hotfix branch: ${description}`)
@@ -94,7 +103,7 @@ class HotfixManager {
   }
 
   /**
-   * Check if branch exists
+   * Check if a Git branch exists.
    */
   branchExists (branchName) {
     try {
@@ -110,7 +119,7 @@ class HotfixManager {
   /**
    * Validate hotfix changes.
    *
-   * This function checks for uncommitted changes, ensures the branch is up to date with main, and validates the build, linting, and test results. It also assesses the number of file changes and checks for modifications to critical files, accumulating issues and warnings as necessary. The validation result is logged and returned at the end of the process.
+   * This function checks for uncommitted changes, ensures the branch is up to date with main, and validates the build, linting, and test results. It also assesses the number of file changes and checks for modifications to critical files, accumulating issues and warnings based on these checks. The validation result is logged and returned at the end of the process.
    *
    * @param branchName - The name of the branch to validate.
    * @returns An object containing the validation result, including whether it passed, any issues found, and warnings.
@@ -230,7 +239,11 @@ class HotfixManager {
   }
 
   /**
-   * Create a hotfix pull request.
+   * Create hotfix pull request.
+   * @param {string} branchName - The name of the branch for the hotfix.
+   * @param {string} description - The description of the hotfix.
+   * @param {string} [severity='high'] - The severity level of the hotfix.
+   * @returns {boolean} - Returns true if the PR is created successfully, otherwise false.
    */
   createHotfixPR (branchName, description, severity = 'high') {
     console.log(`📝 Creating hotfix PR: ${branchName}`)
@@ -262,10 +275,6 @@ class HotfixManager {
 
   /**
    * Generate hotfix PR body.
-   * @param {string} branchName - The name of the branch.
-   * @param {string} description - Description of the issue.
-   * @param {string} severity - Severity level of the issue.
-   * @returns {string} The formatted hotfix PR body.
    */
   generateHotfixPRBody (branchName, description, severity) {
     const timestamp = new Date().toISOString()
@@ -369,6 +378,14 @@ ${description}
 
   /**
    * Deploy hotfix
+   *
+   * This function deploys a hotfix by first validating the provided branch name.
+   * If validation passes, it merges the hotfix into the main branch and pushes the changes.
+   * It also backports the hotfix to the develop branch and optionally triggers an auto-deploy
+   * to production based on the provided parameter or configuration setting.
+   *
+   * @param {string} branchName - The name of the branch containing the hotfix.
+   * @param {boolean} [autoDeploy=false] - Indicates whether to automatically deploy the hotfix to production.
    */
   deployHotfix (branchName, autoDeploy = false) {
     console.log(`🚀 Deploying hotfix: ${branchName}`)
@@ -445,7 +462,7 @@ ${description}
   }
 
   /**
-   * Rollback hotfix
+   * Rollback a hotfix using the specified commit hash.
    */
   rollbackHotfix (commitHash) {
     console.log(`🔄 Rolling back hotfix: ${commitHash}`)
@@ -470,7 +487,7 @@ ${description}
   }
 
   /**
-   * Cleans up the specified hotfix branch by deleting it locally and remotely.
+   * Clean up the specified hotfix branch by deleting it locally and remotely.
    */
   cleanupHotfixBranch (branchName) {
     console.log(`🧹 Cleaning up hotfix branch: ${branchName}`)
@@ -585,7 +602,13 @@ ${description}
   }
 
   /**
-   * List active hotfixes
+   * List active hotfixes.
+   *
+   * This function retrieves all remote branches that are categorized as hotfixes by executing a Git command.
+   * It processes the branch names to remove the 'origin/' prefix and filters out any non-hotfix branches.
+   * If no active hotfix branches are found, it logs a message and returns an empty array.
+   * For each active hotfix branch, it retrieves additional information such as severity and age,
+   * and logs this information to the console. In case of an error during execution, it logs the error message and returns an empty array.
    */
   listActiveHotfixes () {
     console.log('🚨 Active Hotfixes:')
@@ -598,7 +621,7 @@ ${description}
         .trim()
         .split('\n')
         .map(b => b.trim().replace('origin/', ''))
-        .filter(b => b && b.startsWith('hotfix/'))
+        .filter(b => b?.startsWith('hotfix/'))
 
       if (allRemoteBranches.length === 0) {
         console.log('✅ No active hotfix branches')
@@ -623,7 +646,7 @@ ${description}
    *
    * This function retrieves the severity and age of a hotfix based on the provided branch name.
    * It splits the branch name to determine the severity, defaults to 'unknown' if not specified,
-   * and calculates the age of the branch by executing a git command to get the last commit timestamp.
+   * and calculates the age of the branch by executing a git command to get the last commit time.
    * If an error occurs during execution, it returns 'unknown' for both severity and age.
    *
    * @param {string} branchName - The name of the branch to retrieve hotfix information for.
@@ -657,7 +680,7 @@ ${description}
   }
 
   /**
-   * Get severity icon
+   * Get the severity icon based on the severity level.
    */
   getSeverityIcon (severity) {
     const icons = {
