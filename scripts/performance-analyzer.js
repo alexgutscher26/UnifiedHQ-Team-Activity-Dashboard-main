@@ -104,7 +104,7 @@ class PerformanceAnalyzer {
   }
 
   /**
-   * Generate a performance summary from the provided reports.
+   * Generates a performance summary from the provided reports.
    */
   generateSummary (reports) {
     if (reports.length === 0) {
@@ -131,10 +131,10 @@ class PerformanceAnalyzer {
   /**
    * Calculate overall performance grade.
    *
-   * This function evaluates the performance based on various metrics such as average render time, memory usage, total errors, and average scroll time. Points are deducted from a base score of 100 based on the thresholds defined for each metric. The final score is then translated into a letter grade with an accompanying description.
+   * This function evaluates the performance based on various metrics such as average render time, memory usage, total errors, and average scroll time. Points are deducted from a base score of 100 based on the thresholds defined for each metric. The final score is then mapped to a corresponding grade and description.
    *
    * @param summary - An object containing performance metrics including averageRenderTime, averageMemoryUsage, totalErrors, and averageScrollTime.
-   * @returns An object containing the performance grade and description based on the calculated score.
+   * @returns An object with the performance grade and description based on the calculated score.
    */
   calculatePerformanceGrade (summary) {
     let score = 100
@@ -161,7 +161,16 @@ class PerformanceAnalyzer {
   }
 
   /**
-   * Generate recommendations based on analysis
+   * Generate recommendations based on analysis of reports and trends.
+   *
+   * This function evaluates the latest report's summary to identify performance, memory, stability, and UX issues.
+   * It generates tailored recommendations based on specific thresholds for average render time, memory usage, and error counts,
+   * as well as trends in render time and memory usage, if available. Each recommendation includes a category, priority,
+   * issue description, suggested actions, impact, and estimated improvement.
+   *
+   * @param reports - An array of report objects containing performance metrics.
+   * @param trends - An object containing trend data for render time and memory usage.
+   * @returns An array of recommendation objects based on the analysis of reports and trends.
    */
   generateRecommendations (reports, trends) {
     const recommendations = []
@@ -394,10 +403,10 @@ class PerformanceAnalyzer {
   /**
    * Calculate overall performance score.
    *
-   * This function evaluates the performance score based on various metrics from the analysis report. It deducts points for average render time, average memory usage, and total errors. Additionally, it considers trends and alerts, applying further deductions based on their severity. The final score is constrained to a minimum of 0.
+   * This function evaluates the performance score based on various metrics from the analysis report. It deducts points for average render time, average memory usage, and total errors. Additionally, it considers trends and alerts, applying further deductions based on their severity. The final score is constrained to a minimum of zero.
    *
    * @param analysisReport - An object containing performance metrics, trends, and alerts.
-   * @returns The calculated overall performance score, which is a non-negative integer.
+   * @returns The calculated overall performance score, which is a non-negative number.
    */
   calculateOverallScore (analysisReport) {
     let score = 100
@@ -444,7 +453,11 @@ class PerformanceAnalyzer {
   }
 
   /**
-   * Run complete analysis
+   * Run complete analysis.
+   *
+   * This function initiates a performance analysis by loading reports, checking if any reports are available,
+   * generating an analysis report, printing it, and saving the report. If no reports are found, it prompts the user
+   * to run a monitoring command. Errors during the process are caught and logged, terminating the process with an error message.
    */
   async runAnalysis () {
     console.log('🔍 Starting performance analysis...\n')

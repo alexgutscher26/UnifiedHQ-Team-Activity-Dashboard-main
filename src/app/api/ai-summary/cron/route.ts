@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
           errors: results.errors,
           metadata: {
             timestamp: summary.timestamp,
-            authEnabled: !!expectedToken,
+            authEnabled: Boolean(expectedToken),
           },
         },
       });
@@ -226,7 +226,7 @@ export async function POST(request: NextRequest) {
           metadata: {
             error: error instanceof Error ? error.message : 'Unknown error',
             timestamp: new Date().toISOString(),
-            authEnabled: !!expectedToken,
+            authEnabled: Boolean(expectedToken),
           },
         },
       });

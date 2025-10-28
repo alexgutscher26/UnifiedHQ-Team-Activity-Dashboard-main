@@ -125,7 +125,7 @@ export const useScreenReaderSupport = () => {
         navigator.userAgent.includes('JAWS') ||
         navigator.userAgent.includes('VoiceOver');
 
-      setIsScreenReaderActive(!!hasScreenReader);
+      setIsScreenReaderActive(Boolean(hasScreenReader));
     };
 
     detectScreenReader();
