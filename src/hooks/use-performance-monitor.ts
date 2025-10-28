@@ -193,13 +193,13 @@ export const useIntersectionObserver = (
 };
 
 /**
- * Hook for virtual scrolling calculations
+ * Custom hook for managing virtual scrolling.
  */
 export const useVirtualScroll = (
   itemCount: number,
   itemHeight: number,
   containerHeight: number,
-  overscan: number = 5
+  overscan = 5
 ) => {
   const [scrollTop, setScrollTop] = useState(0);
 

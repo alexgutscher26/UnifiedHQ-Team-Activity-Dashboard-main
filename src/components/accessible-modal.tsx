@@ -273,7 +273,7 @@ export const AccessibleAlertDialog: React.FC<AccessibleAlertDialogProps> = ({
       <div className='space-y-4'>
         <p className='text-sm text-muted-foreground'>{description}</p>
         <div className='flex justify-end space-x-2'>
-          <Button variant='outline' onClick={handleCancel} autoFocus>
+          <Button variant='outline' onClick={handleCancel}>
             {cancelLabel}
           </Button>
           <Button

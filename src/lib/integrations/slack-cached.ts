@@ -292,7 +292,7 @@ export class CachedSlackClient {
    */
   async getChannelHistory(
     channelId: string,
-    limit: number = 20
+    limit = 20
   ): Promise<SlackMessage[]> {
     return this.cachedRequest(
       'messages.history',
@@ -498,7 +498,7 @@ class DatabaseCache {
  */
 export async function fetchSlackActivity(
   userId: string,
-  bypassCache: boolean = false
+  bypassCache = false
 ): Promise<SlackActivity[]> {
   console.log(`[Slack Sync] Starting cached sync for user: ${userId}`);
 
@@ -694,7 +694,7 @@ export async function saveSlackActivities(
  */
 export async function getSlackActivities(
   userId: string,
-  limit: number = 10
+  limit = 10
 ): Promise<SlackActivity[]> {
   // Get selected channels
   const selectedChannels = await prisma.selectedChannel.findMany({

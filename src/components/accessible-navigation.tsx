@@ -32,9 +32,8 @@ interface AccessibleNavigationProps {
  * A React functional component that provides accessible navigation with keyboard support.
  *
  * This component manages the state of active and expanded navigation items, allowing users to navigate through
- * a list of items using keyboard controls. It utilizes aria attributes for accessibility and provides visual
- * feedback for active and expanded states. The component also handles item clicks and announces navigation changes
- * for screen readers.
+ * a list of items using keyboard controls. It utilizes aria attributes for accessibility, provides visual feedback
+ * for active and expanded states, and handles item clicks while announcing navigation changes for screen readers.
  *
  * @param items - An array of navigation items to be rendered.
  * @param orientation - The orientation of the navigation, either 'vertical' or 'horizontal'. Defaults to 'vertical'.
@@ -162,7 +161,7 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
   const expandCurrentItem = () => {
     if (activeItem) {
       const item = findItemById(items, activeItem);
-      if (item && item.children) {
+      if (item?.children) {
         setExpandedItems(prev => new Set(prev).add(item.id));
         if (announceNavigation) {
           announce(`Expanded ${item.label}`);
@@ -174,7 +173,7 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
   const collapseCurrentItem = () => {
     if (activeItem) {
       const item = findItemById(items, activeItem);
-      if (item && item.children && expandedItems.has(item.id)) {
+      if (item?.children && expandedItems.has(item.id)) {
         setExpandedItems(prev => {
           const newSet = new Set(prev);
           newSet.delete(item.id);
@@ -218,13 +217,13 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
   /**
    * Renders a navigation item with potential child items.
    *
-   * The function checks if the item is expanded, active, and if it has children. It constructs a list item with appropriate ARIA roles and attributes, and handles click and keydown events. If the item has children and is expanded, it recursively renders the child items.
+   * The function checks if the item is expanded, active, and if it has children. It constructs a list item with appropriate ARIA roles and attributes, and handles click and keydown events. If the item has children and is expanded, it recursively renders the child items using the same function.
    *
    * @param item - An AccessibleNavItem object representing the navigation item to render.
    * @param level - The current nesting level of the navigation item, defaulting to 0.
    * @returns A JSX element representing the rendered navigation item.
    */
-  const renderNavItem = (item: AccessibleNavItem, level: number = 0) => {
+  const renderNavItem = (item: AccessibleNavItem, level = 0) => {
     const isExpanded = expandedItems.has(item.id);
     const isActive = activeItem === item.id;
     const hasChildren = item.children && item.children.length > 0;
