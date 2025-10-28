@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * Performance analyzer script for activity feeds
  * Analyzes performance data and generates reports

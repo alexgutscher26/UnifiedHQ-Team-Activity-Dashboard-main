@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * AI Summary Setup Script
  * Helps users configure OpenRouter API key and set up the AI summary feature
