@@ -14,7 +14,7 @@ class HotfixManager {
   }
 
   /**
-   * Load hotfix configuration
+   * Load hotfix configuration from a YAML file.
    */
   loadConfig() {
     const configPath = path.join(
@@ -37,7 +37,7 @@ class HotfixManager {
   }
 
   /**
-   * Get default configuration
+   * Returns the default configuration settings.
    */
   getDefaultConfig() {
     return {
@@ -52,6 +52,15 @@ class HotfixManager {
 
   /**
    * Create hotfix branch
+   *
+   * This function generates a hotfix branch name based on the provided description and severity level.
+   * It first formats the description and appends a timestamp to create a unique branch name.
+   * The function checks if the branch already exists, switches to the main branch, pulls the latest changes,
+   * and then creates the new hotfix branch. If any errors occur during this process, they are logged,
+   * and the function returns null.
+   *
+   * @param {string} description - The description for the hotfix branch.
+   * @param {string} [severity='high'] - The severity level of the hotfix.
    */
   createHotfixBranch(description, severity = 'high') {
     console.log(`🚨 Creating hotfix branch: ${description}`);
@@ -225,7 +234,11 @@ class HotfixManager {
   }
 
   /**
-   * Create hotfix pull request
+   * Create hotfix pull request.
+   * @param {string} branchName - The name of the branch for the hotfix.
+   * @param {string} description - The description of the hotfix.
+   * @param {string} [severity='high'] - The severity level of the hotfix.
+   * @returns {boolean} - Returns true if the PR is created successfully, otherwise false.
    */
   createHotfixPR(branchName, description, severity = 'high') {
     console.log(`📝 Creating hotfix PR: ${branchName}`);
@@ -256,7 +269,11 @@ class HotfixManager {
   }
 
   /**
-   * Generate hotfix PR body
+   * Generate hotfix PR body.
+   * @param {string} branchName - The name of the branch.
+   * @param {string} description - Description of the issue.
+   * @param {string} severity - Severity level of the issue.
+   * @returns {string} The formatted PR body.
    */
   generateHotfixPRBody(branchName, description, severity) {
     const timestamp = new Date().toISOString();
@@ -406,7 +423,7 @@ ${description}
   }
 
   /**
-   * Backport hotfix to develop
+   * Backports a hotfix branch to the develop branch.
    */
   backportToDevelop(branchName) {
     console.log(`🔀 Backporting hotfix to develop: ${branchName}`);
@@ -436,7 +453,7 @@ ${description}
   }
 
   /**
-   * Rollback hotfix
+   * Rollback a hotfix using the specified commit hash.
    */
   rollbackHotfix(commitHash) {
     console.log(`🔄 Rolling back hotfix: ${commitHash}`);
@@ -485,7 +502,14 @@ ${description}
   }
 
   /**
-   * Complete hotfix process
+   * Complete hotfix process.
+   *
+   * This function orchestrates the entire hotfix workflow, including creating a hotfix branch, waiting for developer changes, validating the hotfix, creating a pull request, deploying the hotfix, and cleaning up the branch. It logs each step and handles errors that may occur during the process, returning a summary of the operation's success or failure.
+   *
+   * @param description - A brief description of the hotfix.
+   * @param severity - The severity level of the hotfix, defaults to 'high'.
+   * @param options - Additional options for the hotfix process.
+   * @returns An object containing the success status, branch name, duration of the process, and completed steps.
    */
   async completeHotfix(description, severity = 'high', options = {}) {
     console.log(`🚨 Starting hotfix process: ${description}`);
@@ -569,7 +593,13 @@ ${description}
   }
 
   /**
-   * List active hotfixes
+   * List active hotfixes.
+   *
+   * This function retrieves all remote branches that are categorized as hotfixes by executing a Git command.
+   * It processes the branch names to remove the 'origin/' prefix and filters out any non-hotfix branches.
+   * If no active hotfix branches are found, it logs a message and returns an empty array.
+   * For each active hotfix branch, it retrieves additional information such as severity and age,
+   * and logs this information along with an appropriate severity icon.
    */
   listActiveHotfixes() {
     console.log('🚨 Active Hotfixes:');
@@ -634,7 +664,7 @@ ${description}
   }
 
   /**
-   * Get severity icon
+   * Get the severity icon based on the provided severity level.
    */
   getSeverityIcon(severity) {
     const icons = {
@@ -648,7 +678,7 @@ ${description}
   }
 
   /**
-   * Show help information
+   * Displays help information for the Hotfix Manager.
    */
   showHelp() {
     console.log(`
