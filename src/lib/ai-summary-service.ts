@@ -255,7 +255,7 @@ Always respond with valid JSON format as requested.`;
         line.startsWith('•') ||
         line.match(/^\d+\./)
       ) {
-        const item = line.replace(/^[-•\d.\s]+/, '').trim();
+        const item = line.replace(/^[-•\d.\s]+/u, '').trim();
         if (item) {
           switch (currentSection) {
             case 'highlights':
