@@ -162,7 +162,7 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
   const expandCurrentItem = () => {
     if (activeItem) {
       const item = findItemById(items, activeItem);
-      if (item && item.children) {
+      if (item?.children) {
         setExpandedItems(prev => new Set(prev).add(item.id));
         if (announceNavigation) {
           announce(`Expanded ${item.label}`);
@@ -174,7 +174,7 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
   const collapseCurrentItem = () => {
     if (activeItem) {
       const item = findItemById(items, activeItem);
-      if (item && item.children && expandedItems.has(item.id)) {
+      if (item?.children && expandedItems.has(item.id)) {
         setExpandedItems(prev => {
           const newSet = new Set(prev);
           newSet.delete(item.id);

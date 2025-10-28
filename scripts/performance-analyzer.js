@@ -210,8 +210,7 @@ class PerformanceAnalyzer {
 
     // Trend-based recommendations (only if trends exist)
     if (
-      trends &&
-      trends.renderTime &&
+      trends?.renderTime &&
       trends.renderTime.direction === 'degrading'
     ) {
       recommendations.push({
@@ -226,8 +225,7 @@ class PerformanceAnalyzer {
     }
 
     if (
-      trends &&
-      trends.memoryUsage &&
+      trends?.memoryUsage &&
       trends.memoryUsage.direction === 'degrading'
     ) {
       recommendations.push({
