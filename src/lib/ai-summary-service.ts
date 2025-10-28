@@ -312,7 +312,7 @@ Always respond with valid JSON format as requested.`;
 
       // Handle both streaming and non-streaming responses
       if ('choices' in response) {
-        return !!response.choices[0]?.message?.content;
+        return Boolean(response.choices[0]?.message?.content);
       } else {
         return false; // Streaming responses not supported for validation
       }

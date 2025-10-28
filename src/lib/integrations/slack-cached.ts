@@ -749,7 +749,7 @@ export async function isSlackConnected(userId: string): Promise<boolean> {
       type: 'slack',
     },
   });
-  return !!connection;
+  return Boolean(connection);
 }
 
 /**

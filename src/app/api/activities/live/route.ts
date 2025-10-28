@@ -20,8 +20,8 @@ export async function GET(request: NextRequest) {
     });
 
     console.log('[SSE] Session check:', {
-      hasSession: !!session,
-      hasUser: !!session?.user,
+      hasSession: Boolean(session),
+      hasUser: Boolean(session?.user),
       userId: session?.user?.id,
     });
 
