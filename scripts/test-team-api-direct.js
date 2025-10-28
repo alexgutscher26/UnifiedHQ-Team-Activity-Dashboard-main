@@ -2,6 +2,15 @@ const { PrismaClient } = require('../src/generated/prisma');
 
 const prisma = new PrismaClient();
 
+/**
+ * Tests the Team Activity API by fetching and logging user activities from GitHub.
+ *
+ * The function retrieves the first user from the database and, if found, it dynamically imports the fetchGithubActivity function.
+ * It then calls this function with the user's ID to fetch their GitHub activities, logging the results or any errors encountered during the process.
+ *
+ * @returns {Promise<void>} A promise that resolves when the test is complete.
+ * @throws Error If there is an issue with fetching the user or activities.
+ */
 async function testTeamActivityAPI() {
   try {
     console.log('🧪 Testing Team Activity API directly...\n');
