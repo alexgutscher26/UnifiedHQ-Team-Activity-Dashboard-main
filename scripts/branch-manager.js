@@ -259,7 +259,12 @@ class BranchManager {
   }
 
   /**
-   * Clean up merged branches
+   * Clean up merged branches from both local and remote repositories.
+   *
+   * This function retrieves all merged branches excluding 'main' and 'develop', logs them, and attempts to delete each local branch.
+   * It also fetches merged remote branches and attempts to delete them. Errors during deletion are logged without stopping the process.
+   *
+   * @throws Error If there is an issue executing git commands or during the cleanup process.
    */
   cleanupMergedBranches () {
     console.log('🧹 Cleaning up merged branches...')
@@ -431,7 +436,14 @@ class BranchManager {
   }
 
   /**
-   * Switch to branch with safety checks
+   * Switch to branch with safety checks.
+   *
+   * This function attempts to switch to a specified branch after performing necessary safety checks.
+   * It first verifies if the branch exists using the branchExists method. Then, it checks for any uncommitted changes
+   * by executing a git status command. If there are uncommitted changes, it logs a warning and returns false.
+   * If all checks pass, it switches to the branch and pulls the latest changes from the remote repository.
+   *
+   * @param {string} branchName - The name of the branch to switch to.
    */
   switchToBranch (branchName) {
     console.log(`🔄 Switching to branch: ${branchName}`)

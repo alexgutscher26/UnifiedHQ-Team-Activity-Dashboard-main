@@ -239,7 +239,11 @@ class HotfixManager {
   }
 
   /**
-   * Create hotfix pull request
+   * Create hotfix pull request.
+   * @param {string} branchName - The name of the branch for the hotfix.
+   * @param {string} description - The description of the hotfix.
+   * @param {string} [severity='high'] - The severity level of the hotfix.
+   * @returns {boolean} - Returns true if the PR is created successfully, otherwise false.
    */
   createHotfixPR (branchName, description, severity = 'high') {
     console.log(`📝 Creating hotfix PR: ${branchName}`)
@@ -270,7 +274,7 @@ class HotfixManager {
   }
 
   /**
-   * Generate hotfix PR body
+   * Generate hotfix PR body.
    */
   generateHotfixPRBody (branchName, description, severity) {
     const timestamp = new Date().toISOString()
@@ -598,7 +602,13 @@ ${description}
   }
 
   /**
-   * List active hotfixes
+   * List active hotfixes.
+   *
+   * This function retrieves all remote branches that are categorized as hotfixes by executing a Git command.
+   * It processes the branch names to remove the 'origin/' prefix and filters out any non-hotfix branches.
+   * If no active hotfix branches are found, it logs a message and returns an empty array.
+   * For each active hotfix branch, it retrieves additional information such as severity and age,
+   * and logs this information to the console. In case of an error during execution, it logs the error message and returns an empty array.
    */
   listActiveHotfixes () {
     console.log('🚨 Active Hotfixes:')
@@ -670,7 +680,7 @@ ${description}
   }
 
   /**
-   * Get severity icon
+   * Get the severity icon based on the severity level.
    */
   getSeverityIcon (severity) {
     const icons = {
