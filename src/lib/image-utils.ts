@@ -117,10 +117,7 @@ export const supportsWebP = (): Promise<boolean> => {
 /**
  * Generate responsive image srcSet for different breakpoints
  */
-export const generateSrcSet = (
-  baseSrc: string,
-  baseWidth = 800
-): string => {
+export const generateSrcSet = (baseSrc: string, baseWidth = 800): string => {
   const breakpoints = [640, 768, 1024, 1280, 1536];
 
   return breakpoints

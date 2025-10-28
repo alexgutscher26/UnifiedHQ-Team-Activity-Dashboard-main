@@ -262,11 +262,7 @@ class CachedGitHubClient {
   /**
    * Get repository commits with caching
    */
-  async getCommits(
-    owner: string,
-    repo: string,
-    perPage = 10
-  ): Promise<any[]> {
+  async getCommits(owner: string, repo: string, perPage = 10): Promise<any[]> {
     return this.cachedRequest(
       'commits.list',
       { owner, repo, perPage },
@@ -310,11 +306,7 @@ class CachedGitHubClient {
   /**
    * Fetches issues from a repository with caching support.
    */
-  async getIssues(
-    owner: string,
-    repo: string,
-    perPage = 10
-  ): Promise<any[]> {
+  async getIssues(owner: string, repo: string, perPage = 10): Promise<any[]> {
     return this.cachedRequest(
       'issues.list',
       { owner, repo, perPage },

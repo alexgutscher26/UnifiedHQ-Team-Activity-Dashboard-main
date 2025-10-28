@@ -322,10 +322,7 @@ export const ApiErrors = {
   validation: (message: string, details?: any, requestId?: string) =>
     createApiError(ApiErrorType.VALIDATION_ERROR, message, details, requestId),
 
-  authentication: (
-    message = 'Authentication required',
-    requestId?: string
-  ) =>
+  authentication: (message = 'Authentication required', requestId?: string) =>
     createApiError(
       ApiErrorType.AUTHENTICATION_ERROR,
       message,
@@ -333,10 +330,7 @@ export const ApiErrors = {
       requestId
     ),
 
-  authorization: (
-    message = 'Insufficient permissions',
-    requestId?: string
-  ) =>
+  authorization: (message = 'Insufficient permissions', requestId?: string) =>
     createApiError(
       ApiErrorType.AUTHORIZATION_ERROR,
       message,
