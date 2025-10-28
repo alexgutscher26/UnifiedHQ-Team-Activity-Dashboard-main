@@ -154,9 +154,9 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
   /**
    * Expands the currently active item if it exists.
    *
-   * The function checks if there is an active item and retrieves it using findItemById.
-   * If the item has children, it adds the item's ID to the set of expanded items.
-   * Additionally, if announceNavigation is true, it announces the expansion of the item.
+   * The function checks for the presence of an active item and retrieves it using findItemById.
+   * If the retrieved item has children, it adds the item's ID to the set of expanded items.
+   * Furthermore, if announceNavigation is true, it announces the expansion of the item using the announce function.
    */
   const expandCurrentItem = () => {
     if (activeItem) {
