@@ -22,7 +22,7 @@ export const customImageLoader = ({
 /**
  * Generate responsive image sizes for different breakpoints
  */
-export const getResponsiveImageSizes = (baseWidth: number = 800) => {
+export const getResponsiveImageSizes = (baseWidth = 800) => {
   return {
     mobile: Math.round(baseWidth * 0.5),
     tablet: Math.round(baseWidth * 0.75),
@@ -119,7 +119,7 @@ export const supportsWebP = (): Promise<boolean> => {
  */
 export const generateSrcSet = (
   baseSrc: string,
-  baseWidth: number = 800
+  baseWidth = 800
 ): string => {
   const breakpoints = [640, 768, 1024, 1280, 1536];
 

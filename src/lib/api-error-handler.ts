@@ -323,7 +323,7 @@ export const ApiErrors = {
     createApiError(ApiErrorType.VALIDATION_ERROR, message, details, requestId),
 
   authentication: (
-    message: string = 'Authentication required',
+    message = 'Authentication required',
     requestId?: string
   ) =>
     createApiError(
@@ -334,7 +334,7 @@ export const ApiErrors = {
     ),
 
   authorization: (
-    message: string = 'Insufficient permissions',
+    message = 'Insufficient permissions',
     requestId?: string
   ) =>
     createApiError(
@@ -344,7 +344,7 @@ export const ApiErrors = {
       requestId
     ),
 
-  notFound: (resource: string = 'Resource', requestId?: string) =>
+  notFound: (resource = 'Resource', requestId?: string) =>
     createApiError(
       ApiErrorType.NOT_FOUND,
       `${resource} not found`,
@@ -355,7 +355,7 @@ export const ApiErrors = {
   conflict: (message: string, details?: any, requestId?: string) =>
     createApiError(ApiErrorType.CONFLICT, message, details, requestId),
 
-  rateLimit: (message: string = 'Rate limit exceeded', requestId?: string) =>
+  rateLimit: (message = 'Rate limit exceeded', requestId?: string) =>
     createApiError(
       ApiErrorType.RATE_LIMIT_ERROR,
       message,
@@ -372,7 +372,7 @@ export const ApiErrors = {
     ),
 
   internal: (
-    message: string = 'Internal server error',
+    message = 'Internal server error',
     details?: any,
     requestId?: string
   ) =>
@@ -425,7 +425,7 @@ export function validateRequest<T>(
 // Rate limiting helper
 export function checkRateLimit(
   identifier: string,
-  limit: number = 100,
+  limit = 100,
   windowMs: number = 15 * 60 * 1000 // 15 minutes
 ): boolean {
   // This is a simple in-memory rate limiter
@@ -651,7 +651,7 @@ export async function requireApiKey(
 export function checkRateLimitWithUser(
   identifier: string,
   userId?: string,
-  limit: number = 100,
+  limit = 100,
   windowMs: number = 15 * 60 * 1000
 ): boolean {
   // Use user ID if available, otherwise fall back to identifier

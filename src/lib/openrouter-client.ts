@@ -72,7 +72,7 @@ export async function generateWithOpenRouter(options: LLMGenerationOptions) {
 // Convenience function for simple text generation
 export async function generateText(
   prompt: string,
-  model: string = 'gpt-3.5-turbo',
+  model = 'gpt-3.5-turbo',
   options: Partial<LLMGenerationOptions> = {}
 ) {
   return generateWithOpenRouter({
