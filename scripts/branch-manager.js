@@ -612,7 +612,7 @@ ${description}
     try {
       // Check for old branches
       const branches = this.listBranches()
-      if (branches && branches.local) {
+      if (branches?.local) {
         branches.local.forEach(branch => {
           if (branch === 'main' || branch === 'develop') return
 

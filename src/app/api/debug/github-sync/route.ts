@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       userId,
-      hasConnection: !!connection,
+      hasConnection: Boolean(connection),
       connectionExpiresAt: connection?.expiresAt,
       selectedRepositories: selectedRepos.length,
       selectedRepos: selectedRepos.map(repo => ({
