@@ -170,8 +170,8 @@ export function ThemeSettings({ onSettingsChange }: ThemeSettingsProps) {
         <CardContent>
           <div className='space-y-4'>
             <div className='animate-pulse space-y-2'>
-              <div className='h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4'></div>
-              <div className='h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2'></div>
+              <div className='h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4' />
+              <div className='h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2' />
             </div>
           </div>
         </CardContent>
@@ -347,7 +347,7 @@ export function ThemeSettings({ onSettingsChange }: ThemeSettingsProps) {
         <CardContent>
           <div className='space-y-4 p-4 border rounded-lg bg-card'>
             <div className='flex items-center gap-2'>
-              <div className='w-8 h-8 bg-primary rounded-full'></div>
+              <div className='w-8 h-8 bg-primary rounded-full' />
               <div>
                 <div className='font-medium'>Sample User</div>
                 <div className='text-sm text-muted-foreground'>
@@ -356,9 +356,9 @@ export function ThemeSettings({ onSettingsChange }: ThemeSettingsProps) {
               </div>
             </div>
             <div className='space-y-2'>
-              <div className='h-2 bg-primary/20 rounded w-3/4'></div>
-              <div className='h-2 bg-secondary rounded w-1/2'></div>
-              <div className='h-2 bg-accent rounded w-2/3'></div>
+              <div className='h-2 bg-primary/20 rounded w-3/4' />
+              <div className='h-2 bg-secondary rounded w-1/2' />
+              <div className='h-2 bg-accent rounded w-2/3' />
             </div>
             <div className='flex gap-2'>
               <Button size='sm'>Primary Button</Button>

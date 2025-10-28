@@ -19,8 +19,8 @@ class BranchManager {
    *
    * This function constructs the path to the branch configuration YAML file and checks if it exists.
    * If the file is found, it attempts to read and parse its contents. In case of a parsing error,
-   * a warning is logged, and the function falls back to a default configuration. If the file does not
-   * exist, it directly returns the default configuration.
+   * a warning is logged, and the function falls back to the default configuration. If the file does
+   * not exist, it directly returns the default configuration.
    */
   loadConfig () {
     const configPath = path.join(
@@ -48,7 +48,7 @@ class BranchManager {
   }
 
   /**
-   * Merge user config with defaults.
+   * Merge user config with defaults, combining specified sections.
    */
   mergeWithDefaults (userConfig) {
     const defaults = this.getDefaultConfig()
@@ -90,7 +90,7 @@ class BranchManager {
   /**
    * Create a new branch with proper naming.
    *
-   * This function validates the branch type against the configuration, generates a branch name, and checks if the branch already exists. It attempts to switch to the specified base branch, pulling the latest changes, and handles errors by falling back to the 'main' branch if 'develop' is not found. Finally, it creates the new branch and logs relevant information.
+   * This function validates the branch type against the configuration, generates a branch name, checks for existing branches, and attempts to switch to the specified base branch while pulling the latest changes. If the base branch is not found, it defaults to 'main'. Finally, it creates the new branch and logs relevant information. If any errors occur during the process, they are caught and logged.
    *
    * @param type - The type of the branch to create.
    * @param description - A description for the new branch.
@@ -173,7 +173,7 @@ class BranchManager {
   /**
    * List all branches with status.
    *
-   * This function retrieves and displays the status of local and remote Git branches. It first fetches local branches and filters out any empty entries. Then, it retrieves remote branches while excluding the 'HEAD' reference. The current branch is identified, and each branch is displayed with its corresponding status and type. The function also handles errors during execution and logs an appropriate message.
+   * This function retrieves and displays the status of local and remote Git branches. It first fetches local branches using the `git branch` command, then retrieves remote branches while filtering out any that include 'HEAD'. The current branch is identified, and each branch is displayed with its corresponding status and icon. The function also handles errors during execution and logs an appropriate message.
    */
   listBranches () {
     console.log('🌿 Branch Status:')
@@ -230,7 +230,7 @@ class BranchManager {
   }
 
   /**
-   * Get the branch type based on the branch name.
+   * Get branch type from name based on configured prefixes.
    */
   getBranchType (branchName) {
     for (const [type, prefix] of Object.entries(this.config.naming)) {
@@ -326,12 +326,12 @@ class BranchManager {
   /**
    * Validate branch naming convention.
    *
-   * This function checks if the provided branch name adheres to the specified naming conventions.
+   * This function checks if the provided branchName adheres to the specified naming conventions.
    * It verifies that the branch name starts with a valid type defined in the configuration,
    * checks the length constraints, and ensures that it contains only allowed characters (lowercase letters, numbers, and hyphens).
-   * If any of these conditions are not met, it logs an appropriate error message and returns false; otherwise, it confirms the validity of the branch name.
+   * If any of these conditions are not met, appropriate error messages are logged.
    *
-   * @param {string} branchName - The branch name to validate.
+   * @param {string} branchName - The name of the branch to validate.
    */
   validateBranchName (branchName) {
     console.log(`🔍 Validating branch name: ${branchName}`)
@@ -370,9 +370,8 @@ class BranchManager {
   /**
    * Get detailed information about a specific Git branch.
    *
-   * This function retrieves the branch type, existence, last commit details, and the ahead/behind status relative to the main branch.
-   * It handles potential errors when fetching the last commit and status, ensuring that the function returns a comprehensive object
-   * with the branch's current state or null in case of an error.
+   * This function retrieves the branch's name, type, existence, last commit, and its status regarding how it compares to the main branch.
+   * It executes Git commands to gather the last commit details and the ahead/behind status, handling potential errors for branches without commits or tracking.
    *
    * @param branchName - The name of the branch to retrieve information for.
    * @returns An object containing branch information, or null if an error occurs.
@@ -481,7 +480,16 @@ class BranchManager {
   }
 
   /**
-   * Merge branch with proper workflow
+   * Merge branch with proper workflow.
+   *
+   * This function merges a specified source branch into a target branch using a defined merge type.
+   * It first validates the existence of both branches, then switches to the target branch, pulls the latest changes,
+   * and performs the merge operation. Depending on the merge type, it either squashes the commits or merges them directly.
+   * Finally, it pushes the changes to the remote repository and logs the outcome.
+   *
+   * @param {string} sourceBranch - The name of the source branch to merge from.
+   * @param {string} [targetBranch='develop'] - The name of the target branch to merge into.
+   * @param {string} [mergeType='squash'] - The type of merge to perform ('squash' or regular).
    */
   mergeBranch (sourceBranch, targetBranch = 'develop', mergeType = 'squash') {
     console.log(`🔀 Merging ${sourceBranch} into ${targetBranch}`)
@@ -616,7 +624,7 @@ ${description}
     try {
       // Check for old branches
       const branches = this.listBranches()
-      if (branches && branches.local) {
+      if (branches?.local) {
         branches.local.forEach(branch => {
           if (branch === 'main' || branch === 'develop') return
 
@@ -658,7 +666,7 @@ ${description}
   /**
    * Show current configuration.
    *
-   * This function displays the current configuration for the Branch Manager, including the source of the configuration file, branch settings, naming conventions, workflow settings, additional settings, and integrations. It checks for the existence of the configuration file and logs the appropriate message. The function iterates over various configuration properties to present their values in a user-friendly format.
+   * This function displays the current configuration for the Branch Manager, including the source of the configuration file, branch settings, naming conventions, workflow settings, additional settings, and integrations. It checks for the existence of the configuration file and logs appropriate messages based on its presence. The function iterates over various configuration properties to present their values in a user-friendly format.
    */
   showConfig () {
     console.log('⚙️  Branch Manager Configuration\n')

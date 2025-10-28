@@ -52,6 +52,15 @@ class HotfixManager {
 
   /**
    * Create hotfix branch
+   *
+   * This function generates a hotfix branch name based on the provided description and severity level.
+   * It first formats the description and appends a timestamp to create a unique branch name.
+   * The function checks if the branch already exists, switches to the main branch, pulls the latest changes,
+   * and then creates the new hotfix branch. If any errors occur during this process, they are logged,
+   * and the function returns null.
+   *
+   * @param {string} description - The description for the hotfix branch.
+   * @param {string} [severity='high'] - The severity level of the hotfix.
    */
   createHotfixBranch (description, severity = 'high') {
     console.log(`🚨 Creating hotfix branch: ${description}`)
@@ -110,9 +119,7 @@ class HotfixManager {
   /**
    * Validate hotfix changes.
    *
-   * This function checks for uncommitted changes, ensures the branch is up to date with main, verifies build and linting status,
-   * checks for test failures, and assesses the scope of file changes. It collects issues and warnings based on these checks
-   * and returns a validation object indicating the overall status of the hotfix.
+   * This function checks for uncommitted changes, ensures the branch is up to date with main, and validates the build, linting, and test results. It also assesses the number of file changes and checks for modifications to critical files, accumulating issues and warnings based on these checks. The validation result is logged and returned at the end of the process.
    *
    * @param branchName - The name of the branch to validate.
    * @returns An object containing the validation result, including whether it passed, any issues found, and warnings.
@@ -378,7 +385,7 @@ ${description}
    * to production based on the provided parameter or configuration setting.
    *
    * @param {string} branchName - The name of the branch containing the hotfix.
-   * @param {boolean} [autoDeploy=false] - Indicates whether to automatically deploy to production.
+   * @param {boolean} [autoDeploy=false] - Indicates whether to automatically deploy the hotfix to production.
    */
   deployHotfix (branchName, autoDeploy = false) {
     console.log(`🚀 Deploying hotfix: ${branchName}`)
@@ -480,7 +487,7 @@ ${description}
   }
 
   /**
-   * Cleans up the specified hotfix branch by deleting it locally and remotely.
+   * Clean up the specified hotfix branch by deleting it locally and remotely.
    */
   cleanupHotfixBranch (branchName) {
     console.log(`🧹 Cleaning up hotfix branch: ${branchName}`)
@@ -504,12 +511,12 @@ ${description}
   }
 
   /**
-   * Complete the hotfix process for a given description and severity.
+   * Complete hotfix process.
    *
-   * This function orchestrates the hotfix process by creating a hotfix branch, waiting for developer changes, validating the hotfix, creating a pull request, deploying the hotfix, and cleaning up the branch. It logs each step and handles errors that may occur during the process, returning the success status and details of the operation.
+   * This function orchestrates the hotfix process by creating a hotfix branch, waiting for developer changes, validating the hotfix, creating a pull request, deploying the hotfix, and cleaning up the branch. It logs each step and handles errors that may occur during the process, returning the success status along with relevant details.
    *
    * @param description - A brief description of the hotfix.
-   * @param severity - The severity level of the hotfix, defaults to 'high'.
+   * @param severity - The severity level of the hotfix (default is 'high').
    * @param options - Additional options for the hotfix process.
    * @returns An object containing the success status, branch name, duration of the process, and completed steps.
    */
@@ -614,7 +621,7 @@ ${description}
         .trim()
         .split('\n')
         .map(b => b.trim().replace('origin/', ''))
-        .filter(b => b && b.startsWith('hotfix/'))
+        .filter(b => b?.startsWith('hotfix/'))
 
       if (allRemoteBranches.length === 0) {
         console.log('✅ No active hotfix branches')
@@ -639,8 +646,8 @@ ${description}
    *
    * This function retrieves the severity and age of a hotfix based on the provided branch name.
    * It splits the branch name to determine the severity, defaults to 'unknown' if not specified,
-   * and calculates the age of the branch by executing a git command to get the last commit timestamp.
-   * In case of an error, it returns 'unknown' for both severity and age.
+   * and calculates the age of the branch by executing a git command to get the last commit time.
+   * If an error occurs during execution, it returns 'unknown' for both severity and age.
    *
    * @param {string} branchName - The name of the branch to retrieve hotfix information for.
    */
