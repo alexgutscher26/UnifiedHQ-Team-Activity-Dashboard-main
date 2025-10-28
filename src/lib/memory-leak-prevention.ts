@@ -441,7 +441,7 @@ export function getMemoryReport() {
 }
 
 // Memory monitoring hook for development
-export function useMemoryMonitoring(interval: number = 5000) {
+export function useMemoryMonitoring(interval = 5000) {
   const detector = MemoryLeakDetector.getInstance();
   const { setInterval, clearInterval } = useSafeTimer();
 
