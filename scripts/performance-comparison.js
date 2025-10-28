@@ -19,7 +19,7 @@ class PerformanceComparison {
   }
 
   /**
-   * Load performance reports
+   * Load performance reports from the reports directory.
    */
   loadReports () {
     if (!fs.existsSync(this.reportsDir)) {
@@ -43,7 +43,7 @@ class PerformanceComparison {
   }
 
   /**
-   * Compare two performance reports
+   * Compare two performance reports and return the comparison results.
    */
   compareReports (baselineReport, comparisonReport) {
     const baseline = baselineReport.summary
@@ -91,7 +91,16 @@ class PerformanceComparison {
   }
 
   /**
-   * Compare individual metrics
+   * Compare individual metrics to determine changes and direction.
+   *
+   * This function evaluates the baseline and comparison values to calculate the change and percentage difference.
+   * It also determines the direction of change based on the specified betterDirection, which can indicate whether lower or higher values are preferred.
+   * Special cases are handled when both values are zero or when the baseline is zero.
+   *
+   * @param baselineValue - The baseline metric value for comparison.
+   * @param comparisonValue - The metric value to compare against the baseline.
+   * @param betterDirection - Indicates whether a lower or higher value is considered better.
+   * @returns An object containing the change, percentage, direction, baseline, and comparison values.
    */
   compareMetric (baselineValue, comparisonValue, betterDirection) {
     if (baselineValue === 0 && comparisonValue === 0) {
@@ -124,7 +133,7 @@ class PerformanceComparison {
   }
 
   /**
-   * Generate comparison summary
+   * Generate a summary of comparison metrics.
    */
   generateComparisonSummary (comparison) {
     const improvements = Object.entries(comparison).filter(
@@ -151,7 +160,13 @@ class PerformanceComparison {
   }
 
   /**
-   * Calculate overall performance score
+   * Calculate overall performance score.
+   *
+   * This function computes a performance score based on various metrics provided in the comparison object.
+   * It assigns weights to each metric and adjusts the score according to the direction of performance change
+   * (improved, stable, or regressed). The final score is rounded to the nearest integer before being returned.
+   *
+   * @param {Object} comparison - An object containing performance metrics and their respective data.
    */
   calculateOverallScore (comparison) {
     let score = 0
@@ -181,7 +196,7 @@ class PerformanceComparison {
   }
 
   /**
-   * Generate recommendations based on comparison
+   * Generate recommendations based on comparison metrics.
    */
   generateRecommendations (comparison) {
     const recommendations = []
@@ -210,7 +225,7 @@ class PerformanceComparison {
   }
 
   /**
-   * Get specific recommendations for metrics
+   * Get specific recommendations for metrics based on the provided metric key.
    */
   getRecommendationForMetric (metric) {
     const recommendations = {
@@ -301,7 +316,13 @@ class PerformanceComparison {
   }
 
   /**
-   * Get performance grade based on score
+   * Get performance grade based on score.
+   *
+   * This function evaluates the provided score and returns an object containing the corresponding grade and a description of the performance.
+   * It categorizes the score into different ranges, from 'A+' for scores 90 and above to 'F' for scores below 50, indicating no improvement or regression.
+   *
+   * @param score - A numeric value representing the performance score.
+   * @returns An object containing the grade and a description of the performance.
    */
   getPerformanceGrade (score) {
     if (score >= 90) {
@@ -315,7 +336,7 @@ class PerformanceComparison {
   }
 
   /**
-   * Save comparison report
+   * Save comparison report to a JSON file.
    */
   saveComparisonReport (
     baselineReport,
@@ -353,7 +374,11 @@ class PerformanceComparison {
   }
 
   /**
-   * Run comparison between latest two reports
+   * Run comparison between latest two reports.
+   *
+   * This function initiates a performance comparison by loading the reports and checking if there are at least two available.
+   * It then selects the last two reports for comparison, generates a summary and recommendations based on the comparison,
+   * and prints the results. Finally, it saves the comparison report and handles any errors that may occur during the process.
    */
   async runComparison () {
     console.log('🔍 Starting performance comparison...\n')
