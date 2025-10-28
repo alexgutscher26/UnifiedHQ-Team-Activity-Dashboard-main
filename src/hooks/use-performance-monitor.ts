@@ -193,7 +193,7 @@ export const useIntersectionObserver = (
 };
 
 /**
- * Hook for virtual scrolling calculations
+ * Custom hook for managing virtual scrolling.
  */
 export const useVirtualScroll = (
   itemCount: number,
