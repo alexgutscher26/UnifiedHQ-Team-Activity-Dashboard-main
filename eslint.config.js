@@ -1,13 +1,13 @@
-import { FlatCompat } from '@eslint/eslintrc';
-import js from '@eslint/js';
-import prettierPlugin from 'eslint-plugin-prettier';
-import prettierConfig from 'eslint-config-prettier';
+import { FlatCompat } from '@eslint/eslintrc'
+import js from '@eslint/js'
+import prettierPlugin from 'eslint-plugin-prettier'
+import prettierConfig from 'eslint-config-prettier'
 
 const compat = new FlatCompat({
   baseDirectory: import.meta.dirname,
   recommendedConfig: js.configs.recommended,
-  allConfig: js.configs.all,
-});
+  allConfig: js.configs.all
+})
 
 export default [
   // Base JavaScript recommended rules
@@ -22,7 +22,7 @@ export default [
   // Global rules
   {
     plugins: {
-      prettier: prettierPlugin,
+      prettier: prettierPlugin
     },
     rules: {
       'prettier/prettier': 'error',
@@ -30,8 +30,8 @@ export default [
       'no-console': 'warn',
       'no-unused-vars': 'warn',
       'prefer-const': 'error',
-      'no-var': 'error',
-    },
+      'no-var': 'error'
+    }
   },
 
   // Ignore patterns
@@ -45,7 +45,7 @@ export default [
       '*.config.js',
       '*.config.mjs',
       'prisma/generated/**',
-      'src/generated/**',
-    ],
-  },
-];
+      'src/generated/**'
+    ]
+  }
+]
