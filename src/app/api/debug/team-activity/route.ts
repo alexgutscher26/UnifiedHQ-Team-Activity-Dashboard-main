@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      console.log(`[Team Activity Debug] GitHub connection found`);
+      console.log('[Team Activity Debug] GitHub connection found');
 
       // Check selected repositories
       const selectedRepos = await prisma.selectedRepository.findMany({

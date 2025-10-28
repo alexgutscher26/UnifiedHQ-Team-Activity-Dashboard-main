@@ -355,7 +355,7 @@ export function useFieldValidation(
   field: string,
   value: any,
   rules: ValidationRule,
-  validateOnChange: boolean = true
+  validateOnChange = true
 ) {
   const [error, setError] = React.useState<string | null>(null);
   const [touched, setTouched] = React.useState(false);

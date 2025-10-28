@@ -162,7 +162,7 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
   const expandCurrentItem = () => {
     if (activeItem) {
       const item = findItemById(items, activeItem);
-      if (item && item.children) {
+      if (item?.children) {
         setExpandedItems(prev => new Set(prev).add(item.id));
         if (announceNavigation) {
           announce(`Expanded ${item.label}`);
@@ -174,7 +174,7 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
   const collapseCurrentItem = () => {
     if (activeItem) {
       const item = findItemById(items, activeItem);
-      if (item && item.children && expandedItems.has(item.id)) {
+      if (item?.children && expandedItems.has(item.id)) {
         setExpandedItems(prev => {
           const newSet = new Set(prev);
           newSet.delete(item.id);
@@ -224,7 +224,7 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
    * @param level - The current nesting level of the navigation item, defaulting to 0.
    * @returns A JSX element representing the rendered navigation item.
    */
-  const renderNavItem = (item: AccessibleNavItem, level: number = 0) => {
+  const renderNavItem = (item: AccessibleNavItem, level = 0) => {
     const isExpanded = expandedItems.has(item.id);
     const isActive = activeItem === item.id;
     const hasChildren = item.children && item.children.length > 0;

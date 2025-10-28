@@ -29,7 +29,7 @@ export interface LLMResponse {
 export class LLMService {
   private defaultModel: string;
 
-  constructor(defaultModel: string = 'gpt-3.5-turbo') {
+  constructor(defaultModel = 'gpt-3.5-turbo') {
     this.defaultModel = defaultModel;
   }
 
