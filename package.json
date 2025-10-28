@@ -53,7 +53,7 @@
     "@dnd-kit/sortable": "latest",
     "@dnd-kit/utilities": "latest",
     "@dymo-api/better-auth": "^1.2.21",
-    "@hookform/resolvers": "^3.10.0",
+    "@hookform/resolvers": "^5.2.2",
     "@modelcontextprotocol/sdk": "^1.19.1",
     "@octokit/rest": "^22.0.0",
     "@prisma/client": "^6.17.1",
