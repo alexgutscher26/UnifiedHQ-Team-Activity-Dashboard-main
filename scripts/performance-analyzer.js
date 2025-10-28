@@ -256,7 +256,7 @@ class PerformanceAnalyzer {
   }
 
   /**
-   * Generate performance alerts
+   * Generate performance alerts based on summary metrics.
    */
   generateAlerts (summary) {
     const alerts = []
@@ -295,7 +295,7 @@ class PerformanceAnalyzer {
   }
 
   /**
-   * Generate comprehensive analysis report
+   * Generate an analysis report from the provided reports.
    */
   generateAnalysisReport (reports) {
     const trends = this.analyzeTrends(reports)
@@ -436,7 +436,7 @@ class PerformanceAnalyzer {
   }
 
   /**
-   * Save analysis report to file
+   * Save analysis report to a JSON file in the reports directory.
    */
   saveAnalysisReport (analysisReport) {
     const filename = `performance-analysis-${Date.now()}.json`
