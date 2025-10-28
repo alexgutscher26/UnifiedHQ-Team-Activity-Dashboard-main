@@ -9,6 +9,16 @@ const { PrismaClient } = require('../src/generated/prisma');
 
 const prisma = new PrismaClient();
 
+/**
+ * Check the setup of team activity by verifying user connections and selected repositories.
+ *
+ * This function retrieves all users from the database and checks each user's GitHub connection, selected repositories, and recent activities.
+ * It logs the status of each check and provides guidance on actions to take if issues are found.
+ * Finally, it summarizes the necessary steps for users to ensure proper setup.
+ *
+ * @returns {Promise<void>} A promise that resolves when the check is complete.
+ * @throws {Error} If an error occurs during the database operations.
+ */
 async function checkTeamActivitySetup() {
   console.log('🔍 Checking Team Activity Setup...\n');
 
