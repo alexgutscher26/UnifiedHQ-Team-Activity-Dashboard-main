@@ -417,6 +417,19 @@ export function validateRequest<T>(
 }
 
 // Rate limiting helper
+/**
+ * Checks if the rate limit for a given identifier has been exceeded.
+ *
+ * This function implements a simple in-memory rate limiter that tracks the number of requests made
+ * within a specified time window. It initializes a rate limit store if it doesn't exist, filters
+ * the requests to only include those within the defined time window, and checks if the number of
+ * recent requests exceeds the specified limit. If the limit is not exceeded, it records the current
+ * request timestamp.
+ *
+ * @param identifier - A unique identifier for the rate limit check.
+ * @param limit - The maximum number of requests allowed within the time window (default is 100).
+ * @param windowMs - The duration of the time window in milliseconds (default is 15 minutes).
+ */
 export function checkRateLimit(
   identifier: string,
   limit = 100,
