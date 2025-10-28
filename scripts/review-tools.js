@@ -408,21 +408,21 @@ class ReviewTools {
    * Generate markdown report
    */
   generateMarkdownReport(report) {
-    let markdown = `# 🔍 Code Review Report\n\n`;
+    let markdown = "# 🔍 Code Review Report\n\n";
     markdown += `**Generated:** ${report.timestamp}\n\n`;
 
-    markdown += `## 📊 Summary\n\n`;
+    markdown += "## 📊 Summary\n\n";
     markdown += `- **Issues:** ${report.summary.totalIssues}\n`;
     markdown += `- **Warnings:** ${report.summary.totalWarnings}\n`;
     markdown += `- **Suggestions:** ${report.summary.totalSuggestions}\n\n`;
 
-    markdown += `## 📈 Metrics\n\n`;
+    markdown += "## 📈 Metrics\n\n";
     markdown += `- **Files:** ${report.summary.metrics.files}\n`;
     markdown += `- **Lines:** ${report.summary.metrics.lines}\n`;
     markdown += `- **Functions:** ${report.summary.metrics.functions}\n\n`;
 
     if (report.issues.length > 0) {
-      markdown += `## ❌ Issues\n\n`;
+      markdown += "## ❌ Issues\n\n";
       report.issues.forEach(issue => {
         markdown += `- **${issue.type}** in \`${issue.file}:${issue.line}\`\n`;
         markdown += `  - ${issue.message}\n\n`;
@@ -430,7 +430,7 @@ class ReviewTools {
     }
 
     if (report.warnings.length > 0) {
-      markdown += `## ⚠️ Warnings\n\n`;
+      markdown += "## ⚠️ Warnings\n\n";
       report.warnings.forEach(warning => {
         markdown += `- **${warning.type}** in \`${warning.file}:${warning.line}\`\n`;
         markdown += `  - ${warning.message}\n\n`;
@@ -438,7 +438,7 @@ class ReviewTools {
     }
 
     if (report.suggestions.length > 0) {
-      markdown += `## 💡 Suggestions\n\n`;
+      markdown += "## 💡 Suggestions\n\n";
       report.suggestions.forEach(suggestion => {
         markdown += `- **${suggestion.type}** in \`${suggestion.file}:${suggestion.line}\`\n`;
         markdown += `  - ${suggestion.message}\n\n`;

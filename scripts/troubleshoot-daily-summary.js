@@ -101,16 +101,16 @@ async function troubleshootDailySummary() {
 
       if (activityCount >= 3 && !hasRecentSummary) {
         eligibleUsers++;
-        console.log(`     ✅ ELIGIBLE for summary generation`);
+        console.log("     ✅ ELIGIBLE for summary generation");
       } else {
-        console.log(`     ❌ Not eligible:`);
+        console.log("     ❌ Not eligible:");
         if (activityCount < 3) {
           console.log(
             `       - Need at least 3 activities (has ${activityCount})`
           );
         }
         if (hasRecentSummary) {
-          console.log(`       - Already has recent summary`);
+          console.log("       - Already has recent summary");
         }
       }
       console.log('');

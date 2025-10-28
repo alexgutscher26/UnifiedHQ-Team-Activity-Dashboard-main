@@ -516,7 +516,7 @@ class BranchManager {
       const prCommand = `gh pr create --title "${title}" --body "${body}" --base ${targetBranch} --head ${sourceBranch}`;
       execSync(prCommand, { stdio: 'pipe' });
 
-      console.log(`✅ Pull request created successfully`);
+      console.log("✅ Pull request created successfully");
       return true;
     } catch (error) {
       console.error(`❌ Error creating pull request: ${error.message}`);

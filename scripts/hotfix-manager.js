@@ -246,7 +246,7 @@ class HotfixManager {
       const prCommand = `gh pr create --title "${title}" --body "${body}" --base main --head ${branchName} --label "hotfix,${severity}"`;
       execSync(prCommand, { stdio: 'pipe' });
 
-      console.log(`✅ Hotfix PR created successfully`);
+      console.log("✅ Hotfix PR created successfully");
       console.log(`🚨 Severity: ${severity.toUpperCase()}`);
       console.log(`👥 Notifying: ${this.config.emergency_contacts.join(', ')}`);
 
@@ -388,7 +388,7 @@ ${description}
       // Push to main
       execSync('git push origin main', { stdio: 'pipe' });
 
-      console.log(`✅ Hotfix merged to main`);
+      console.log("✅ Hotfix merged to main");
 
       // Backport to develop
       this.backportToDevelop(branchName);
@@ -429,7 +429,7 @@ ${description}
       // Push to develop
       execSync('git push origin develop', { stdio: 'pipe' });
 
-      console.log(`✅ Hotfix backported to develop`);
+      console.log("✅ Hotfix backported to develop");
       return true;
     } catch (error) {
       console.error(`❌ Error backporting hotfix: ${error.message}`);
@@ -454,7 +454,7 @@ ${description}
       // Push rollback
       execSync('git push origin main', { stdio: 'pipe' });
 
-      console.log(`✅ Hotfix rolled back`);
+      console.log("✅ Hotfix rolled back");
       return true;
     } catch (error) {
       console.error(`❌ Error rolling back hotfix: ${error.message}`);

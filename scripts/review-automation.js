@@ -44,7 +44,7 @@ class ReviewAutomation {
 
     try {
       // Get changed files
-      const changedFiles = execSync(`git diff --name-only HEAD~1 HEAD`, {
+      const changedFiles = execSync("git diff --name-only HEAD~1 HEAD", {
         encoding: 'utf8',
       });
       const files = changedFiles
@@ -131,7 +131,7 @@ class ReviewAutomation {
       }
 
       // Label based on changed files
-      const changedFiles = execSync(`git diff --name-only HEAD~1 HEAD`, {
+      const changedFiles = execSync("git diff --name-only HEAD~1 HEAD", {
         encoding: 'utf8',
       });
       const files = changedFiles
