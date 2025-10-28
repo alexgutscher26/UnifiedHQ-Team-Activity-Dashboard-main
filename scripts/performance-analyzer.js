@@ -18,7 +18,7 @@ class PerformanceAnalyzer {
   }
 
   /**
-   * Load performance reports from files
+   * Load performance reports from JSON files in the reports directory.
    */
   loadReports() {
     if (!fs.existsSync(this.reportsDir)) {
@@ -42,7 +42,7 @@ class PerformanceAnalyzer {
   }
 
   /**
-   * Analyze performance trends
+   * Analyzes performance trends from the provided reports.
    */
   analyzeTrends(reports) {
     if (reports.length < 2) {
@@ -64,7 +64,15 @@ class PerformanceAnalyzer {
   }
 
   /**
-   * Calculate trend for a specific metric
+   * Calculate trend for a specific metric.
+   *
+   * This function processes an array of reports to extract values based on the provided metricPath.
+   * It computes the percentage change between the first and last values, determining the trend direction
+   * as 'improving', 'degrading', or 'stable' based on the calculated change. The function returns an
+   * object containing the trend direction, absolute change, first and last values, and the array of values.
+   *
+   * @param {Array} reports - The array of report objects to analyze.
+   * @param {string} metricPath - The path to the metric within the report objects.
    */
   calculateTrend(reports, metricPath) {
     const values = reports.map(report => {
@@ -96,7 +104,7 @@ class PerformanceAnalyzer {
   }
 
   /**
-   * Generate performance summary
+   * Generate a performance summary from the provided reports.
    */
   generateSummary(reports) {
     if (reports.length === 0) {
@@ -121,7 +129,12 @@ class PerformanceAnalyzer {
   }
 
   /**
-   * Calculate overall performance grade
+   * Calculate overall performance grade.
+   *
+   * This function evaluates the performance based on various metrics such as average render time, memory usage, total errors, and average scroll time. Points are deducted from a base score of 100 based on the thresholds defined for each metric. The final score is then translated into a letter grade with an accompanying description.
+   *
+   * @param summary - An object containing performance metrics including averageRenderTime, averageMemoryUsage, totalErrors, and averageScrollTime.
+   * @returns An object containing the performance grade and description based on the calculated score.
    */
   calculatePerformanceGrade(summary) {
     let score = 100;
@@ -234,7 +247,7 @@ class PerformanceAnalyzer {
   }
 
   /**
-   * Generate performance alerts
+   * Generate performance alerts based on summary metrics.
    */
   generateAlerts(summary) {
     const alerts = [];
@@ -273,7 +286,7 @@ class PerformanceAnalyzer {
   }
 
   /**
-   * Generate comprehensive analysis report
+   * Generate an analysis report from the provided reports.
    */
   generateAnalysisReport(reports) {
     const trends = this.analyzeTrends(reports);
@@ -379,7 +392,12 @@ class PerformanceAnalyzer {
   }
 
   /**
-   * Calculate overall performance score
+   * Calculate overall performance score.
+   *
+   * This function evaluates the performance score based on various metrics from the analysis report. It deducts points for average render time, average memory usage, and total errors. Additionally, it considers trends and alerts, applying further deductions based on their severity. The final score is constrained to a minimum of 0.
+   *
+   * @param analysisReport - An object containing performance metrics, trends, and alerts.
+   * @returns The calculated overall performance score, which is a non-negative integer.
    */
   calculateOverallScore(analysisReport) {
     let score = 100;
@@ -409,7 +427,7 @@ class PerformanceAnalyzer {
   }
 
   /**
-   * Save analysis report to file
+   * Save analysis report to a JSON file in the reports directory.
    */
   saveAnalysisReport(analysisReport) {
     const filename = `performance-analysis-${Date.now()}.json`;
