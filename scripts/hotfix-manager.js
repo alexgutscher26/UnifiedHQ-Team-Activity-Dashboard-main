@@ -582,7 +582,7 @@ ${description}
         .trim()
         .split('\n')
         .map(b => b.trim().replace('origin/', ''))
-        .filter(b => b && b.startsWith('hotfix/'));
+        .filter(b => b?.startsWith('hotfix/'));
 
       if (allRemoteBranches.length === 0) {
         console.log('✅ No active hotfix branches');
