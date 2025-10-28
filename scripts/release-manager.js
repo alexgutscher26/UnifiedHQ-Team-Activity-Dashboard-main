@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * Release Manager
  * Automated release process management

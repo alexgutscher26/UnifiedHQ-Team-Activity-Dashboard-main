@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * Hotfix Manager
  * Emergency hotfix process automation

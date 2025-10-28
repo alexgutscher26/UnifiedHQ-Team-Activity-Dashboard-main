@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * Review Automation
  * Automates various aspects of the code review process

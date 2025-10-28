@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * Code Review Tools
  * Automated tools for code review analysis and reporting

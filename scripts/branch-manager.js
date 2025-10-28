@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * Branch Manager
  * Automated branch management and workflow enforcement

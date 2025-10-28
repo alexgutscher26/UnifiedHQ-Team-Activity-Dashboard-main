@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * Review Monitor
  * Monitors code review metrics and generates reports

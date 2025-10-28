@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * Performance analyzer script for activity feeds
  * Analyzes performance data and generates reports
@@ -209,11 +207,7 @@ class PerformanceAnalyzer {
     }
 
     // Trend-based recommendations (only if trends exist)
-    if (
-      trends &&
-      trends.renderTime &&
-      trends.renderTime.direction === 'degrading'
-    ) {
+    if (trends?.renderTime && trends.renderTime.direction === 'degrading') {
       recommendations.push({
         category: 'Performance',
         priority: 'Medium',
@@ -225,11 +219,7 @@ class PerformanceAnalyzer {
       })
     }
 
-    if (
-      trends &&
-      trends.memoryUsage &&
-      trends.memoryUsage.direction === 'degrading'
-    ) {
+    if (trends?.memoryUsage && trends.memoryUsage.direction === 'degrading') {
       recommendations.push({
         category: 'Memory',
         priority: 'High',

@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * Daily Summary Setup Script
  * Sets up environment variables and cron job configuration for automated daily summary generation

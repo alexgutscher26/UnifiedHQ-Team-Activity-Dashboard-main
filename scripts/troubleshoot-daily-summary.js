@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * Daily Summary Troubleshooting Script
  * Helps diagnose why daily summaries aren't generating
