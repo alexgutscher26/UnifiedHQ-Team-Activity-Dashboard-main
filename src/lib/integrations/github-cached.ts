@@ -668,7 +668,7 @@ export async function fetchGithubActivity(
     );
 
     if (sortedActivities.length > 0) {
-      console.log("[GitHub Sync] Sample activity:", {
+      console.log('[GitHub Sync] Sample activity:', {
         title: sortedActivities[0].title,
         timestamp: sortedActivities[0].timestamp,
         metadata: sortedActivities[0].metadata,

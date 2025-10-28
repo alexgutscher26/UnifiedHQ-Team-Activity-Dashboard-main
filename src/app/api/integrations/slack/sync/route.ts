@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     console.log(`[Slack Sync API] Selected channels: ${selectedChannelCount}`);
 
     if (selectedChannelCount === 0) {
-      console.log("[Slack Sync API] No channels selected, returning early");
+      console.log('[Slack Sync API] No channels selected, returning early');
       return NextResponse.json({
         success: true,
         message:
@@ -65,13 +65,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch and save Slack activity
-    console.log("[Slack Sync API] Fetching Slack activities...");
+    console.log('[Slack Sync API] Fetching Slack activities...');
     const activities = await fetchSlackActivity(userId, true); // Bypass cache
     console.log(`[Slack Sync API] Fetched ${activities.length} activities`);
 
-    console.log("[Slack Sync API] Saving activities to database...");
+    console.log('[Slack Sync API] Saving activities to database...');
     await saveSlackActivities(userId, activities);
-    console.log("[Slack Sync API] Saved activities successfully");
+    console.log('[Slack Sync API] Saved activities successfully');
 
     // Broadcast update to connected clients
     try {

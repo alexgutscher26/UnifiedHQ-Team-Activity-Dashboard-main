@@ -97,7 +97,7 @@ async function getTeamActivity(request: NextRequest): Promise<NextResponse> {
 
       // Debug: Log sample GitHub activity
       if (githubActivities.length > 0) {
-        console.log("[Team Activity] Sample GitHub activity:", {
+        console.log('[Team Activity] Sample GitHub activity:', {
           title: githubActivities[0].title,
           timestamp: githubActivities[0].timestamp,
           timestampType: typeof githubActivities[0].timestamp,
@@ -193,7 +193,7 @@ async function getTeamActivity(request: NextRequest): Promise<NextResponse> {
         `[Team Activity] Returning ${filteredActivities.length} filtered activities`
       );
       console.log(
-        "[Team Activity] Sample activity:",
+        '[Team Activity] Sample activity:',
         filteredActivities[0]
           ? {
               id: filteredActivities[0].id,
