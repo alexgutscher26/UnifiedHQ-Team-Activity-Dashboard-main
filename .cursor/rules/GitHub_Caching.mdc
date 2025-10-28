@@ -1,0 +1,382 @@
+---
+alwaysApply: true
+---
+
+# GitHub API Caching Rules
+
+## Caching System Usage
+
+### Always Use Cached GitHub Integration
+
+- **NEVER** use `@/lib/integrations/github` directly
+- **ALWAYS** use `@/lib/integrations/github-cached` for all GitHub operations
+- **ALWAYS** use `CachedGitHubClient` instead of raw Octokit calls
+- **ALWAYS** use `fetchGithubActivity` from cached module
+
+### Cache Management
+
+- **Use cache statistics** to monitor performance
+- **Clear cache appropriately** when data becomes stale
+- **Handle cache errors** gracefully with fallbacks
+- **Monitor memory usage** for large cache entries
+
+## Code Examples
+
+### Basic GitHub Activity Fetching
+
+```tsx
+// ✅ CORRECT - Use cached version
+import { fetchGithubActivity } from '@/lib/integrations/github-cached';
+
+const activities = await fetchGithubActivity(userId);
+```
+
+```tsx
+// ❌ WRONG - Don't use non-cached version
+import { fetchGithubActivity } from '@/lib/integrations/github';
+```
+
+### Cache Management
+
+```tsx
+// ✅ CORRECT - Use cache manager
+import { GitHubCacheManager } from '@/lib/integrations/github-cached';
+
+// Get cache statistics
+const stats = GitHubCacheManager.getStats();
+
+// Clear user cache
+await GitHubCacheManager.clearUserCache(userId);
+
+// Clear all caches
+await GitHubCacheManager.clearAllCaches(userId);
+```
+
+### Custom GitHub Client
+
+```tsx
+// ✅ CORRECT - Use cached client
+import { CachedGitHubClient } from '@/lib/integrations/github-cached';
+
+const client = new CachedGitHubClient(accessToken, userId);
+const repos = await client.getRepositories();
+const commits = await client.getCommits('owner', 'repo');
+```
+
+## API Endpoint Rules
+
+### Cache Management Endpoints
+
+- **Use GET /api/github/cache?action=stats** for cache statistics
+- **Use POST /api/github/cache** for cache operations
+- **Use POST /api/cache/cleanup** for automated cleanup
+
+### Cache Statistics Response
+
+```tsx
+// ✅ CORRECT - Include cache stats in responses
+return NextResponse.json({
+  data: result,
+  cache: {
+    memoryCache: GitHubCacheManager.getStats(),
+    databaseCache: 'enabled',
+  },
+});
+```
+
+## Error Handling Rules
+
+### Rate Limit Handling
+
+- **Always check rate limits** before making API calls
+- **Use cached data** when rate limited
+- **Implement exponential backoff** for retries
+- **Log rate limit events** for monitoring
+
+### Cache Error Handling
+
+```tsx
+// ✅ CORRECT - Handle cache errors gracefully
+try {
+  const data = await cachedRequest(operation, params, ttl, fetcher);
+  return data;
+} catch (error) {
+  if (error.status === 403 && error.message?.includes('rate limit')) {
+    // Try expired cache as fallback
+    const expiredCache = githubCache.get(cacheKey);
+    if (expiredCache) return expiredCache;
+  }
+  throw error;
+}
+```
+
+## Performance Rules
+
+### Cache TTL Configuration
+
+- **Repository data**: 30 minutes (stable data)
+- **Commits**: 5 minutes (frequently changing)
+- **Pull requests**: 10 minutes (moderate changes)
+- **Issues**: 10 minutes (moderate changes)
+- **User data**: 1 hour (very stable)
+- **Rate limit**: 1 minute (frequently changing)
+
+### Memory Management
+
+- **Monitor cache size** regularly
+- **Clear expired entries** automatically
+- **Use appropriate TTL** for different data types
+- **Implement cache size limits** for large datasets
+
+## Database Rules
+
+### Cache Table Usage
+
+- **Always use unique cache keys** per user
+- **Include TTL in cache entries** for proper expiration
+- **Clean up expired entries** regularly
+- **Use proper indexing** for cache lookups
+
+### Cache Key Generation
+
+```tsx
+// ✅ CORRECT - Generate consistent cache keys
+const cacheKey = `activities:${userId}:${selectedRepos
+  .map(r => r.repoId)
+  .sort()
+  .join(',')}`;
+
+// ✅ CORRECT - Use operation-specific keys
+const cacheKey = githubCache.generateKey(`${userId}:${operation}`, params);
+```
+
+## Monitoring Rules
+
+### Cache Statistics
+
+- **Track cache hit rates** for performance monitoring
+- **Monitor memory usage** to prevent bloat
+- **Log cache operations** for debugging
+- **Set up alerts** for cache failures
+
+### Performance Metrics
+
+```tsx
+// ✅ CORRECT - Include cache metrics in responses
+const stats = GitHubCacheManager.getStats();
+console.log(
+  `Cache hit rate: ${(stats.validEntries / stats.totalEntries) * 100}%`
+);
+```
+
+## Migration Rules
+
+### From Non-Cached to Cached
+
+- **Update all imports** to use cached version
+- **Replace direct Octokit calls** with CachedGitHubClient
+- **Add cache management** to existing endpoints
+- **Update error handling** for cache-specific errors
+
+### Import Updates
+
+```tsx
+// ❌ WRONG - Old imports
+import { fetchGithubActivity } from '@/lib/integrations/github';
+import { Octokit } from '@octokit/rest';
+
+// ✅ CORRECT - New imports
+import {
+  fetchGithubActivity,
+  CachedGitHubClient,
+} from '@/lib/integrations/github-cached';
+```
+
+## Testing Rules
+
+### Cache Testing
+
+- **Test cache hit scenarios** with valid data
+- **Test cache miss scenarios** with expired data
+- **Test error handling** with API failures
+- **Test cache cleanup** functionality
+
+### Mock Cache Data
+
+```tsx
+// ✅ CORRECT - Mock cache for testing
+const mockCacheData = {
+  data: mockActivities,
+  timestamp: Date.now(),
+  ttl: 300000, // 5 minutes
+};
+```
+
+## Security Rules
+
+### Cache Data Protection
+
+- **Never cache sensitive data** like tokens
+- **Use user-specific cache keys** to prevent data leaks
+- **Validate cache data** before using
+- **Implement proper access controls** for cache management
+
+### Authentication
+
+```tsx
+// ✅ CORRECT - Authenticate cache management
+const authHeader = request.headers.get('authorization');
+const expectedToken = process.env.CRON_SECRET_TOKEN;
+
+if (expectedToken && authHeader !== `Bearer ${expectedToken}`) {
+  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+}
+```
+
+## Documentation Rules
+
+### Code Documentation
+
+- **Document cache TTL** for each operation
+- **Explain cache key generation** logic
+- **Include performance impact** notes
+- **Document error handling** strategies
+
+### API Documentation
+
+- **Document cache endpoints** with examples
+- **Include cache statistics** in responses
+- **Explain cache management** operations
+- **Provide troubleshooting** guidance
+
+## Maintenance Rules
+
+### Regular Cleanup
+
+- **Set up cron jobs** for cache cleanup
+- **Monitor cache growth** over time
+- **Archive old cache data** when needed
+- **Update cache configuration** based on usage patterns
+
+### Cache Optimization
+
+```tsx
+// ✅ CORRECT - Regular cache maintenance
+// Run every hour via cron job
+await GitHubCacheManager.clearDatabaseCache();
+```
+
+## Best Practices
+
+### Cache Key Design
+
+- **Use descriptive names** for cache keys
+- **Include version numbers** for schema changes
+- **Use consistent separators** (colons, dashes)
+- **Include user context** in keys
+
+### TTL Selection
+
+- **Consider data freshness** requirements
+- **Balance performance** vs accuracy
+- **Monitor cache hit rates** for optimization
+- **Adjust TTL** based on usage patterns
+
+### Error Recovery
+
+- **Always have fallback** to original API
+- **Implement retry logic** for transient failures
+- **Log cache operations** for debugging
+- **Provide user feedback** for cache issues
+
+## File Organization
+
+### Import Structure
+
+```tsx
+// ✅ CORRECT - Organized imports
+import {
+  fetchGithubActivity,
+  saveGithubActivities,
+  isGithubConnected,
+  getSelectedRepositoryCount,
+  GitHubCacheManager,
+} from '@/lib/integrations/github-cached';
+```
+
+### Cache Utilities
+
+- **Import from cached module**: Use `@/lib/integrations/github-cached`
+- **Use cache manager**: Import `GitHubCacheManager` for operations
+- **Keep cache logic centralized**: Don't scatter cache code
+
+## Performance Optimization
+
+### Cache Warming
+
+- **Pre-populate frequently accessed data**
+- **Use background jobs** for cache warming
+- **Monitor cache effectiveness** regularly
+- **Adjust warming strategies** based on usage
+
+### Memory Optimization
+
+```tsx
+// ✅ CORRECT - Monitor and optimize memory usage
+const stats = GitHubCacheManager.getStats();
+if (stats.totalEntries > 1000) {
+  console.warn('Cache size is large, consider cleanup');
+  GitHubCacheManager.clearMemoryCache();
+}
+```
+
+## Troubleshooting
+
+### Common Issues
+
+- **High memory usage**: Clear memory cache regularly
+- **Stale data**: Check TTL configuration
+- **Rate limit errors**: Verify cache hit rates
+- **Cache misses**: Review cache key generation
+
+### Debug Information
+
+```tsx
+// ✅ CORRECT - Include debug information
+console.log(
+  `[GitHub Cache] ${hit ? 'Cache hit' : 'Cache miss'} for ${operation}`
+);
+console.log(`[GitHub Cache] Stats:`, GitHubCacheManager.getStats());
+```
+
+## Compliance Rules
+
+### Data Privacy
+
+- **Respect user data** in cache
+- **Implement proper retention** policies
+- **Clear user data** on request
+- **Follow GDPR** requirements
+
+### Rate Limiting
+
+- **Respect GitHub API limits**
+- **Use cache to reduce** API calls
+- **Implement proper backoff** strategies
+- **Monitor rate limit** usage
+
+## Future Enhancements
+
+### Planned Features
+
+- **Redis integration** for distributed caching
+- **Cache compression** for memory efficiency
+- **Predictive caching** based on user patterns
+- **Advanced analytics** for cache optimization
+
+### Migration Path
+
+- **Prepare for Redis** migration
+- **Design cache interfaces** for flexibility
+- **Plan for horizontal scaling**
+- **Consider cache partitioning** strategies

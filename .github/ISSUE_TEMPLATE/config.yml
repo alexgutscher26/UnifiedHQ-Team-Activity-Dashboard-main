@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GitHub Community Support
+    url: https://github.com/unifiedhq/unifiedhq/discussions
+    about: Please ask and answer questions here.
+  - name: Documentation
+    url: https://github.com/unifiedhq/unifiedhq/tree/main/docs
+    about: Check our documentation for guides and examples.
+  - name: Security Issues
+    url: https://github.com/unifiedhq/unifiedhq/security/advisories/new
+    about: Report security vulnerabilities privately.

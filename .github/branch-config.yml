@@ -1,0 +1,66 @@
+# Branch Management Configuration
+# This file configures the branch manager behavior
+
+# Branch protection and review requirements
+branches:
+  main:
+    protected: true
+    required_reviews: 2
+    require_status_checks: true
+    enforce_admins: true
+  develop:
+    protected: true
+    required_reviews: 1
+    require_status_checks: true
+  release:
+    protected: true
+    required_reviews: 2
+    require_status_checks: true
+  staging:
+    protected: false
+    required_reviews: 1
+
+# Branch naming conventions
+naming:
+  feature: 'feature/'
+  bugfix: 'bugfix/'
+  hotfix: 'hotfix/'
+  release: 'release/'
+  docs: 'docs/'
+  chore: 'chore/'
+  refactor: 'refactor/'
+
+# Workflow settings
+workflows:
+  auto_cleanup: true
+  enforce_naming: true
+  require_approval: true
+  auto_merge: false
+  delete_after_merge: true
+  require_linear_history: true
+
+# Additional settings
+settings:
+  default_base_branch: 'develop'
+  max_branch_age_days: 30
+  auto_stale_branch_cleanup: true
+  require_pr_description: true
+  require_pr_template: true
+
+# Integration settings
+integrations:
+  github:
+    auto_create_pr: true
+    auto_assign_reviewers: true
+    auto_request_review: true
+  slack:
+    notify_on_pr_creation: true
+    notify_on_merge: true
+    notify_on_errors: true
+
+# Custom validation rules
+validation:
+  min_description_length: 10
+  require_ticket_number: false
+  allowed_ticket_formats: ['JIRA-123', 'GH-123', '#123']
+  forbidden_words: ['wip', 'temp', 'test']

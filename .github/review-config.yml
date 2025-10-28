@@ -1,0 +1,177 @@
+# Code Review Configuration
+# This file configures automated code review settings
+
+# Review Bot Settings
+review_bot:
+  enabled: true
+  comment_threshold: 5 # Minimum number of issues to comment
+  auto_approve_threshold: 0 # Maximum issues for auto-approval
+  skip_draft: true # Skip review for draft PRs
+
+# File-based Reviewers
+file_reviewers:
+  'src/lib/integrations/':
+    - '@backend-team'
+    - '@integrations-team'
+  'src/components/':
+    - '@frontend-team'
+    - '@ui-team'
+  'src/app/api/':
+    - '@backend-team'
+    - '@api-team'
+  'prisma/':
+    - '@backend-team'
+    - '@database-team'
+  'docs/':
+    - '@documentation-team'
+  '.github/':
+    - '@devops-team'
+    - '@maintainers'
+
+# Critical Files (require security team review)
+critical_files:
+  - 'src/lib/auth.ts'
+  - 'src/lib/integrations/github.ts'
+  - 'src/app/api/auth/'
+  - 'prisma/schema.prisma'
+
+# Auto-labeling Rules
+auto_labels:
+  size:
+    small: 50
+    medium: 200
+    large: 500
+  type:
+    bug: ['fix', 'bug', 'patch']
+    feature: ['feat', 'feature', 'add']
+    refactor: ['refactor', 'restructure']
+    docs: ['docs', 'documentation']
+    test: ['test', 'testing']
+    chore: ['chore', 'maintenance']
+
+# Review Rules
+review_rules:
+  # Code Quality Rules
+  code_quality:
+    - 'no-console-logs'
+    - 'no-todo-comments'
+    - 'no-hardcoded-values'
+    - 'no-unused-imports'
+    - 'proper-error-handling'
+
+  # Security Rules
+  security:
+    - 'no-eval-usage'
+    - 'no-inner-html'
+    - 'no-dangerous-html'
+    - 'proper-auth-checks'
+    - 'input-validation'
+
+  # Performance Rules
+  performance:
+    - 'optimized-images'
+    - 'cached-api-calls'
+    - 'lazy-loading'
+    - 'memory-leak-prevention'
+
+  # Project-specific Rules
+  project_specific:
+    - 'github-cached-integration'
+    - 'optimized-image-component'
+    - 'proper-typescript-types'
+    - 'consistent-error-handling'
+
+# Review Thresholds
+thresholds:
+  max_files_changed: 20
+  max_lines_changed: 1000
+  max_review_time_days: 3
+  min_reviewers: 1
+  max_reviewers: 3
+
+# Notification Settings
+notifications:
+  slack:
+    enabled: false
+    webhook_url: ''
+    channels:
+      - '#code-review'
+  email:
+    enabled: false
+    recipients: []
+  github:
+    enabled: true
+    mention_reviewers: true
+    mention_author: true
+
+# Review Templates
+templates:
+  approval:
+    title: '✅ Approved'
+    body: |
+      This PR looks good! All checks have passed and the code meets our quality standards.
+
+      **Review Summary:**
+      - ✅ Code quality checks passed
+      - ✅ Security review completed
+      - ✅ Performance considerations addressed
+      - ✅ Project-specific rules followed
+
+      Great work! 🚀
+
+  request_changes:
+    title: '❌ Changes Requested'
+    body: |
+      This PR needs some changes before it can be approved.
+
+      **Issues to Address:**
+      - Please review the comments below
+      - Address all feedback
+      - Ensure all checks pass
+
+      Let me know when you've made the changes! 👍
+
+  comment:
+    title: '💬 Comment'
+    body: |
+      I've left some comments for your consideration.
+
+      **Comments:**
+      - Please review the feedback below
+      - Address any critical issues
+      - Consider the suggestions for improvement
+
+      Thanks for your contribution! 🙏
+
+# Review Automation
+automation:
+  auto_assign:
+    enabled: true
+    based_on_files: true
+    based_on_author: false
+    fallback_reviewers: ['@maintainers']
+
+  auto_label:
+    enabled: true
+    based_on_files: true
+    based_on_title: true
+    based_on_size: true
+
+  auto_comment:
+    enabled: true
+    on_pr_open: true
+    on_pr_update: true
+    on_review_submit: false
+
+  auto_close:
+    enabled: false
+    after_days: 30
+    with_message: 'This PR has been automatically closed due to inactivity.'
+
+# Review Metrics
+metrics:
+  track_review_time: true
+  track_comment_count: true
+  track_approval_rate: true
+  generate_dashboard: true
+  dashboard_frequency: 'daily'

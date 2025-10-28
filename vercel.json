@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/ai-summary/cron",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cache/cleanup",
+      "schedule": "0 2 * * *"
+    }
+  ]
+}

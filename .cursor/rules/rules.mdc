@@ -1,0 +1,585 @@
+---
+alwaysApply: true
+---
+
+# Project Rules & Guidelines
+
+This document outlines the comprehensive rules and guidelines for this project. All developers must follow these rules to maintain code quality, consistency, and project standards.
+
+## 🚀 Package Manager Rules
+
+### Always Use Bun
+- **NEVER** use `npm` or `yarn` for package management
+- **ALWAYS** use `bun` for all package operations:
+  - `bun install` instead of `npm install`
+  - `bun add <package>` instead of `npm install <package>`
+  - `bun run <script>` instead of `bun run <script>`
+  - `bun remove <package>` instead of `npm uninstall <package>`
+
+### Bun Commands
+```bash
+# Install dependencies
+bun install
+
+# Add new package
+bun add <package-name>
+
+# Add dev dependency
+bun add -d <package-name>
+
+# Run scripts
+bun run dev
+bun run build
+bun run test
+
+# Remove package
+bun remove <package-name>
+
+# Update packages
+bun update
+```
+
+## 🎯 TypeScript Rules
+
+### Never Use `any` Type
+- **NEVER** use `any` type in TypeScript code
+- **ALWAYS** use proper type definitions
+- **ALWAYS** use `unknown` instead of `any` when type is truly unknown
+- **ALWAYS** create proper interfaces and types
+
+### Type Safety Examples
+```typescript
+// ❌ WRONG - Never use any
+const data: any = fetchData();
+
+// ✅ CORRECT - Use proper types
+interface ApiResponse {
+  data: unknown[];
+  status: number;
+}
+const data: ApiResponse = fetchData();
+
+// ✅ CORRECT - Use unknown when type is unknown
+const unknownData: unknown = fetchData();
+if (typeof unknownData === 'object' && unknownData !== null) {
+  // Type guard to narrow the type
+}
+
+// ✅ CORRECT - Create proper interfaces
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+const user: User = getUser();
+```
+
+### TypeScript Best Practices
+- **Always define return types** for functions
+- **Use strict mode** in TypeScript configuration
+- **Prefer interfaces over types** for object shapes
+- **Use enums** for constants
+- **Use generics** for reusable components
+- **Use type guards** for runtime type checking
+
+## 🎨 UI/UX Rules
+
+### Always Use OptimizedImage Instead of Standard Images
+- **NEVER** use standard `<img>` tags or Next.js `<Image>` directly
+- **ALWAYS** use `<OptimizedImage>` component for all images
+- **ALWAYS** use `<AvatarImage>` component for profile pictures and avatars
+- **ALWAYS** use `<ImageGallery>` component for image collections
+
+### Quality Levels
+- **Hero images** (above-the-fold): Use `quality="hero"` (90%)
+- **Card images** (content): Use `quality="card"` (80%)
+- **Thumbnails** (small images): Use `quality="thumbnail"` (70%)
+- **Avatars** (profile pictures): Use `quality="avatar"` (75%)
+- **Custom quality**: Use numeric values (1-100) when needed
+
+### Image Component Examples
+```tsx
+// ✅ CORRECT - Use OptimizedImage
+import { OptimizedImage } from '@/components/optimized-image';
+
+<OptimizedImage
+  src='/path/to/image.jpg'
+  alt='Descriptive alt text'
+  width={800}
+  height={600}
+  quality='card'
+  priority={false}
+  className='rounded-lg'
+/>;
+
+// ✅ CORRECT - Use AvatarImage
+import { AvatarImage } from '@/components/avatar-image';
+
+<AvatarImage
+  src='/path/to/avatar.jpg'
+  alt='User avatar'
+  size='lg'
+  fallback='/default-avatar.jpg'
+/>;
+```
+
+## 🔄 GitHub Integration Rules
+
+### Always Use Cached GitHub Integration
+- **NEVER** use `@/lib/integrations/github` directly
+- **ALWAYS** use `@/lib/integrations/github-cached` for all GitHub operations
+- **ALWAYS** use `CachedGitHubClient` instead of raw Octokit calls
+- **ALWAYS** use `fetchGithubActivity` from cached module
+
+### GitHub Code Examples
+```tsx
+// ✅ CORRECT - Use cached version
+import { fetchGithubActivity } from '@/lib/integrations/github-cached';
+
+const activities = await fetchGithubActivity(userId);
+
+// ❌ WRONG - Don't use non-cached version
+import { fetchGithubActivity } from '@/lib/integrations/github';
+```
+
+### Cache Management
+```tsx
+// ✅ CORRECT - Use cache manager
+import { GitHubCacheManager } from '@/lib/integrations/github-cached';
+
+// Get cache statistics
+const stats = GitHubCacheManager.getStats();
+
+// Clear user cache
+await GitHubCacheManager.clearUserCache(userId);
+```
+
+## 🔄 Retry Mechanism Rules
+
+### Always Use Retry Mechanisms for Failed Requests
+- **ALWAYS** use `withRetry` utility for API calls
+- **ALWAYS** use appropriate retry presets
+- **ALWAYS** handle retry errors gracefully
+- **ALWAYS** use `useRetry` hook in React components
+
+### Retry Configuration
+```typescript
+// ✅ CORRECT - Use retry mechanisms
+import { withRetry, RetryPresets } from '@/lib/retry-utils';
+
+const result = await withRetry(
+  async () => {
+    return await apiCall();
+  },
+  {
+    ...RetryPresets.standard,
+    onRetry: (error, attempt, delay) => {
+      console.warn(`Retry attempt ${attempt}:`, error.message);
+    },
+  }
+);
+```
+
+### Retry Presets
+- **quick**: Fast retries for UI interactions
+- **standard**: Default retry configuration
+- **aggressive**: More retries for critical operations
+- **github**: Optimized for GitHub API
+- **openrouter**: Optimized for OpenRouter API
+
+## 🚨 Error Handling Rules
+
+### Always Use Error Boundaries
+- **ALWAYS** wrap components with error boundaries
+- **ALWAYS** use `DashboardErrorBoundary` for dashboard components
+- **ALWAYS** provide fallback UI for errors
+- **ALWAYS** log errors with proper context
+
+### Error Handling Examples
+```tsx
+// ✅ CORRECT - Use error boundaries
+import { DashboardErrorBoundary } from '@/components/error-boundaries';
+
+<DashboardErrorBoundary>
+  <YourComponent />
+</DashboardErrorBoundary>
+```
+
+### API Error Handling
+- **ALWAYS** use `withErrorHandling` wrapper for API routes
+- **ALWAYS** return standardized error responses
+- **ALWAYS** include request IDs for debugging
+- **ALWAYS** log errors with proper context
+
+## 🎨 Styling Rules
+
+### Always Use Tailwind CSS
+- **NEVER** use inline styles or CSS modules
+- **ALWAYS** use Tailwind utility classes
+- **ALWAYS** use consistent spacing and sizing
+- **ALWAYS** use dark mode classes
+
+### Styling Examples
+```tsx
+// ✅ CORRECT - Use Tailwind classes
+<div className="bg-slate-800 border-slate-700 rounded-lg p-4">
+  <h2 className="text-white text-xl font-bold mb-2">
+    Title
+  </h2>
+  <p className="text-gray-400 text-sm">
+    Description
+  </p>
+</div>
+```
+
+### Color Scheme
+- **Background**: `bg-slate-800`, `bg-slate-900`
+- **Borders**: `border-slate-700`, `border-slate-600`
+- **Text**: `text-white`, `text-gray-300`, `text-gray-400`
+- **Accents**: `text-blue-400`, `text-green-400`, `text-red-400`
+
+## 🔧 Component Rules
+
+### Always Use Shadcn/ui Components
+- **ALWAYS** use components from `@/components/ui/`
+- **ALWAYS** follow component patterns
+- **ALWAYS** use proper props and variants
+- **ALWAYS** maintain accessibility standards
+
+### Component Examples
+```tsx
+// ✅ CORRECT - Use shadcn/ui components
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+
+<Card className="bg-slate-800 border-slate-700">
+  <CardHeader>
+    <CardTitle className="text-white">Title</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <Button variant="outline" className="border-blue-500/30 text-blue-400">
+      Action
+    </Button>
+  </CardContent>
+</Card>
+```
+
+## 📁 File Organization Rules
+
+### Always Follow Consistent File Structure
+- **ALWAYS** use `src/` directory for source code
+- **ALWAYS** use `@/` alias for imports
+- **ALWAYS** organize components by feature
+- **ALWAYS** use descriptive file names
+
+### Import Organization
+```typescript
+// ✅ CORRECT - Organized imports
+// 1. React imports
+import React, { useState, useEffect } from 'react';
+
+// 2. Next.js imports
+import { NextRequest, NextResponse } from 'next/server';
+
+// 3. Third-party imports
+import { IconBug, IconCheck } from '@tabler/icons-react';
+
+// 4. Internal imports (components)
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+
+// 5. Internal imports (utilities)
+import { withRetry } from '@/lib/retry-utils';
+
+// 6. Type imports
+import type { User } from '@/types/user';
+```
+
+## 🧪 Testing Rules
+
+### Always Write Tests for New Features
+- **ALWAYS** write unit tests for utilities
+- **ALWAYS** write integration tests for API routes
+- **ALWAYS** write component tests for UI components
+- **ALWAYS** use proper test descriptions
+
+### Testing Examples
+```typescript
+// ✅ CORRECT - Test structure
+describe('RetryUtils', () => {
+  it('should retry failed requests with exponential backoff', async () => {
+    const mockFn = jest.fn().mockRejectedValue(new Error('Test error'));
+    
+    await expect(withRetry(mockFn, RetryPresets.quick)).rejects.toThrow('Test error');
+    expect(mockFn).toHaveBeenCalledTimes(3); // 1 initial + 2 retries
+  });
+});
+```
+
+## 🔒 Security Rules
+
+### Always Validate Input
+- **ALWAYS** validate user input on both client and server
+- **ALWAYS** sanitize data before processing
+- **ALWAYS** use proper authentication checks
+- **ALWAYS** follow OWASP guidelines
+
+### Security Examples
+```typescript
+// ✅ CORRECT - Input validation
+import { z } from 'zod';
+
+const userSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(1).max(100),
+});
+
+const validatedData = userSchema.parse(userInput);
+```
+
+## 📊 Performance Rules
+
+### Always Optimize for Performance
+- **ALWAYS** use React.memo for expensive components
+- **ALWAYS** use useMemo and useCallback appropriately
+- **ALWAYS** implement proper loading states
+- **ALWAYS** use lazy loading for non-critical components
+
+### Performance Examples
+```tsx
+// ✅ CORRECT - Optimized component
+const ExpensiveComponent = React.memo(({ data }: { data: Data[] }) => {
+  const processedData = useMemo(() => {
+    return data.map(item => processItem(item));
+  }, [data]);
+
+  return <div>{processedData.map(item => <Item key={item.id} data={item} />)}</div>;
+});
+```
+
+## 🌐 API Rules
+
+### Always Use Consistent API Patterns
+- **ALWAYS** use RESTful API design
+- **ALWAYS** return consistent response formats
+- **ALWAYS** include proper HTTP status codes
+- **ALWAYS** handle errors gracefully
+
+### API Response Format
+```typescript
+// ✅ CORRECT - Consistent API response
+interface ApiResponse<T> {
+  data: T;
+  success: boolean;
+  message?: string;
+  timestamp: string;
+}
+
+// Success response
+return NextResponse.json({
+  data: result,
+  success: true,
+  timestamp: new Date().toISOString(),
+});
+
+// Error response
+return NextResponse.json({
+  data: null,
+  success: false,
+  message: 'Error description',
+  timestamp: new Date().toISOString(),
+}, { status: 400 });
+```
+
+## 🎯 Feature Flag Rules
+
+### Always Use Feature Flags Properly
+- **ALWAYS** use enums for flag names
+- **ALWAYS** check flag validity before use
+- **ALWAYS** provide fallbacks for disabled features
+- **ALWAYS** document flag usage
+
+### Feature Flag Examples
+```typescript
+// ✅ CORRECT - Feature flag usage
+enum FeatureFlags {
+  NEW_DASHBOARD = 'new_dashboard',
+  ADVANCED_ANALYTICS = 'advanced_analytics',
+}
+
+const isNewDashboardEnabled = checkFeatureFlag(FeatureFlags.NEW_DASHBOARD);
+if (isNewDashboardEnabled) {
+  return <NewDashboard />;
+}
+return <LegacyDashboard />;
+```
+
+## 📝 Documentation Rules
+
+### Always Document Code
+- **ALWAYS** write JSDoc comments for functions
+- **ALWAYS** document complex logic
+- **ALWAYS** update README files
+- **ALWAYS** maintain API documentation
+
+## 🚀 Deployment Rules
+
+### Always Follow Deployment Best Practices
+- **ALWAYS** test in staging before production
+- **ALWAYS** use environment variables for configuration
+- **ALWAYS** monitor application health
+- **ALWAYS** have rollback plans
+
+## 🔍 Code Review Rules
+
+### Always Review Code Thoroughly
+- **ALWAYS** check for rule compliance
+- **ALWAYS** verify type safety
+- **ALWAYS** test functionality
+- **ALWAYS** check performance impact
+
+## 📋 Checklist for New Features
+
+Before implementing any new feature, ensure:
+
+- [ ] Using Bun for package management
+- [ ] No `any` types used
+- [ ] Proper TypeScript interfaces defined
+- [ ] Using OptimizedImage for images
+- [ ] Using cached GitHub integration
+- [ ] Implementing retry mechanisms
+- [ ] Error boundaries implemented
+- [ ] Tailwind CSS for styling
+- [ ] Shadcn/ui components used
+- [ ] Proper file organization
+- [ ] Tests written
+- [ ] Security considerations addressed
+- [ ] Performance optimized
+- [ ] API patterns followed
+- [ ] Feature flags used if needed
+- [ ] Documentation updated
+
+## 📱 Social Media Content Creation Rules
+
+### Always Create Tweets and Reddit Posts for Major Accomplishments
+- **ALWAYS** create tweets and Reddit posts when completing significant features or fixes
+- **ALWAYS** document major milestones, bug fixes, and feature implementations
+- **ALWAYS** use the dedicated folders: `tweets/` and `reddit-posts/`
+- **ALWAYS** include relevant hashtags and engaging content
+
+### Tweet Creation Guidelines
+- **File naming**: Use descriptive names like `team-activity-page-fix.md` or `github-integration-setup.md`
+- **Content structure**: Include title, main content, hashtags, and call-to-action
+- **Character limit**: Keep under 280 characters for optimal engagement
+- **Visual elements**: Mention if screenshots or GIFs would enhance the post
+- **Engagement**: Include relevant hashtags like #webdev #nextjs #typescript #github
+
+### Reddit Post Creation Guidelines
+- **File naming**: Use descriptive names like `team-activity-implementation.md` or `error-handling-improvements.md`
+- **Content structure**: Include title, detailed explanation, code snippets, and discussion points
+- **Subreddit targeting**: Specify which subreddits would be appropriate (r/webdev, r/nextjs, r/programming, etc.)
+- **Technical depth**: Provide more detailed explanations suitable for developer communities
+- **Community engagement**: Include questions or discussion prompts to encourage interaction
+
+### Content Creation Examples
+
+#### Tweet Example Structure
+```markdown
+# Team Activity Dashboard Implementation
+
+🚀 Just implemented a comprehensive team activity dashboard for our Next.js app!
+
+✅ Real-time GitHub activity tracking
+✅ Graceful error handling for missing integrations  
+✅ Beautiful UI with filtering and search
+✅ Cached API responses for performance
+
+#webdev #nextjs #typescript #github #dashboard
+
+What's your favorite way to track team productivity? 👇
+```
+
+#### Reddit Post Example Structure
+```markdown
+# Built a Team Activity Dashboard - Here's What I Learned About Error Handling
+
+## The Problem
+Our team activity page was throwing 500 errors when users hadn't connected their GitHub accounts yet.
+
+## The Solution
+Instead of letting the app crash, I implemented graceful error handling that:
+- Returns empty data with helpful messages
+- Provides direct links to fix integration issues
+- Shows informative empty states with actionable guidance
+
+## Key Learnings
+1. **Graceful degradation** is better than hard failures
+2. **User guidance** is crucial for onboarding
+3. **Empty states** can be opportunities for education
+
+## Code Example
+```typescript
+// Instead of throwing errors, return helpful responses
+return NextResponse.json({
+  data: [],
+  success: true,
+  message: 'GitHub account not connected. Please connect your GitHub account in the integrations page.',
+  timestamp: new Date().toISOString(),
+});
+```
+
+## Discussion
+How do you handle integration dependencies in your apps? Do you prefer graceful degradation or strict requirements?
+
+**Target Subreddits**: r/webdev, r/nextjs, r/programming
+```
+
+### When to Create Content
+- **Feature completions**: New pages, components, or functionality
+- **Bug fixes**: Significant issues resolved
+- **Performance improvements**: Optimizations that impact user experience
+- **Architecture decisions**: Important technical choices and their reasoning
+- **Learning moments**: Insights gained during development
+
+### Content Quality Standards
+- **Be authentic**: Share real challenges and solutions
+- **Be helpful**: Provide value to the developer community
+- **Be engaging**: Ask questions and encourage discussion
+- **Be accurate**: Ensure technical details are correct
+- **Be respectful**: Follow community guidelines and be constructive
+
+### File Organization
+```
+tweets/
+├── team-activity-implementation.md
+├── github-integration-setup.md
+├── error-handling-improvements.md
+└── performance-optimizations.md
+
+reddit-posts/
+├── team-activity-dashboard-build.md
+├── graceful-error-handling-patterns.md
+├── nextjs-api-best-practices.md
+└── github-integration-lessons.md
+```
+
+## 🚨 Violation Consequences
+
+Violations of these rules will result in:
+1. **Code review rejection**
+2. **Required refactoring**
+3. **Documentation updates**
+4. **Team discussion for clarification**
+
+## 📞 Questions and Clarifications
+
+If you have questions about any of these rules:
+1. Check existing code examples
+2. Ask team members
+3. Create an issue for clarification
+4. Update this document if needed
+
+---
+
+**Remember**: These rules exist to maintain code quality, consistency, and project standards. Following them makes the codebase more maintainable, performant, and easier to work with for all team members.

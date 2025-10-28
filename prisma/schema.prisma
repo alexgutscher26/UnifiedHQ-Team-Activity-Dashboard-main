@@ -1,0 +1,297 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+
+  lastLoginMethod String?
+
+  oauthapplications OauthApplication[]
+  oauthaccesstokens OauthAccessToken[]
+  oauthconsents     OauthConsent[]
+  preferences       UserPreferences?
+  connections       Connection[]
+  activities        Activity[]
+  selectedRepositories SelectedRepository[]
+  selectedChannels    SelectedChannel[]
+  githubCache       GitHubCache[]
+  slackCache        SlackCache[]
+  aiSummaries       AISummary[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  @@map("verification")
+}
+
+model OauthApplication {
+  id                String             @id
+  name              String?
+  icon              String?
+  metadata          String?
+  clientId          String?
+  clientSecret      String?
+  redirectURLs      String?
+  type              String?
+  disabled          Boolean?           @default(false)
+  userId            String?
+  user              User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime?
+  updatedAt         DateTime?
+  oauthaccesstokens OauthAccessToken[]
+  oauthconsents     OauthConsent[]
+
+  @@unique([clientId])
+  @@map("oauthApplication")
+}
+
+model OauthAccessToken {
+  id                    String            @id
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  clientId              String?
+  oauthapplication      OauthApplication? @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  userId                String?
+  user                  User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scopes                String?
+  createdAt             DateTime?
+  updatedAt             DateTime?
+
+  @@unique([accessToken])
+  @@unique([refreshToken])
+  @@map("oauthAccessToken")
+}
+
+model OauthConsent {
+  id               String            @id
+  clientId         String?
+  oauthapplication OauthApplication? @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  userId           String?
+  user             User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scopes           String?
+  createdAt        DateTime?
+  updatedAt        DateTime?
+  consentGiven     Boolean?
+
+  @@map("oauthConsent")
+}
+
+model RateLimit {
+  id          String  @id
+  key         String?
+  count       Int?
+  lastRequest BigInt?
+
+  @@map("rateLimit")
+}
+
+model UserPreferences {
+  id          String  @id @default(cuid())
+  userId      String
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // GitHub preferences
+  githubOwner String?
+  githubRepo  String?
+  githubRepoId Int?
+  
+  // Other integration preferences can be added here
+  // slackTeamId String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId])
+  @@map("userPreferences")
+}
+
+model SelectedRepository {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  repoId      Int      // GitHub repository ID
+  repoName    String   // Full repository name (owner/repo)
+  repoOwner   String   // Repository owner
+  repoUrl     String   // Repository URL
+  isPrivate   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, repoId])
+  @@map("selectedRepository")
+}
+
+model Connection {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String   // 'github' | 'slack'
+  accessToken String
+  refreshToken String?
+  expiresAt   DateTime?
+  teamId      String?  // Slack team/workspace ID
+  teamName    String?  // Slack team/workspace name
+  botToken    String?  // Slack bot token for better channel access
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, type])
+  @@map("connection")
+}
+
+model Activity {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source      String   // 'github' | 'slack'
+  title       String
+  description String?
+  timestamp   DateTime @default(now())
+  externalId  String?  // GitHub event ID to prevent duplicates
+  metadata    Json?    // Store additional event data
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, source, externalId])
+  @@map("activity")
+}
+
+model SelectedChannel {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channelId   String   // Slack channel ID
+  channelName String   // Channel name (e.g., #general)
+  channelType String   // 'public_channel', 'private_channel', 'im', 'mpim'
+  isPrivate   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, channelId])
+  @@map("selectedChannel")
+}
+
+model GitHubCache {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cacheKey  String   // Unique cache key for this user's data
+  data      Json     // Cached GitHub API response data
+  timestamp DateTime @default(now())
+  ttl       Int      // Time to live in milliseconds
+  createdAt DateTime @default(now())
+
+  @@unique([userId, cacheKey])
+  @@map("github_cache")
+}
+
+model SlackCache {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cacheKey  String   // Unique cache key for this user's data
+  data      Json     // Cached Slack API response data
+  timestamp DateTime @default(now())
+  ttl       Int      // Time to live in milliseconds
+  createdAt DateTime @default(now())
+
+  @@unique([userId, cacheKey])
+  @@map("slack_cache")
+}
+
+model AISummary {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String
+  keyHighlights Json     // Array of key highlights
+  actionItems   Json     // Array of action items
+  insights      Json     // Array of insights
+  generatedAt   DateTime @default(now())
+  timeRangeStart DateTime
+  timeRangeEnd   DateTime
+  metadata      Json     // Activity count, source breakdown, model info, etc.
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("ai_summary")
+}
+
+model AISummaryMonitoring {
+  id        String   @id @default(cuid())
+  type      String   // 'DAILY_CRON', 'MANUAL', 'BACKGROUND'
+  status    String   // 'SUCCESS', 'PARTIAL_FAILURE', 'FAILURE'
+  processed Int      @default(0)
+  generated Int      @default(0)
+  skipped   Int      @default(0)
+  errors    Int      @default(0)
+  metadata  Json?    // Additional context (timestamp, auth status, etc.)
+  createdAt DateTime @default(now())
+
+  @@map("ai_summary_monitoring")
+}

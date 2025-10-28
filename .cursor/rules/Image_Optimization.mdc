@@ -1,0 +1,158 @@
+---
+alwaysApply: true
+---
+
+# Image Optimization & WebP Support Rules
+
+## Image Component Usage
+
+### Always Use OptimizedImage Instead of Standard Images
+
+- **NEVER** use standard `<img>` tags or Next.js `<Image>` directly
+- **ALWAYS** use `<OptimizedImage>` component for all images
+- **ALWAYS** use `<AvatarImage>` component for profile pictures and avatars
+- **ALWAYS** use `<ImageGallery>` component for image collections
+
+### Quality Levels
+
+- **Hero images** (above-the-fold): Use `quality="hero"` (90%)
+- **Card images** (content): Use `quality="card"` (80%)
+- **Thumbnails** (small images): Use `quality="thumbnail"` (70%)
+- **Avatars** (profile pictures): Use `quality="avatar"` (75%)
+- **Custom quality**: Use numeric values (1-100) when needed
+
+### Performance Best Practices
+
+- **Priority images**: Use `priority={true}` for above-the-fold images
+- **Lazy loading**: Use `lazy={true}` for images below the fold (default)
+- **Blur placeholders**: Use `blur={true}` for smooth loading (default)
+- **Fallback images**: Always provide `fallback` prop for error handling
+
+### Responsive Images
+
+- **Always provide** `width` and `height` props for proper aspect ratio
+- **Use `sizes` prop** for responsive images with different breakpoints
+- **Use `fill` prop** for container-based sizing when needed
+
+### Avatar Images
+
+- **Use predefined sizes**: `sm` (32px), `md` (40px), `lg` (48px), `xl` (64px)
+- **Use custom sizes**: Pass numeric values for specific requirements
+- **Always provide fallback**: Use `fallback` prop for missing avatars
+
+### Image Galleries
+
+- **Use for multiple images**: When displaying 2+ related images
+- **Enable thumbnails**: Use `showThumbnails={true}` for navigation
+- **Auto-play**: Use `autoPlay={true}` for slideshow functionality
+- **Provide captions**: Include `caption` in image objects
+
+## Code Examples
+
+### Basic Image
+
+```tsx
+import { OptimizedImage } from '@/components/optimized-image';
+
+<OptimizedImage
+  src='/path/to/image.jpg'
+  alt='Descriptive alt text'
+  width={800}
+  height={600}
+  quality='card'
+  priority={false}
+  className='rounded-lg'
+/>;
+```
+
+### Avatar Image
+
+```tsx
+import { AvatarImage } from '@/components/avatar-image';
+
+<AvatarImage
+  src='/path/to/avatar.jpg'
+  alt='User avatar'
+  size='lg'
+  fallback='/default-avatar.jpg'
+/>;
+```
+
+### Image Gallery
+
+```tsx
+import { ImageGallery } from '@/components/image-gallery';
+
+<ImageGallery
+  images={[
+    {
+      src: '/image1.jpg',
+      alt: 'Image 1',
+      caption: 'Description',
+      width: 800,
+      height: 600,
+    },
+    // ... more images
+  ]}
+  showThumbnails={true}
+  autoPlay={false}
+/>;
+```
+
+## Format Support
+
+- **WebP**: Automatic conversion with fallbacks
+- **AVIF**: Next-generation format support
+- **JPEG/PNG**: Fallback formats for older browsers
+- **SVG**: Proper handling with security policies
+
+## Error Handling
+
+- **Always provide alt text** for accessibility
+- **Use fallback images** for missing or broken images
+- **Handle loading states** with blur placeholders
+- **Provide error callbacks** when needed
+
+## Performance Rules
+
+- **Preload critical images** with `priority={true}`
+- **Lazy load non-critical images** with `lazy={true}`
+- **Use appropriate quality levels** for different use cases
+- **Optimize image dimensions** for different screen sizes
+- **Cache images** with proper TTL settings
+
+## Accessibility Rules
+
+- **Always provide descriptive alt text**
+- **Use proper ARIA labels** when needed
+- **Ensure keyboard navigation** for interactive galleries
+- **Provide text alternatives** for complex images
+
+## Migration Rules
+
+- **Replace all `<img>` tags** with `<OptimizedImage>`
+- **Replace Next.js `<Image>`** with `<OptimizedImage>`
+- **Update avatar components** to use `<AvatarImage>`
+- **Convert image collections** to use `<ImageGallery>`
+
+## File Organization
+
+- **Import from components**: Use `@/components/optimized-image`
+- **Import utilities**: Use `@/lib/image-utils` for helper functions
+- **Import hooks**: Use `@/hooks/use-lazy-image` for lazy loading
+- **Keep images in public folder**: Use `/path/to/image.jpg` format
+
+## Testing Rules
+
+- **Test WebP support** across different browsers
+- **Test responsive behavior** on different screen sizes
+- **Test lazy loading** with scroll behavior
+- **Test error handling** with broken image URLs
+- **Test accessibility** with screen readers
+
+## Documentation Rules
+
+- **Document image requirements** in component props
+- **Provide usage examples** in component files
+- **Update README** with image optimization features
+- **Include performance metrics** in documentation

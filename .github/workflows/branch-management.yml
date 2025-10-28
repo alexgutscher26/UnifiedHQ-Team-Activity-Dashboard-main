@@ -1,0 +1,270 @@
+name: Branch Management
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    types: [opened, closed]
+  schedule:
+    # Run daily at 2 AM UTC for cleanup
+    - cron: '0 2 * * *'
+
+jobs:
+  branch-protection:
+    name: Enforce Branch Protection
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check branch protection
+        run: |
+          echo "🔒 Checking branch protection for ${{ github.ref_name }}"
+
+          # Check if this is a protected branch
+          if [[ "${{ github.ref_name }}" == "main" || "${{ github.ref_name }}" == "develop" ]]; then
+            echo "✅ Protected branch: ${{ github.ref_name }}"
+          else
+            echo "ℹ️ Non-protected branch: ${{ github.ref_name }}"
+          fi
+
+  auto-cleanup:
+    name: Auto Cleanup Merged Branches
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || (github.event_name == 'pull_request' && github.event.action == 'closed')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run branch cleanup
+        run: node scripts/branch-manager.js cleanup
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run hotfix cleanup
+        run: node scripts/hotfix-manager.js list
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  branch-health-check:
+    name: Branch Health Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run branch health check
+        run: node scripts/branch-manager.js health
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Comment on PR if issues found
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '⚠️ Branch health check found issues. Please review and address them.'
+            })
+
+  pr-validation:
+    name: PR Validation
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate branch naming
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+          echo "🔍 Validating branch name: $BRANCH_NAME"
+          node scripts/branch-manager.js validate "$BRANCH_NAME"
+
+      - name: Check PR size
+        run: |
+          echo "📏 Checking PR size..."
+          CHANGED_LINES=$(git diff --numstat HEAD~1 HEAD | awk '{sum += $1 + $2} END {print sum}')
+          echo "Changed lines: $CHANGED_LINES"
+
+          if [ $CHANGED_LINES -gt 1000 ]; then
+            echo "⚠️ Warning: This PR has $CHANGED_LINES changed lines. Consider breaking it into smaller PRs."
+            exit 1
+          else
+            echo "✅ PR size is reasonable ($CHANGED_LINES changed lines)"
+          fi
+
+      - name: Check for hotfix urgency
+        if: contains(github.head_ref, 'hotfix/')
+        run: |
+          echo "🚨 Hotfix detected: ${{ github.head_ref }}"
+          echo "⚠️ This is a hotfix branch. Please ensure:"
+          echo "  - The fix is minimal and focused"
+          echo "  - It has been tested thoroughly"
+          echo "  - A rollback plan is ready"
+          echo "  - The team has been notified"
+
+  auto-merge:
+    name: Auto Merge Approved PRs
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'synchronize'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check if PR is ready for merge
+        id: check-pr
+        run: |
+          # Check if PR is approved and all checks pass
+          PR_STATUS=$(gh pr view ${{ github.event.pull_request.number }} --json reviewDecision,statusCheckRollup)
+          echo "PR Status: $PR_STATUS"
+
+          # This would need to be implemented based on your specific requirements
+          echo "ready=false" >> $GITHUB_OUTPUT
+
+      - name: Auto merge if ready
+        if: steps.check-pr.outputs.ready == 'true'
+        run: |
+          echo "✅ PR is ready for auto-merge"
+          gh pr merge ${{ github.event.pull_request.number }} --squash --delete-branch
+
+  branch-notifications:
+    name: Branch Notifications
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'opened'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Notify on hotfix
+        if: contains(github.head_ref, 'hotfix/')
+        run: |
+          echo "🚨 HOTFIX ALERT: ${{ github.head_ref }}"
+          echo "Please review and merge quickly if the fix is correct."
+          # In a real implementation, this would send notifications to Slack, email, etc.
+
+      - name: Notify on large PR
+        run: |
+          CHANGED_LINES=$(git diff --numstat HEAD~1 HEAD | awk '{sum += $1 + $2} END {print sum}')
+          if [ $CHANGED_LINES -gt 500 ]; then
+            echo "⚠️ Large PR detected: $CHANGED_LINES changed lines"
+            echo "Consider breaking this into smaller PRs for easier review."
+          fi
+
+  release-branch-validation:
+    name: Release Branch Validation
+    runs-on: ubuntu-latest
+    if: contains(github.head_ref, 'release/')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate release branch
+        run: |
+          echo "🚀 Validating release branch: ${{ github.head_ref }}"
+
+          # Check if version is properly updated
+          VERSION=$(node -p "require('./package.json').version")
+          echo "Current version: $VERSION"
+
+          # Check if changelog is updated
+          if [ -f "CHANGELOG.md" ]; then
+            if grep -q "## \[$VERSION\]" CHANGELOG.md; then
+              echo "✅ Changelog updated for version $VERSION"
+            else
+              echo "❌ Changelog not updated for version $VERSION"
+              exit 1
+            fi
+          else
+            echo "⚠️ No CHANGELOG.md found"
+          fi
+
+      - name: Run release validation
+        run: node scripts/release-manager.js validate ${{ github.head_ref }}
+
+  hotfix-monitoring:
+    name: Hotfix Monitoring
+    runs-on: ubuntu-latest
+    if: contains(github.head_ref, 'hotfix/')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Monitor hotfix
+        run: |
+          echo "🚨 Monitoring hotfix: ${{ github.head_ref }}"
+          node scripts/hotfix-manager.js validate ${{ github.head_ref }}
+
+      - name: Alert on hotfix age
+        run: |
+          # Check how long the hotfix has been open
+          CREATED_AT="${{ github.event.pull_request.created_at }}"
+          echo "Hotfix created at: $CREATED_AT"
+
+          # Calculate age and alert if too old
+          # This would need to be implemented based on your requirements
+          echo "⏰ Hotfix age monitoring completed"

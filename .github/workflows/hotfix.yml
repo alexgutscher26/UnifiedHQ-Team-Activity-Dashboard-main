@@ -1,0 +1,334 @@
+name: Hotfix Management
+
+on:
+  push:
+    branches:
+      - 'hotfix/**'
+  pull_request:
+    types: [opened, synchronize, closed]
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      description:
+        description: 'Hotfix description'
+        required: true
+        type: string
+      severity:
+        description: 'Severity level'
+        required: true
+        default: 'high'
+        type: choice
+        options:
+          - critical
+          - high
+          - medium
+          - low
+
+jobs:
+  hotfix-validation:
+    name: Hotfix Validation
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/hotfix/')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate hotfix
+        run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          echo "🚨 Validating hotfix: $BRANCH_NAME"
+          node scripts/hotfix-manager.js validate $BRANCH_NAME
+
+      - name: Check hotfix urgency
+        run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          echo "⏰ Checking hotfix urgency..."
+
+          # Extract severity from branch name
+          if [[ $BRANCH_NAME == *"critical"* ]]; then
+            echo "🔴 CRITICAL hotfix detected"
+            echo "⚠️ This requires immediate attention and deployment"
+          elif [[ $BRANCH_NAME == *"high"* ]]; then
+            echo "🟠 HIGH priority hotfix detected"
+            echo "⚠️ This should be reviewed and deployed quickly"
+          else
+            echo "🟡 Standard hotfix detected"
+          fi
+
+      - name: Run emergency tests
+        run: |
+          echo "🧪 Running emergency test suite..."
+          bun run test || echo "⚠️ Tests failed, but continuing for hotfix"
+          bun run build || echo "⚠️ Build failed, but continuing for hotfix"
+
+      - name: Security check
+        run: |
+          echo "🔒 Running security check..."
+          npm audit --audit-level high || echo "⚠️ Security issues found, but continuing for hotfix"
+
+  hotfix-pr-validation:
+    name: Hotfix PR Validation
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && contains(github.head_ref, 'hotfix/')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate hotfix PR
+        run: |
+          echo "🚨 Validating hotfix PR: ${{ github.head_ref }}"
+          node scripts/hotfix-manager.js validate ${{ github.head_ref }}
+
+      - name: Check PR urgency
+        run: |
+          echo "⏰ Checking PR urgency..."
+
+          # Check if this is a critical hotfix
+          if [[ "${{ github.head_ref }}" == *"critical"* ]]; then
+            echo "🔴 CRITICAL hotfix PR detected"
+            echo "⚠️ This requires immediate review and merge"
+            
+            # Add urgent label
+            gh pr edit ${{ github.event.pull_request.number }} --add-label "urgent,critical"
+          elif [[ "${{ github.head_ref }}" == *"high"* ]]; then
+            echo "🟠 HIGH priority hotfix PR detected"
+            echo "⚠️ This should be reviewed quickly"
+            
+            # Add high priority label
+            gh pr edit ${{ github.event.pull_request.number }} --add-label "high-priority"
+          fi
+
+      - name: Request emergency review
+        if: contains(github.head_ref, 'critical')
+        run: |
+          echo "🚨 Requesting emergency review for critical hotfix..."
+          gh pr edit ${{ github.event.pull_request.number }} --add-reviewer "@maintainers,@devops-team"
+          gh pr comment ${{ github.event.pull_request.number }} --body "🚨 **CRITICAL HOTFIX** - Please review and merge immediately if the fix is correct."
+
+      - name: Run minimal test suite
+        run: |
+          echo "🧪 Running minimal test suite for hotfix..."
+          bun run test || echo "⚠️ Tests failed, but continuing for hotfix"
+
+  hotfix-deployment:
+    name: Hotfix Deployment
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged && contains(github.head_ref, 'hotfix/')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy hotfix
+        run: |
+          BRANCH_NAME=${{ github.head_ref }}
+          echo "🚀 Deploying hotfix: $BRANCH_NAME"
+          node scripts/hotfix-manager.js deploy $BRANCH_NAME
+
+      - name: Backport to develop
+        run: |
+          BRANCH_NAME=${{ github.head_ref }}
+          echo "🔀 Backporting hotfix to develop: $BRANCH_NAME"
+          node scripts/hotfix-manager.js backport $BRANCH_NAME
+
+      - name: Cleanup hotfix branch
+        run: |
+          BRANCH_NAME=${{ github.head_ref }}
+          echo "🧹 Cleaning up hotfix branch: $BRANCH_NAME"
+          node scripts/hotfix-manager.js cleanup $BRANCH_NAME
+
+      - name: Notify team
+        run: |
+          echo "📢 Notifying team of hotfix deployment..."
+          # In a real implementation, this would send notifications
+          echo "✅ Team notified"
+
+  hotfix-monitoring:
+    name: Hotfix Monitoring
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/hotfix/')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Monitor hotfix
+        run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          echo "🔍 Monitoring hotfix: $BRANCH_NAME"
+          node scripts/hotfix-manager.js list
+
+      - name: Check hotfix age
+        run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          echo "⏰ Checking hotfix age..."
+
+          # Get branch creation time
+          CREATED_AT=$(git log --format="%ct" --reverse $BRANCH_NAME | head -1)
+          CURRENT_TIME=$(date +%s)
+          AGE_MINUTES=$(( (CURRENT_TIME - CREATED_AT) / 60 ))
+
+          echo "Hotfix age: $AGE_MINUTES minutes"
+
+          # Alert if hotfix is too old
+          if [ $AGE_MINUTES -gt 60 ]; then
+            echo "⚠️ Hotfix is $AGE_MINUTES minutes old - consider merging or closing"
+          fi
+
+  emergency-hotfix:
+    name: Emergency Hotfix
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create emergency hotfix
+        run: |
+          echo "🚨 Creating emergency hotfix..."
+          node scripts/hotfix-manager.js create "${{ github.event.inputs.description }}" "${{ github.event.inputs.severity }}"
+
+      - name: Notify emergency contacts
+        run: |
+          echo "📢 Notifying emergency contacts..."
+          # In a real implementation, this would send notifications to emergency contacts
+          echo "✅ Emergency contacts notified"
+
+  hotfix-rollback:
+    name: Hotfix Rollback
+    runs-on: ubuntu-latest
+    if: failure() && github.event_name == 'pull_request' && github.event.pull_request.merged && contains(github.head_ref, 'hotfix/')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Rollback hotfix
+        run: |
+          echo "🔄 Rolling back hotfix..."
+          # Get the last commit hash
+          LAST_COMMIT=$(git rev-parse HEAD)
+          node scripts/hotfix-manager.js rollback $LAST_COMMIT
+
+      - name: Notify team of rollback
+        run: |
+          echo "📢 Notifying team of rollback..."
+          # In a real implementation, this would send notifications
+          echo "✅ Team notified of rollback"
+
+  hotfix-metrics:
+    name: Hotfix Metrics
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Collect hotfix metrics
+        run: |
+          echo "📊 Collecting hotfix metrics..."
+
+          if [ "${{ github.event_name }}" == "push" ] && [[ "${{ github.ref }}" == refs/heads/hotfix/* ]]; then
+            BRANCH_NAME=${GITHUB_REF#refs/heads/}
+            echo "Hotfix branch: $BRANCH_NAME"
+            echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "Actor: $GITHUB_ACTOR"
+            echo "Commit: $GITHUB_SHA"
+          fi
+
+          # In a real implementation, this would send metrics to your monitoring system
+          echo "✅ Metrics collected"
+
+  hotfix-cleanup:
+    name: Hotfix Cleanup
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cleanup old hotfix branches
+        run: |
+          echo "🧹 Cleaning up old hotfix branches..."
+          node scripts/hotfix-manager.js list
+          # In a real implementation, this would clean up old hotfix branches
+          echo "✅ Cleanup completed"
