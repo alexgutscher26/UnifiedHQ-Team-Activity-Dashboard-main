@@ -2,6 +2,14 @@ const { PrismaClient } = require('../src/generated/prisma');
 
 const prisma = new PrismaClient();
 
+/**
+ * Test the GitHub API access for the authenticated user.
+ *
+ * This function checks for a user and their GitHub connection in the database, then tests the GitHub API by checking the rate limit, retrieving user information, listing repositories, and fetching commits for the first repository. It handles various potential errors, including API errors and connection issues, while ensuring proper disconnection from the database at the end.
+ *
+ * @returns {Promise<void>} A promise that resolves when the test is complete.
+ * @throws {Error} If there is an error during the API calls or database operations.
+ */
 async function testGitHubAPI() {
   try {
     console.log('🔍 Testing GitHub API Access...\n');
