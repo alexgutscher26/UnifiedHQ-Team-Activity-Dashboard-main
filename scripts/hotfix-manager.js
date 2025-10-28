@@ -5,25 +5,25 @@
  * Emergency hotfix process automation
  */
 
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+const fs = require('fs')
+const path = require('path')
+const { execSync } = require('child_process')
 
 class HotfixManager {
-  constructor() {
-    this.projectRoot = process.cwd();
-    this.config = this.loadConfig();
+  constructor () {
+    this.projectRoot = process.cwd()
+    this.config = this.loadConfig()
   }
 
   /**
    * Load hotfix configuration
    */
-  loadConfig() {
+  loadConfig () {
     const configPath = path.join(
       this.projectRoot,
       '.github',
       'hotfix-config.yml'
-    );
+    )
     if (fs.existsSync(configPath)) {
       // In a real implementation, you'd use a YAML parser
       return {
@@ -32,162 +32,162 @@ class HotfixManager {
         require_approval: false, // Emergency bypass
         rollback_plan: 'automatic',
         notification_channels: ['slack', 'email'],
-        max_hotfix_time: 30, // minutes
-      };
+        max_hotfix_time: 30 // minutes
+      }
     }
-    return this.getDefaultConfig();
+    return this.getDefaultConfig()
   }
 
   /**
    * Get default configuration
    */
-  getDefaultConfig() {
+  getDefaultConfig () {
     return {
       emergency_contacts: ['@maintainers', '@devops-team'],
       auto_deploy: true,
       require_approval: false,
       rollback_plan: 'automatic',
       notification_channels: ['slack', 'email'],
-      max_hotfix_time: 30,
-    };
+      max_hotfix_time: 30
+    }
   }
 
   /**
    * Create hotfix branch
    */
-  createHotfixBranch(description, severity = 'high') {
-    console.log(`🚨 Creating hotfix branch: ${description}`);
+  createHotfixBranch (description, severity = 'high') {
+    console.log(`🚨 Creating hotfix branch: ${description}`)
 
     try {
       // Generate branch name
       const timestamp = new Date()
         .toISOString()
         .replace(/[:.]/g, '-')
-        .slice(0, 19);
+        .slice(0, 19)
       const cleanDescription = description
         .toLowerCase()
         .replace(/[^a-z0-9\s-]/g, '')
         .replace(/\s+/g, '-')
-        .trim();
-      const branchName = `hotfix/${severity}-${cleanDescription}-${timestamp}`;
+        .trim()
+      const branchName = `hotfix/${severity}-${cleanDescription}-${timestamp}`
 
       // Check if branch already exists
       if (this.branchExists(branchName)) {
-        throw new Error(`Hotfix branch ${branchName} already exists`);
+        throw new Error(`Hotfix branch ${branchName} already exists`)
       }
 
       // Switch to main and pull latest
-      execSync('git checkout main', { stdio: 'pipe' });
-      execSync('git pull origin main', { stdio: 'pipe' });
+      execSync('git checkout main', { stdio: 'pipe' })
+      execSync('git pull origin main', { stdio: 'pipe' })
 
       // Create hotfix branch
-      execSync(`git checkout -b ${branchName}`, { stdio: 'pipe' });
+      execSync(`git checkout -b ${branchName}`, { stdio: 'pipe' })
 
-      console.log(`✅ Created hotfix branch: ${branchName}`);
-      console.log(`🚨 Severity: ${severity.toUpperCase()}`);
-      console.log(`⏰ Timestamp: ${timestamp}`);
-      console.log(`🔗 Push with: git push origin ${branchName}`);
+      console.log(`✅ Created hotfix branch: ${branchName}`)
+      console.log(`🚨 Severity: ${severity.toUpperCase()}`)
+      console.log(`⏰ Timestamp: ${timestamp}`)
+      console.log(`🔗 Push with: git push origin ${branchName}`)
 
-      return branchName;
+      return branchName
     } catch (error) {
-      console.error(`❌ Error creating hotfix branch: ${error.message}`);
-      return null;
+      console.error(`❌ Error creating hotfix branch: ${error.message}`)
+      return null
     }
   }
 
   /**
    * Check if branch exists
    */
-  branchExists(branchName) {
+  branchExists (branchName) {
     try {
       execSync(`git show-ref --verify --quiet refs/heads/${branchName}`, {
-        stdio: 'pipe',
-      });
-      return true;
+        stdio: 'pipe'
+      })
+      return true
     } catch (error) {
-      return false;
+      return false
     }
   }
 
   /**
    * Validate hotfix changes
    */
-  validateHotfix(branchName) {
-    console.log(`🔍 Validating hotfix: ${branchName}`);
+  validateHotfix (branchName) {
+    console.log(`🔍 Validating hotfix: ${branchName}`)
 
     const validation = {
       passed: true,
       issues: [],
-      warnings: [],
-    };
+      warnings: []
+    }
 
     try {
       // Check for uncommitted changes
       const status = execSync('git status --porcelain', {
-        encoding: 'utf8',
-      }).trim();
+        encoding: 'utf8'
+      }).trim()
       if (status) {
-        validation.issues.push('Uncommitted changes detected');
-        validation.passed = false;
+        validation.issues.push('Uncommitted changes detected')
+        validation.passed = false
       }
 
       // Check branch is up to date with main
-      execSync('git fetch origin', { stdio: 'pipe' });
+      execSync('git fetch origin', { stdio: 'pipe' })
       const behind = execSync(`git rev-list --count main..${branchName}`, {
-        encoding: 'utf8',
-      }).trim();
+        encoding: 'utf8'
+      }).trim()
       const ahead = execSync(`git rev-list --count ${branchName}..main`, {
-        encoding: 'utf8',
-      }).trim();
+        encoding: 'utf8'
+      }).trim()
 
       if (parseInt(behind) > 0) {
-        validation.warnings.push('Branch is behind main');
+        validation.warnings.push('Branch is behind main')
       }
 
       if (parseInt(ahead) > 0) {
         validation.issues.push(
           'Branch is ahead of main (unexpected for hotfix)'
-        );
-        validation.passed = false;
+        )
+        validation.passed = false
       }
 
       // Check for build errors
       try {
-        execSync('bun run build', { stdio: 'pipe' });
+        execSync('bun run build', { stdio: 'pipe' })
       } catch (error) {
-        validation.issues.push('Build failed');
-        validation.passed = false;
+        validation.issues.push('Build failed')
+        validation.passed = false
       }
 
       // Check for linting errors
       try {
-        execSync('bun run lint', { stdio: 'pipe' });
+        execSync('bun run lint', { stdio: 'pipe' })
       } catch (error) {
-        validation.warnings.push('Linting issues detected');
+        validation.warnings.push('Linting issues detected')
       }
 
       // Check for test failures
       try {
-        execSync('npm test', { stdio: 'pipe' });
+        execSync('npm test', { stdio: 'pipe' })
       } catch (error) {
-        validation.warnings.push('Tests failed (may be acceptable for hotfix)');
+        validation.warnings.push('Tests failed (may be acceptable for hotfix)')
       }
 
       // Check file changes scope
       const changedFiles = execSync(
         `git diff --name-only main..${branchName}`,
         {
-          encoding: 'utf8',
+          encoding: 'utf8'
         }
       )
         .trim()
         .split('\n')
-        .filter(f => f);
+        .filter(f => f)
 
       if (changedFiles.length > 10) {
         validation.warnings.push(
           'Hotfix affects many files (consider if this is truly a hotfix)'
-        );
+        )
       }
 
       // Check for critical file changes
@@ -196,78 +196,78 @@ class HotfixManager {
         'package-lock.json',
         'prisma/schema.prisma',
         'next.config.mjs',
-        'tailwind.config.ts',
-      ];
+        'tailwind.config.ts'
+      ]
 
       const criticalChanges = changedFiles.filter(file =>
         criticalFiles.some(critical => file.includes(critical))
-      );
+      )
 
       if (criticalChanges.length > 0) {
         validation.warnings.push(
           `Critical files changed: ${criticalChanges.join(', ')}`
-        );
+        )
       }
 
-      console.log(`📊 Validation ${validation.passed ? 'PASSED' : 'FAILED'}`);
+      console.log(`📊 Validation ${validation.passed ? 'PASSED' : 'FAILED'}`)
       if (validation.issues.length > 0) {
-        console.log('❌ Issues:');
-        validation.issues.forEach(issue => console.log(`  - ${issue}`));
+        console.log('❌ Issues:')
+        validation.issues.forEach(issue => console.log(`  - ${issue}`))
       }
       if (validation.warnings.length > 0) {
-        console.log('⚠️ Warnings:');
-        validation.warnings.forEach(warning => console.log(`  - ${warning}`));
+        console.log('⚠️ Warnings:')
+        validation.warnings.forEach(warning => console.log(`  - ${warning}`))
       }
 
-      return validation;
+      return validation
     } catch (error) {
-      console.error(`❌ Error validating hotfix: ${error.message}`);
-      return { passed: false, issues: [error.message], warnings: [] };
+      console.error(`❌ Error validating hotfix: ${error.message}`)
+      return { passed: false, issues: [error.message], warnings: [] }
     }
   }
 
   /**
    * Create hotfix pull request
    */
-  createHotfixPR(branchName, description, severity = 'high') {
-    console.log(`📝 Creating hotfix PR: ${branchName}`);
+  createHotfixPR (branchName, description, severity = 'high') {
+    console.log(`📝 Creating hotfix PR: ${branchName}`)
 
     try {
       // Push branch if not already pushed
-      execSync(`git push origin ${branchName}`, { stdio: 'pipe' });
+      execSync(`git push origin ${branchName}`, { stdio: 'pipe' })
 
       // Generate PR title
-      const title = `🚨 HOTFIX: ${description}`;
+      const title = `🚨 HOTFIX: ${description}`
 
       // Generate PR body
-      const body = this.generateHotfixPRBody(branchName, description, severity);
+      const body = this.generateHotfixPRBody(branchName, description, severity)
 
       // Create PR using GitHub CLI
-      const prCommand = `gh pr create --title "${title}" --body "${body}" --base main --head ${branchName} --label "hotfix,${severity}"`;
-      execSync(prCommand, { stdio: 'pipe' });
+      const prCommand = `gh pr create --title "${title}" --body "${body}" --base main --head ${branchName} --label "hotfix,${severity}"`
+      execSync(prCommand, { stdio: 'pipe' })
 
-      console.log(`✅ Hotfix PR created successfully`);
-      console.log(`🚨 Severity: ${severity.toUpperCase()}`);
-      console.log(`👥 Notifying: ${this.config.emergency_contacts.join(', ')}`);
+      console.log('✅ Hotfix PR created successfully')
+      console.log(`🚨 Severity: ${severity.toUpperCase()}`)
+      console.log(`👥 Notifying: ${this.config.emergency_contacts.join(', ')}`)
 
-      return true;
+      return true
     } catch (error) {
-      console.error(`❌ Error creating hotfix PR: ${error.message}`);
-      return false;
+      console.error(`❌ Error creating hotfix PR: ${error.message}`)
+      return false
     }
   }
 
   /**
    * Generate hotfix PR body
    */
-  generateHotfixPRBody(branchName, description, severity) {
-    const timestamp = new Date().toISOString();
+  generateHotfixPRBody (branchName, description, severity) {
+    const timestamp = new Date().toISOString()
     const urgencyLevel =
       severity === 'critical'
         ? '🔴 CRITICAL'
         : severity === 'high'
           ? '🟠 HIGH'
-          : '🟡 MEDIUM';
+          : '🟡 MEDIUM'
 
     return `# 🚨 Emergency Hotfix
 
@@ -357,302 +357,302 @@ ${description}
 **🚨 Emergency Contacts**: ${this.config.emergency_contacts.join(', ')}
 **⏰ Created**: ${timestamp}
 **🌿 Branch**: ${branchName}
-`;
+`
   }
 
   /**
    * Deploy hotfix
    */
-  deployHotfix(branchName, autoDeploy = false) {
-    console.log(`🚀 Deploying hotfix: ${branchName}`);
+  deployHotfix (branchName, autoDeploy = false) {
+    console.log(`🚀 Deploying hotfix: ${branchName}`)
 
     try {
       // Validate hotfix first
-      const validation = this.validateHotfix(branchName);
+      const validation = this.validateHotfix(branchName)
       if (!validation.passed) {
-        console.log('❌ Hotfix validation failed. Cannot deploy.');
-        return false;
+        console.log('❌ Hotfix validation failed. Cannot deploy.')
+        return false
       }
 
       if (validation.warnings.length > 0) {
-        console.log('⚠️ Hotfix has warnings. Proceed with caution.');
+        console.log('⚠️ Hotfix has warnings. Proceed with caution.')
       }
 
       // Merge to main
-      execSync('git checkout main', { stdio: 'pipe' });
-      execSync('git pull origin main', { stdio: 'pipe' });
+      execSync('git checkout main', { stdio: 'pipe' })
+      execSync('git pull origin main', { stdio: 'pipe' })
       execSync(`git merge --no-ff ${branchName} -m "Hotfix: ${branchName}"`, {
-        stdio: 'pipe',
-      });
+        stdio: 'pipe'
+      })
 
       // Push to main
-      execSync('git push origin main', { stdio: 'pipe' });
+      execSync('git push origin main', { stdio: 'pipe' })
 
-      console.log(`✅ Hotfix merged to main`);
+      console.log('✅ Hotfix merged to main')
 
       // Backport to develop
-      this.backportToDevelop(branchName);
+      this.backportToDevelop(branchName)
 
       // Deploy if auto-deploy is enabled
       if (autoDeploy || this.config.auto_deploy) {
-        console.log('🚀 Auto-deploying to production...');
+        console.log('🚀 Auto-deploying to production...')
         // In a real implementation, this would trigger deployment
-        console.log('✅ Hotfix deployed to production');
+        console.log('✅ Hotfix deployed to production')
       }
 
-      return true;
+      return true
     } catch (error) {
-      console.error(`❌ Error deploying hotfix: ${error.message}`);
-      return false;
+      console.error(`❌ Error deploying hotfix: ${error.message}`)
+      return false
     }
   }
 
   /**
    * Backport hotfix to develop
    */
-  backportToDevelop(branchName) {
-    console.log(`🔀 Backporting hotfix to develop: ${branchName}`);
+  backportToDevelop (branchName) {
+    console.log(`🔀 Backporting hotfix to develop: ${branchName}`)
 
     try {
       // Switch to develop
-      execSync('git checkout develop', { stdio: 'pipe' });
-      execSync('git pull origin develop', { stdio: 'pipe' });
+      execSync('git checkout develop', { stdio: 'pipe' })
+      execSync('git pull origin develop', { stdio: 'pipe' })
 
       // Merge hotfix
       execSync(
         `git merge --no-ff ${branchName} -m "Backport hotfix: ${branchName}"`,
         {
-          stdio: 'pipe',
+          stdio: 'pipe'
         }
-      );
+      )
 
       // Push to develop
-      execSync('git push origin develop', { stdio: 'pipe' });
+      execSync('git push origin develop', { stdio: 'pipe' })
 
-      console.log(`✅ Hotfix backported to develop`);
-      return true;
+      console.log('✅ Hotfix backported to develop')
+      return true
     } catch (error) {
-      console.error(`❌ Error backporting hotfix: ${error.message}`);
-      return false;
+      console.error(`❌ Error backporting hotfix: ${error.message}`)
+      return false
     }
   }
 
   /**
    * Rollback hotfix
    */
-  rollbackHotfix(commitHash) {
-    console.log(`🔄 Rolling back hotfix: ${commitHash}`);
+  rollbackHotfix (commitHash) {
+    console.log(`🔄 Rolling back hotfix: ${commitHash}`)
 
     try {
       // Switch to main
-      execSync('git checkout main', { stdio: 'pipe' });
-      execSync('git pull origin main', { stdio: 'pipe' });
+      execSync('git checkout main', { stdio: 'pipe' })
+      execSync('git pull origin main', { stdio: 'pipe' })
 
       // Create rollback commit
-      execSync(`git revert ${commitHash} --no-edit`, { stdio: 'pipe' });
+      execSync(`git revert ${commitHash} --no-edit`, { stdio: 'pipe' })
 
       // Push rollback
-      execSync('git push origin main', { stdio: 'pipe' });
+      execSync('git push origin main', { stdio: 'pipe' })
 
-      console.log(`✅ Hotfix rolled back`);
-      return true;
+      console.log('✅ Hotfix rolled back')
+      return true
     } catch (error) {
-      console.error(`❌ Error rolling back hotfix: ${error.message}`);
-      return false;
+      console.error(`❌ Error rolling back hotfix: ${error.message}`)
+      return false
     }
   }
 
   /**
    * Clean up hotfix branch
    */
-  cleanupHotfixBranch(branchName) {
-    console.log(`🧹 Cleaning up hotfix branch: ${branchName}`);
+  cleanupHotfixBranch (branchName) {
+    console.log(`🧹 Cleaning up hotfix branch: ${branchName}`)
 
     try {
       // Switch to main
-      execSync('git checkout main', { stdio: 'pipe' });
+      execSync('git checkout main', { stdio: 'pipe' })
 
       // Delete local branch
-      execSync(`git branch -d ${branchName}`, { stdio: 'pipe' });
+      execSync(`git branch -d ${branchName}`, { stdio: 'pipe' })
 
       // Delete remote branch
-      execSync(`git push origin --delete ${branchName}`, { stdio: 'pipe' });
+      execSync(`git push origin --delete ${branchName}`, { stdio: 'pipe' })
 
-      console.log(`✅ Hotfix branch cleaned up: ${branchName}`);
-      return true;
+      console.log(`✅ Hotfix branch cleaned up: ${branchName}`)
+      return true
     } catch (error) {
-      console.error(`❌ Error cleaning up hotfix branch: ${error.message}`);
-      return false;
+      console.error(`❌ Error cleaning up hotfix branch: ${error.message}`)
+      return false
     }
   }
 
   /**
    * Complete hotfix process
    */
-  async completeHotfix(description, severity = 'high', options = {}) {
-    console.log(`🚨 Starting hotfix process: ${description}`);
+  async completeHotfix (description, severity = 'high', options = {}) {
+    console.log(`🚨 Starting hotfix process: ${description}`)
 
-    const startTime = Date.now();
-    const steps = [];
+    const startTime = Date.now()
+    const steps = []
 
     try {
       // Step 1: Create hotfix branch
-      console.log('\n🌿 Step 1: Creating hotfix branch...');
-      const branchName = this.createHotfixBranch(description, severity);
+      console.log('\n🌿 Step 1: Creating hotfix branch...')
+      const branchName = this.createHotfixBranch(description, severity)
       if (!branchName) {
-        throw new Error('Failed to create hotfix branch');
+        throw new Error('Failed to create hotfix branch')
       }
-      steps.push('Hotfix branch created');
+      steps.push('Hotfix branch created')
 
       // Step 2: Wait for developer to make changes
-      console.log('\n⏳ Step 2: Waiting for hotfix implementation...');
-      console.log('Please implement your hotfix changes and commit them.');
-      console.log('Then run: node scripts/hotfix-manager.js validate <branch>');
-      console.log('And: node scripts/hotfix-manager.js deploy <branch>');
+      console.log('\n⏳ Step 2: Waiting for hotfix implementation...')
+      console.log('Please implement your hotfix changes and commit them.')
+      console.log('Then run: node scripts/hotfix-manager.js validate <branch>')
+      console.log('And: node scripts/hotfix-manager.js deploy <branch>')
 
       // Step 3: Validate hotfix
-      console.log('\n🔍 Step 3: Validating hotfix...');
-      const validation = this.validateHotfix(branchName);
+      console.log('\n🔍 Step 3: Validating hotfix...')
+      const validation = this.validateHotfix(branchName)
       if (!validation.passed) {
-        throw new Error('Hotfix validation failed');
+        throw new Error('Hotfix validation failed')
       }
-      steps.push('Hotfix validated');
+      steps.push('Hotfix validated')
 
       // Step 4: Create PR
-      console.log('\n📝 Step 4: Creating hotfix PR...');
-      const prCreated = this.createHotfixPR(branchName, description, severity);
+      console.log('\n📝 Step 4: Creating hotfix PR...')
+      const prCreated = this.createHotfixPR(branchName, description, severity)
       if (!prCreated) {
-        throw new Error('Failed to create hotfix PR');
+        throw new Error('Failed to create hotfix PR')
       }
-      steps.push('Hotfix PR created');
+      steps.push('Hotfix PR created')
 
       // Step 5: Deploy hotfix
-      console.log('\n🚀 Step 5: Deploying hotfix...');
-      const deployed = this.deployHotfix(branchName, options.autoDeploy);
+      console.log('\n🚀 Step 5: Deploying hotfix...')
+      const deployed = this.deployHotfix(branchName, options.autoDeploy)
       if (!deployed) {
-        throw new Error('Failed to deploy hotfix');
+        throw new Error('Failed to deploy hotfix')
       }
-      steps.push('Hotfix deployed');
+      steps.push('Hotfix deployed')
 
       // Step 6: Cleanup
-      console.log('\n🧹 Step 6: Cleaning up...');
-      const cleanedUp = this.cleanupHotfixBranch(branchName);
+      console.log('\n🧹 Step 6: Cleaning up...')
+      const cleanedUp = this.cleanupHotfixBranch(branchName)
       if (!cleanedUp) {
-        console.log('⚠️ Warning: Failed to clean up hotfix branch');
+        console.log('⚠️ Warning: Failed to clean up hotfix branch')
       }
-      steps.push('Cleanup completed');
+      steps.push('Cleanup completed')
 
-      const duration = Math.round((Date.now() - startTime) / 1000);
-      console.log('\n✅ Hotfix process completed successfully!');
-      console.log(`⏱️ Duration: ${duration} seconds`);
-      console.log(`🌿 Branch: ${branchName}`);
-      console.log('\n📋 Completed steps:');
+      const duration = Math.round((Date.now() - startTime) / 1000)
+      console.log('\n✅ Hotfix process completed successfully!')
+      console.log(`⏱️ Duration: ${duration} seconds`)
+      console.log(`🌿 Branch: ${branchName}`)
+      console.log('\n📋 Completed steps:')
       steps.forEach((step, index) => {
-        console.log(`  ${index + 1}. ${step}`);
-      });
+        console.log(`  ${index + 1}. ${step}`)
+      })
 
       return {
         success: true,
         branchName,
         duration,
-        steps,
-      };
+        steps
+      }
     } catch (error) {
-      const duration = Math.round((Date.now() - startTime) / 1000);
-      console.error(`❌ Hotfix process failed: ${error.message}`);
-      console.log(`⏱️ Duration: ${duration} seconds`);
+      const duration = Math.round((Date.now() - startTime) / 1000)
+      console.error(`❌ Hotfix process failed: ${error.message}`)
+      console.log(`⏱️ Duration: ${duration} seconds`)
       return {
         success: false,
         error: error.message,
         duration,
-        steps: steps || [],
-      };
+        steps: steps || []
+      }
     }
   }
 
   /**
    * List active hotfixes
    */
-  listActiveHotfixes() {
-    console.log('🚨 Active Hotfixes:');
+  listActiveHotfixes () {
+    console.log('🚨 Active Hotfixes:')
 
     try {
       // Get hotfix branches
       const allRemoteBranches = execSync('git branch -r', {
-        encoding: 'utf8',
+        encoding: 'utf8'
       })
         .trim()
         .split('\n')
         .map(b => b.trim().replace('origin/', ''))
-        .filter(b => b && b.startsWith('hotfix/'));
+        .filter(b => b && b.startsWith('hotfix/'))
 
       if (allRemoteBranches.length === 0) {
-        console.log('✅ No active hotfix branches');
-        return [];
+        console.log('✅ No active hotfix branches')
+        return []
       }
 
       allRemoteBranches.forEach(branch => {
-        const info = this.getHotfixInfo(branch);
-        const icon = this.getSeverityIcon(info.severity);
-        console.log(`  ${icon} ${branch} (${info.severity}) - ${info.age}`);
-      });
+        const info = this.getHotfixInfo(branch)
+        const icon = this.getSeverityIcon(info.severity)
+        console.log(`  ${icon} ${branch} (${info.severity}) - ${info.age}`)
+      })
 
-      return allRemoteBranches;
+      return allRemoteBranches
     } catch (error) {
-      console.error(`❌ Error listing hotfixes: ${error.message}`);
-      return [];
+      console.error(`❌ Error listing hotfixes: ${error.message}`)
+      return []
     }
   }
 
   /**
    * Get hotfix information
    */
-  getHotfixInfo(branchName) {
+  getHotfixInfo (branchName) {
     try {
-      const parts = branchName.split('-');
-      const severity = parts[1] || 'unknown';
+      const parts = branchName.split('-')
+      const severity = parts[1] || 'unknown'
 
       // Get branch age
       const lastCommit = execSync(
         `git log -1 --format="%ct" origin/${branchName}`,
         {
-          encoding: 'utf8',
+          encoding: 'utf8'
         }
-      ).trim();
+      ).trim()
       const age = Math.round(
         (Date.now() - parseInt(lastCommit) * 1000) / 60000
-      ); // minutes
+      ) // minutes
 
       return {
         severity,
-        age: `${age}m ago`,
-      };
+        age: `${age}m ago`
+      }
     } catch (error) {
       return {
         severity: 'unknown',
-        age: 'unknown',
-      };
+        age: 'unknown'
+      }
     }
   }
 
   /**
    * Get severity icon
    */
-  getSeverityIcon(severity) {
+  getSeverityIcon (severity) {
     const icons = {
       critical: '🔴',
       high: '🟠',
       medium: '🟡',
       low: '🟢',
-      unknown: '❓',
-    };
-    return icons[severity] || icons.unknown;
+      unknown: '❓'
+    }
+    return icons[severity] || icons.unknown
   }
 
   /**
    * Show help information
    */
-  showHelp() {
+  showHelp () {
     console.log(`
 🚨 Hotfix Manager - Emergency Fix Automation
 
@@ -689,91 +689,91 @@ Severity Levels:
 
 Emergency Contacts:
   ${this.config.emergency_contacts.join(', ')}
-`);
+`)
   }
 }
 
 // CLI Interface
 if (require.main === module) {
-  const command = process.argv[2];
-  const args = process.argv.slice(3);
+  const command = process.argv[2]
+  const args = process.argv.slice(3)
 
-  const manager = new HotfixManager();
+  const manager = new HotfixManager()
 
   switch (command) {
     case 'create':
       if (args.length < 1) {
-        console.error('Usage: create <description> [severity]');
-        process.exit(1);
+        console.error('Usage: create <description> [severity]')
+        process.exit(1)
       }
-      manager.createHotfixBranch(args[0], args[1]);
-      break;
+      manager.createHotfixBranch(args[0], args[1])
+      break
 
     case 'validate':
       if (args.length < 1) {
-        console.error('Usage: validate <branch>');
-        process.exit(1);
+        console.error('Usage: validate <branch>')
+        process.exit(1)
       }
-      manager.validateHotfix(args[0]);
-      break;
+      manager.validateHotfix(args[0])
+      break
 
     case 'pr':
       if (args.length < 2) {
-        console.error('Usage: pr <branch> <description> [severity]');
-        process.exit(1);
+        console.error('Usage: pr <branch> <description> [severity]')
+        process.exit(1)
       }
-      manager.createHotfixPR(args[0], args[1], args[2]);
-      break;
+      manager.createHotfixPR(args[0], args[1], args[2])
+      break
 
     case 'deploy':
       if (args.length < 1) {
-        console.error('Usage: deploy <branch> [auto]');
-        process.exit(1);
+        console.error('Usage: deploy <branch> [auto]')
+        process.exit(1)
       }
-      manager.deployHotfix(args[0], args[1] === 'auto');
-      break;
+      manager.deployHotfix(args[0], args[1] === 'auto')
+      break
 
     case 'backport':
       if (args.length < 1) {
-        console.error('Usage: backport <branch>');
-        process.exit(1);
+        console.error('Usage: backport <branch>')
+        process.exit(1)
       }
-      manager.backportToDevelop(args[0]);
-      break;
+      manager.backportToDevelop(args[0])
+      break
 
     case 'rollback':
       if (args.length < 1) {
-        console.error('Usage: rollback <commit>');
-        process.exit(1);
+        console.error('Usage: rollback <commit>')
+        process.exit(1)
       }
-      manager.rollbackHotfix(args[0]);
-      break;
+      manager.rollbackHotfix(args[0])
+      break
 
     case 'cleanup':
       if (args.length < 1) {
-        console.error('Usage: cleanup <branch>');
-        process.exit(1);
+        console.error('Usage: cleanup <branch>')
+        process.exit(1)
       }
-      manager.cleanupHotfixBranch(args[0]);
-      break;
+      manager.cleanupHotfixBranch(args[0])
+      break
 
     case 'complete':
       if (args.length < 1) {
-        console.error('Usage: complete <description> [severity]');
-        process.exit(1);
+        console.error('Usage: complete <description> [severity]')
+        process.exit(1)
       }
-      manager.completeHotfix(args[0], args[1]);
-      break;
+      manager.completeHotfix(args[0], args[1])
+      break
 
     case 'list':
-      manager.listActiveHotfixes();
-      break;
+      manager.listActiveHotfixes()
+      break
 
     case 'help':
     default:
-      manager.showHelp();
-      break;
+      manager.showHelp()
+      break
   }
 }
 
-module.exports = HotfixManager;
+module.exports = HotfixManager
