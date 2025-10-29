@@ -1,3 +1,21 @@
+/**
+ * @fileoverview Memory Leak Fix Generator
+ * 
+ * This module provides the main MemoryLeakFixGenerator class that analyzes TypeScript/React code
+ * and generates fixes for various types of memory leaks including:
+ * - Missing useEffect cleanup functions
+ * - Uncleaned event listeners
+ * - Uncleaned timers (setInterval/setTimeout)
+ * - Unclosed connections (EventSource/WebSocket)
+ * - Uncleaned subscriptions
+ * 
+ * The generator uses TypeScript AST analysis to understand code structure and context,
+ * then delegates to specialized fix generators for different leak types.
+ * 
+ * @author UnifiedHQ Memory Leak Detection System
+ * @version 1.0.0
+ */
+
 import * as ts from 'typescript';
 import { LeakDetectionResult, LeakType } from './memory-leak-detection-patterns';
 import { createEventListenerFixGenerator } from './event-listener-fix-generator';
@@ -38,17 +56,41 @@ export interface FixGenerationResult {
     error?: string;
 }
 
+/**
+ * Represents a code transformation to be applied to source code
+ */
 export interface CodeTransformation {
+    /** Starting position in the source code */
     start: number;
+    /** Ending position in the source code */
     end: number;
+    /** Replacement text to insert between start and end positions */
     replacement: string;
 }
 
+/**
+ * Main class for generating fixes for memory leaks in TypeScript/React code.
+ * Uses TypeScript AST analysis to detect patterns and generate appropriate cleanup code.
+ * 
+ * @example
+ * ```typescript
+ * const generator = new MemoryLeakFixGenerator(sourceCode, 'component.tsx');
+ * const result = generator.generateFix(leakDetectionResult);
+ * if (result.success) {
+ *   console.log('Fixed code:', result.fix.fixedCode);
+ * }
+ * ```
+ */
 export class MemoryLeakFixGenerator {
     private sourceFile: ts.SourceFile;
     private sourceCode: string;
     private fileName: string;
 
+    /**
+     * Creates a new MemoryLeakFixGenerator instance
+     * @param sourceCode - The source code to analyze and fix
+     * @param fileName - The name of the file being processed
+     */
     constructor(sourceCode: string, fileName: string) {
         this.sourceCode = sourceCode;
         this.fileName = fileName;
@@ -60,6 +102,11 @@ export class MemoryLeakFixGenerator {
         );
     }
 
+    /**
+     * Generates a fix for the specified memory leak
+     * @param leak - The detected memory leak to fix
+     * @returns Result containing the generated fix or error information
+     */
     generateFix(leak: LeakDetectionResult): FixGenerationResult {
         try {
             switch (leak.type) {
@@ -88,21 +135,41 @@ export class MemoryLeakFixGenerator {
         }
     }
 
+    /**
+     * Delegates event listener leak fixes to the specialized event listener fix generator
+     * @param leak - The event listener leak to fix
+     * @returns Fix generation result from the event listener generator
+     */
     private delegateToEventListenerGenerator(leak: LeakDetectionResult): FixGenerationResult {
         const eventListenerGenerator = createEventListenerFixGenerator(this.sourceCode, this.fileName);
         return eventListenerGenerator.generateEventListenerCleanupFix(leak);
     }
 
+    /**
+     * Delegates timer leak fixes to the specialized timer cleanup fix generator
+     * @param leak - The timer leak to fix
+     * @returns Fix generation result from the timer generator
+     */
     private delegateToTimerGenerator(leak: LeakDetectionResult): FixGenerationResult {
         const timerGenerator = createTimerCleanupFixGenerator(this.sourceCode, this.fileName);
         return timerGenerator.generateTimerCleanupFix(leak);
     }
 
+    /**
+     * Delegates connection leak fixes to the specialized connection cleanup fix generator
+     * @param leak - The connection leak to fix
+     * @returns Fix generation result from the connection generator
+     */
     private delegateToConnectionGenerator(leak: LeakDetectionResult): FixGenerationResult {
         const connectionGenerator = createConnectionCleanupFixGenerator(this.sourceCode, this.fileName);
         return connectionGenerator.generateConnectionCleanupFix(leak);
     }
 
+    /**
+     * Generates a fix for useEffect hooks that are missing cleanup functions
+     * @param leak - The useEffect cleanup leak to fix
+     * @returns Fix generation result with cleanup function added to useEffect
+     */
     private generateUseEffectCleanupFix(leak: LeakDetectionResult): FixGenerationResult {
         const useEffectNode = this.findNodeAtPosition(leak.line, leak.column);
         if (!useEffectNode || !ts.isCallExpression(useEffectNode)) {
@@ -332,7 +399,7 @@ export class MemoryLeakFixGenerator {
 
         // Check if subscribe call is already assigned to a variable
         const variableName = this.extractVariableName(subscribeNode);
-        let transformation: CodeTransformation;
+        let transformation: CodeTransformation | undefined;
         let cleanupCode: string;
 
         if (variableName) {
@@ -359,16 +426,20 @@ export class MemoryLeakFixGenerator {
             return { success: false, error: 'Could not find containing function' };
         }
 
+        let finalTransformation: CodeTransformation;
         if (this.isInUseEffect(container)) {
             const cleanupTransformation = this.addCleanupToExistingUseEffect(container, cleanupCode);
-            if (!transformation) {
-                transformation = cleanupTransformation;
+            if (transformation) {
+                // If we already have a transformation (from variable assignment), use it
+                finalTransformation = transformation;
+            } else {
+                finalTransformation = cleanupTransformation;
             }
         } else {
-            transformation = this.wrapInUseEffectWithCleanup(subscribeNode, cleanupCode);
+            finalTransformation = this.wrapInUseEffectWithCleanup(subscribeNode, cleanupCode);
         }
 
-        const fixedCode = this.applyTransformation(transformation);
+        const fixedCode = this.applyTransformation(finalTransformation);
 
         return {
             success: true,
@@ -386,6 +457,12 @@ export class MemoryLeakFixGenerator {
     }
 
     // Helper methods for analysis and transformation
+    /**
+     * Finds the TypeScript AST node at the specified line and column position
+     * @param line - Line number (1-based)
+     * @param column - Column number (1-based)
+     * @returns The AST node at the position, or null if not found
+     */
     private findNodeAtPosition(line: number, column: number): ts.Node | null {
         const position = this.sourceFile.getPositionOfLineAndCharacter(line - 1, column - 1);
 
@@ -399,6 +476,11 @@ export class MemoryLeakFixGenerator {
         return findNode(this.sourceFile);
     }
 
+    /**
+     * Analyzes a useEffect callback function to identify items that need cleanup
+     * @param effectCallback - The useEffect callback function to analyze
+     * @returns Array of cleanup items found in the effect
+     */
     private analyzeEffectForCleanup(effectCallback: ts.ArrowFunction | ts.FunctionExpression): CleanupItem[] {
         const cleanupItems: CleanupItem[] = [];
 
@@ -476,6 +558,11 @@ export class MemoryLeakFixGenerator {
         return cleanupItems;
     }
 
+    /**
+     * Generates a cleanup function containing all the specified cleanup items
+     * @param cleanupItems - Array of cleanup items to include in the function
+     * @returns String representation of the cleanup function
+     */
     private generateCleanupFunction(cleanupItems: CleanupItem[]): string {
         const cleanupCode = cleanupItems.map(item => `      ${item.code}`).join('\n');
         return `return () => {
@@ -483,6 +570,12 @@ ${cleanupCode}
     };`;
     }
 
+    /**
+     * Adds cleanup code to an existing useEffect callback function
+     * @param effectCallback - The useEffect callback to modify
+     * @param cleanupCode - The cleanup code to add
+     * @returns Code transformation to apply the cleanup
+     */
     private addCleanupToUseEffect(effectCallback: ts.ArrowFunction | ts.FunctionExpression, cleanupCode: string): CodeTransformation {
         if (!effectCallback.body) {
             throw new Error('Effect callback has no body');
@@ -525,6 +618,12 @@ ${cleanupCode}
         };
     }
 
+    /**
+     * Adds cleanup code to an existing useEffect that may already have a cleanup function
+     * @param container - The container node (useEffect function)
+     * @param cleanupCode - The cleanup code to add
+     * @returns Code transformation to add the cleanup
+     */
     private addCleanupToExistingUseEffect(container: ts.Node, cleanupCode: string): CodeTransformation {
         // Find existing return statement or add new one
         let returnStatement: ts.ReturnStatement | null = null;
@@ -539,10 +638,11 @@ ${cleanupCode}
 
         visit(container);
 
-        if (returnStatement && returnStatement.expression) {
+        if (returnStatement?.expression) {
+            const expression = returnStatement.expression;
             // Add to existing cleanup function
-            if (ts.isArrowFunction(returnStatement.expression) || ts.isFunctionExpression(returnStatement.expression)) {
-                const cleanupFunction = returnStatement.expression;
+            if (ts.isArrowFunction(expression) || ts.isFunctionExpression(expression)) {
+                const cleanupFunction = expression;
                 if (cleanupFunction.body && ts.isBlock(cleanupFunction.body)) {
                     const insertPosition = cleanupFunction.body.getEnd() - 1;
                     return {
@@ -563,6 +663,12 @@ ${cleanupCode}
         };
     }
 
+    /**
+     * Wraps a node in a useEffect with cleanup function
+     * @param node - The node to wrap
+     * @param cleanupCode - The cleanup code to include
+     * @returns Code transformation to wrap the node in useEffect
+     */
     private wrapInUseEffectWithCleanup(node: ts.Node, cleanupCode: string): CodeTransformation {
         const nodeText = this.getNodeText(node);
         const wrappedCode = `useEffect(() => {
@@ -579,6 +685,11 @@ ${cleanupCode}
         };
     }
 
+    /**
+     * Extracts details from an addEventListener call expression
+     * @param node - The addEventListener call expression node
+     * @returns Event listener details or null if extraction fails
+     */
     private extractEventListenerDetails(node: ts.CallExpression): EventListenerDetails | null {
         if (node.arguments.length < 2) return null;
 
@@ -594,11 +705,21 @@ ${cleanupCode}
         return { target, event, handler, options };
     }
 
+    /**
+     * Generates removeEventListener cleanup code from event listener details
+     * @param details - The event listener details
+     * @returns The cleanup code string
+     */
     private generateEventListenerCleanup(details: EventListenerDetails): string {
         const optionsStr = details.options ? `, ${details.options}` : '';
         return `${details.target}.removeEventListener('${details.event}', ${details.handler}${optionsStr});`;
     }
 
+    /**
+     * Extracts details from a timer function call (setInterval/setTimeout)
+     * @param node - The timer call expression node
+     * @returns Timer details or null if extraction fails
+     */
     private extractTimerDetails(node: ts.CallExpression): TimerDetails | null {
         if (!ts.isIdentifier(node.expression)) return null;
 
@@ -613,10 +734,20 @@ ${cleanupCode}
         };
     }
 
+    /**
+     * Generates timer cleanup code from timer details
+     * @param details - The timer details
+     * @returns The cleanup code string
+     */
     private generateTimerCleanup(details: TimerDetails): string {
         return `${details.clearFunction}(${details.variableName});`;
     }
 
+    /**
+     * Extracts the variable name that a node is assigned to
+     * @param node - The AST node to check for variable assignment
+     * @returns The variable name or null if not assigned to a variable
+     */
     private extractVariableName(node: ts.Node): string | null {
         let current = node.parent;
 
@@ -635,6 +766,11 @@ ${cleanupCode}
         return null;
     }
 
+    /**
+     * Finds the containing function for a given AST node
+     * @param node - The AST node to find the containing function for
+     * @returns The containing function node or null if not found
+     */
     private findContainingFunction(node: ts.Node): ts.Node | null {
         let current = node.parent;
         while (current) {
@@ -649,6 +785,11 @@ ${cleanupCode}
         return null;
     }
 
+    /**
+     * Checks if a container node is inside a useEffect call
+     * @param container - The container node to check
+     * @returns True if the container is inside a useEffect call
+     */
     private isInUseEffect(container: ts.Node): boolean {
         // Check if the container is a useEffect callback
         let current = container.parent;
@@ -663,38 +804,79 @@ ${cleanupCode}
         return false;
     }
 
+    /**
+     * Applies a code transformation to the source code
+     * @param transformation - The transformation to apply
+     * @returns The modified source code with the transformation applied
+     */
     private applyTransformation(transformation: CodeTransformation): string {
         const before = this.sourceCode.substring(0, transformation.start);
         const after = this.sourceCode.substring(transformation.end);
         return before + transformation.replacement + after;
     }
 
+    /**
+     * Gets the text content of a TypeScript AST node
+     * @param node - The AST node to get text from
+     * @returns The trimmed text content of the node
+     */
     private getNodeText(node: ts.Node): string {
         return this.sourceCode.substring(node.getFullStart(), node.getEnd()).trim();
     }
 }
 
 // Supporting interfaces
+/**
+ * Represents an item that needs cleanup in a useEffect
+ */
 interface CleanupItem {
+    /** Type of cleanup item */
     type: 'eventsource' | 'websocket' | 'eventlistener' | 'timer' | 'subscription';
+    /** Cleanup code to execute */
     code: string;
+    /** Whether this cleanup requires manual review */
     requiresManualReview: boolean;
 }
 
+/**
+ * Details extracted from an addEventListener call
+ */
 interface EventListenerDetails {
+    /** The target element or object */
     target: string;
+    /** The event name */
     event: string;
+    /** The event handler function */
     handler: string;
+    /** Optional event listener options */
     options?: string;
 }
 
+/**
+ * Details extracted from a timer function call (setInterval/setTimeout)
+ */
 interface TimerDetails {
+    /** The timer function name (setInterval or setTimeout) */
     timerFunction: string;
+    /** The corresponding clear function name (clearInterval or clearTimeout) */
     clearFunction: string;
+    /** The variable name the timer is assigned to */
     variableName: string;
 }
 
 // Factory function
+/**
+ * Factory function to create a new MemoryLeakFixGenerator instance
+ * @param sourceCode - The source code to analyze and fix
+ * @param fileName - The name of the file being processed
+ * @returns A new MemoryLeakFixGenerator instance
+ * 
+ * @example
+ * ```typescript
+ * const generator = createMemoryLeakFixGenerator(sourceCode, 'MyComponent.tsx');
+ * const result = generator.generateFix(leakDetectionResult);
+ * ```
+ */
 export function createMemoryLeakFixGenerator(sourceCode: string, fileName: string): MemoryLeakFixGenerator {
     return new MemoryLeakFixGenerator(sourceCode, fileName);
 }
