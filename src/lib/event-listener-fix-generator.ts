@@ -232,6 +232,18 @@ export class EventListenerFixGenerator {
     }
   }
 
+  /**
+   * Adds cleanup code to an existing function for event listeners.
+   *
+   * This method locates the containing function of the provided node and generates the necessary cleanup code
+   * for the specified event listener pattern. Depending on the cleanup strategy, it either wraps the cleanup
+   * code in a useEffect hook or adds it to an existing return statement, or creates a new return statement
+   * if none exists.
+   *
+   * @param node - The CallExpression node representing the event listener.
+   * @param pattern - The pattern defining the event listener to be cleaned up.
+   * @param strategy - The strategy determining how the cleanup should be applied.
+   */
   private addToExistingCleanup(
     node: ts.CallExpression,
     pattern: EventListenerPattern,
