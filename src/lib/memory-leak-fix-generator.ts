@@ -103,9 +103,12 @@ export class MemoryLeakFixGenerator {
     }
 
     /**
-     * Generates a fix for the specified memory leak
-     * @param leak - The detected memory leak to fix
-     * @returns Result containing the generated fix or error information
+     * Generates a fix for the specified memory leak.
+     *
+     * The function evaluates the type of memory leak and delegates the fix generation to the appropriate handler based on the leak type. It handles various cases such as missing cleanup in useEffect, uncleaned event listeners, timers, and connections. If the leak type is unsupported or an error occurs during processing, it returns an error message.
+     *
+     * @param leak - The detected memory leak to fix.
+     * @returns Result containing the generated fix or error information.
      */
     generateFix(leak: LeakDetectionResult): FixGenerationResult {
         try {
@@ -136,9 +139,8 @@ export class MemoryLeakFixGenerator {
     }
 
     /**
-     * Delegates event listener leak fixes to the specialized event listener fix generator
-     * @param leak - The event listener leak to fix
-     * @returns Fix generation result from the event listener generator
+     * Delegates event listener leak fixes to the event listener fix generator.
+     * @param leak - The event listener leak to fix.
      */
     private delegateToEventListenerGenerator(leak: LeakDetectionResult): FixGenerationResult {
         const eventListenerGenerator = createEventListenerFixGenerator(this.sourceCode, this.fileName);
@@ -156,9 +158,8 @@ export class MemoryLeakFixGenerator {
     }
 
     /**
-     * Delegates connection leak fixes to the specialized connection cleanup fix generator
-     * @param leak - The connection leak to fix
-     * @returns Fix generation result from the connection generator
+     * Delegates connection leak fixes to the connection cleanup fix generator.
+     * @param leak - The connection leak to fix.
      */
     private delegateToConnectionGenerator(leak: LeakDetectionResult): FixGenerationResult {
         const connectionGenerator = createConnectionCleanupFixGenerator(this.sourceCode, this.fileName);
@@ -166,9 +167,13 @@ export class MemoryLeakFixGenerator {
     }
 
     /**
-     * Generates a fix for useEffect hooks that are missing cleanup functions
-     * @param leak - The useEffect cleanup leak to fix
-     * @returns Fix generation result with cleanup function added to useEffect
+     * Generates a fix for useEffect hooks that are missing cleanup functions.
+     *
+     * This function locates the useEffect call, verifies that its callback is a function, and analyzes it for any necessary cleanup items.
+     * If cleanup items are found, it generates a cleanup function, transforms the useEffect to include this cleanup, and returns the fix details.
+     *
+     * @param leak - The useEffect cleanup leak to fix.
+     * @returns Fix generation result with cleanup function added to useEffect.
      */
     private generateUseEffectCleanupFix(leak: LeakDetectionResult): FixGenerationResult {
         const useEffectNode = this.findNodeAtPosition(leak.line, leak.column);
@@ -391,6 +396,17 @@ export class MemoryLeakFixGenerator {
         };
     }
 
+    /**
+     * Generates a fix for subscription cleanup in a given code context.
+     *
+     * This function identifies a subscription call within the provided leak detection result.
+     * It checks if the call is already assigned to a variable and either adds cleanup code or
+     * creates a new variable for the subscription. The function then finds the containing function
+     * and applies the necessary transformations to ensure proper cleanup, particularly in the context
+     * of React's useEffect. Finally, it returns the result of the fix generation process.
+     *
+     * @param leak - The LeakDetectionResult containing information about the subscription leak.
+     */
     private generateSubscriptionCleanupFix(leak: LeakDetectionResult): FixGenerationResult {
         const subscribeNode = this.findNodeAtPosition(leak.line, leak.column);
         if (!subscribeNode || !ts.isCallExpression(subscribeNode)) {
@@ -458,10 +474,14 @@ export class MemoryLeakFixGenerator {
 
     // Helper methods for analysis and transformation
     /**
-     * Finds the TypeScript AST node at the specified line and column position
+     * Finds the TypeScript AST node at the specified line and column position.
+     *
+     * This function calculates the position in the source file based on the provided line and column numbers.
+     * It then recursively searches through the AST nodes to find the node that encompasses the specified position.
+     * If a matching node is found, it is returned; otherwise, null is returned.
+     *
      * @param line - Line number (1-based)
      * @param column - Column number (1-based)
-     * @returns The AST node at the position, or null if not found
      */
     private findNodeAtPosition(line: number, column: number): ts.Node | null {
         const position = this.sourceFile.getPositionOfLineAndCharacter(line - 1, column - 1);
@@ -477,9 +497,14 @@ export class MemoryLeakFixGenerator {
     }
 
     /**
-     * Analyzes a useEffect callback function to identify items that need cleanup
-     * @param effectCallback - The useEffect callback function to analyze
-     * @returns Array of cleanup items found in the effect
+     * Analyzes a useEffect callback function to identify items that need cleanup.
+     *
+     * The function traverses the AST of the provided effectCallback to find instances of EventSource, WebSocket,
+     * addEventListener, timers (setInterval/setTimeout), and subscriptions. For each identified item, it generates
+     * the appropriate cleanup code and stores it in an array, which is returned at the end of the analysis.
+     *
+     * @param effectCallback - The useEffect callback function to analyze.
+     * @returns Array of cleanup items found in the effect.
      */
     private analyzeEffectForCleanup(effectCallback: ts.ArrowFunction | ts.FunctionExpression): CleanupItem[] {
         const cleanupItems: CleanupItem[] = [];
@@ -559,9 +584,9 @@ export class MemoryLeakFixGenerator {
     }
 
     /**
-     * Generates a cleanup function containing all the specified cleanup items
-     * @param cleanupItems - Array of cleanup items to include in the function
-     * @returns String representation of the cleanup function
+     * Generates a cleanup function from the specified cleanup items.
+     * @param cleanupItems - Array of cleanup items to include in the function.
+     * @returns String representation of the cleanup function.
      */
     private generateCleanupFunction(cleanupItems: CleanupItem[]): string {
         const cleanupCode = cleanupItems.map(item => `      ${item.code}`).join('\n');
@@ -664,10 +689,10 @@ ${cleanupCode}
     }
 
     /**
-     * Wraps a node in a useEffect with cleanup function
-     * @param node - The node to wrap
-     * @param cleanupCode - The cleanup code to include
-     * @returns Code transformation to wrap the node in useEffect
+     * Wraps a node in a useEffect with a cleanup function.
+     * @param node - The node to wrap.
+     * @param cleanupCode - The cleanup code to include.
+     * @returns Code transformation to wrap the node in useEffect.
      */
     private wrapInUseEffectWithCleanup(node: ts.Node, cleanupCode: string): CodeTransformation {
         const nodeText = this.getNodeText(node);
@@ -706,9 +731,9 @@ ${cleanupCode}
     }
 
     /**
-     * Generates removeEventListener cleanup code from event listener details
-     * @param details - The event listener details
-     * @returns The cleanup code string
+     * Generates removeEventListener cleanup code from event listener details.
+     * @param details - The event listener details.
+     * @returns The cleanup code string.
      */
     private generateEventListenerCleanup(details: EventListenerDetails): string {
         const optionsStr = details.options ? `, ${details.options}` : '';
@@ -716,9 +741,13 @@ ${cleanupCode}
     }
 
     /**
-     * Extracts details from a timer function call (setInterval/setTimeout)
+     * Extracts details from a timer function call (setInterval/setTimeout).
+     *
+     * This function checks if the provided node is an identifier and retrieves the timer function name.
+     * It determines the corresponding clear function based on the timer function type and extracts the
+     * variable name associated with the timer call. If the variable name is not found, it defaults to 'timer'.
+     *
      * @param node - The timer call expression node
-     * @returns Timer details or null if extraction fails
      */
     private extractTimerDetails(node: ts.CallExpression): TimerDetails | null {
         if (!ts.isIdentifier(node.expression)) return null;
@@ -744,9 +773,13 @@ ${cleanupCode}
     }
 
     /**
-     * Extracts the variable name that a node is assigned to
-     * @param node - The AST node to check for variable assignment
-     * @returns The variable name or null if not assigned to a variable
+     * Extracts the variable name that a node is assigned to.
+     *
+     * This function traverses the parent nodes of the given AST node to find a variable declaration or a binary expression with an assignment operator.
+     * If a variable declaration is found, it returns the name of the variable. If a binary expression is encountered, it checks if the left side is an identifier and returns its text.
+     * If no variable name is found, it returns null.
+     *
+     * @param node - The AST node to check for variable assignment.
      */
     private extractVariableName(node: ts.Node): string | null {
         let current = node.parent;
@@ -767,9 +800,11 @@ ${cleanupCode}
     }
 
     /**
-     * Finds the containing function for a given AST node
-     * @param node - The AST node to find the containing function for
-     * @returns The containing function node or null if not found
+     * Finds the containing function for a given AST node.
+     *
+     * This function traverses the parent nodes of the provided AST node to locate the nearest function declaration, arrow function, function expression, or method declaration. If such a function is found, it is returned; otherwise, the function returns null. The traversal continues until a function node is identified or there are no more parent nodes to check.
+     *
+     * @param node - The AST node to find the containing function for.
      */
     private findContainingFunction(node: ts.Node): ts.Node | null {
         let current = node.parent;
@@ -786,9 +821,14 @@ ${cleanupCode}
     }
 
     /**
-     * Checks if a container node is inside a useEffect call
-     * @param container - The container node to check
-     * @returns True if the container is inside a useEffect call
+     * Determines if a given container node is part of a useEffect call.
+     *
+     * This function traverses the parent nodes of the provided container to check
+     * if any of them is a call expression that invokes 'useEffect'. It continues
+     * this traversal until it either finds a matching call or reaches the root of
+     * the node tree, returning true if found, otherwise false.
+     *
+     * @param container - The container node to check.
      */
     private isInUseEffect(container: ts.Node): boolean {
         // Check if the container is a useEffect callback
@@ -805,9 +845,8 @@ ${cleanupCode}
     }
 
     /**
-     * Applies a code transformation to the source code
-     * @param transformation - The transformation to apply
-     * @returns The modified source code with the transformation applied
+     * Applies a code transformation to the source code.
+     * @param transformation - The transformation to apply.
      */
     private applyTransformation(transformation: CodeTransformation): string {
         const before = this.sourceCode.substring(0, transformation.start);
@@ -816,9 +855,8 @@ ${cleanupCode}
     }
 
     /**
-     * Gets the text content of a TypeScript AST node
-     * @param node - The AST node to get text from
-     * @returns The trimmed text content of the node
+     * Gets the trimmed text content of a TypeScript AST node.
+     * @param node - The AST node to get text from.
      */
     private getNodeText(node: ts.Node): string {
         return this.sourceCode.substring(node.getFullStart(), node.getEnd()).trim();
@@ -866,16 +904,9 @@ interface TimerDetails {
 
 // Factory function
 /**
- * Factory function to create a new MemoryLeakFixGenerator instance
- * @param sourceCode - The source code to analyze and fix
- * @param fileName - The name of the file being processed
- * @returns A new MemoryLeakFixGenerator instance
- * 
- * @example
- * ```typescript
- * const generator = createMemoryLeakFixGenerator(sourceCode, 'MyComponent.tsx');
- * const result = generator.generateFix(leakDetectionResult);
- * ```
+ * Creates a new MemoryLeakFixGenerator instance.
+ * @param sourceCode - The source code to analyze and fix.
+ * @param fileName - The name of the file being processed.
  */
 export function createMemoryLeakFixGenerator(sourceCode: string, fileName: string): MemoryLeakFixGenerator {
     return new MemoryLeakFixGenerator(sourceCode, fileName);
