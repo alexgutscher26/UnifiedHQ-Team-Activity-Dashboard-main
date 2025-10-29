@@ -131,7 +131,7 @@ export class EventListenerFixGenerator {
     let handlerType: 'inline' | 'reference' | 'arrow' = 'reference';
     if (ts.isArrowFunction(handlerArg) || ts.isFunctionExpression(handlerArg)) {
       handlerType = 'inline';
-    }  
+    }
 
     // Extract options if present
     const options = node.arguments[2]
