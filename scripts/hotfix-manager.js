@@ -14,7 +14,7 @@ class HotfixManager {
   }
 
   /**
-   * Load hotfix configuration from a YAML file.
+   * Load hotfix configuration from a YAML file or return default config.
    */
   loadConfig () {
     const configPath = path.join(
@@ -377,12 +377,9 @@ ${description}
   }
 
   /**
-   * Deploy hotfix
+   * Deploys a hotfix to the main branch and optionally triggers an auto-deploy.
    *
-   * This function deploys a hotfix by first validating the provided branch name.
-   * If validation passes, it merges the hotfix into the main branch and pushes the changes.
-   * It also backports the hotfix to the develop branch and optionally triggers an auto-deploy
-   * to production based on the provided parameter or configuration setting.
+   * This function first validates the provided branch name for the hotfix. If validation is successful, it merges the hotfix into the main branch and pushes the changes. It also backports the hotfix to the develop branch. If the autoDeploy parameter is true or the configuration setting allows it, the function triggers an auto-deploy to production.
    *
    * @param {string} branchName - The name of the branch containing the hotfix.
    * @param {boolean} [autoDeploy=false] - Indicates whether to automatically deploy the hotfix to production.
@@ -433,6 +430,8 @@ ${description}
 
   /**
    * Backports a hotfix branch to the develop branch.
+   * @param {string} branchName - The name of the hotfix branch to backport.
+   * @returns {boolean} - Returns true if the backport was successful, false otherwise.
    */
   backportToDevelop (branchName) {
     console.log(`🔀 Backporting hotfix to develop: ${branchName}`)
@@ -463,6 +462,8 @@ ${description}
 
   /**
    * Rollback a hotfix using the specified commit hash.
+   * @param {string} commitHash - The commit hash of the hotfix to rollback.
+   * @returns {boolean} Indicates success or failure of the rollback operation.
    */
   rollbackHotfix (commitHash) {
     console.log(`🔄 Rolling back hotfix: ${commitHash}`)
@@ -488,6 +489,8 @@ ${description}
 
   /**
    * Clean up the specified hotfix branch by deleting it locally and remotely.
+   * @param {string} branchName - The name of the hotfix branch to clean up.
+   * @returns {boolean} - Returns true if the cleanup was successful, false otherwise.
    */
   cleanupHotfixBranch (branchName) {
     console.log(`🧹 Cleaning up hotfix branch: ${branchName}`)
@@ -604,11 +607,11 @@ ${description}
   /**
    * List active hotfixes.
    *
-   * This function retrieves all remote branches that are categorized as hotfixes by executing a Git command.
-   * It processes the branch names to remove the 'origin/' prefix and filters out any non-hotfix branches.
+   * This function retrieves all remote branches categorized as hotfixes by executing a Git command.
+   * It processes the branch names to remove the 'origin/' prefix and filters out non-hotfix branches.
    * If no active hotfix branches are found, it logs a message and returns an empty array.
    * For each active hotfix branch, it retrieves additional information such as severity and age,
-   * and logs this information to the console. In case of an error during execution, it logs the error message and returns an empty array.
+   * logging this information to the console. In case of an error during execution, it logs the error message and returns an empty array.
    */
   listActiveHotfixes () {
     console.log('🚨 Active Hotfixes:')
