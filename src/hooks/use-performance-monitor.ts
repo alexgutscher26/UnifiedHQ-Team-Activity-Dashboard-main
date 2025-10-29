@@ -90,7 +90,11 @@ export const usePerformanceMonitor = (config: PerformanceConfig = {}) => {
     componentCountRef.current = leakDetection.componentLifecycle.active;
     eventListenerCountRef.current = leakDetection.eventListenerCount;
     intervalCountRef.current = leakDetection.intervalCount;
-  }, [leakDetection.componentLifecycle.active, leakDetection.eventListenerCount, leakDetection.intervalCount]);
+  }, [
+    leakDetection.componentLifecycle.active,
+    leakDetection.eventListenerCount,
+    leakDetection.intervalCount,
+  ]);
 
   const getMemoryMetrics = useCallback((): MemoryMetrics | undefined => {
     if (!enableMemoryMonitoring || !('memory' in performance)) {
@@ -112,7 +116,8 @@ export const usePerformanceMonitor = (config: PerformanceConfig = {}) => {
       const recent = history.slice(-5); // Last 5 measurements
       if (recent.length >= 2) {
         const oldestRecent = recent[0];
-        const timeDiff = (now.getTime() - oldestRecent.timestamp.getTime()) / 1000; // seconds
+        const timeDiff =
+          (now.getTime() - oldestRecent.timestamp.getTime()) / 1000; // seconds
         const usageDiff = currentUsage - oldestRecent.usage;
         memoryGrowthRate = timeDiff > 0 ? usageDiff / timeDiff : 0; // MB/second
 
@@ -128,8 +133,9 @@ export const usePerformanceMonitor = (config: PerformanceConfig = {}) => {
     }
 
     // Calculate GC frequency (approximate)
-    const currentGCCount = (performance as any).measureUserAgentSpecificMemory ?
-      Math.floor(currentUsage / 10) : lastGCCount; // Rough approximation
+    const currentGCCount = (performance as any).measureUserAgentSpecificMemory
+      ? Math.floor(currentUsage / 10)
+      : lastGCCount; // Rough approximation
     const gcFrequency = Math.max(0, currentGCCount - lastGCCount);
     setLastGCCount(currentGCCount);
 
@@ -146,39 +152,42 @@ export const usePerformanceMonitor = (config: PerformanceConfig = {}) => {
     };
   }, [enableMemoryMonitoring, lastGCCount]);
 
-  const checkMemoryThreshold = useCallback((memoryMetrics: MemoryMetrics) => {
-    if (!memoryAlertEnabled) return;
+  const checkMemoryThreshold = useCallback(
+    (memoryMetrics: MemoryMetrics) => {
+      if (!memoryAlertEnabled) return;
 
-    const { heapUsed, suspiciousGrowth, memoryGrowthRate } = memoryMetrics;
+      const { heapUsed, suspiciousGrowth, memoryGrowthRate } = memoryMetrics;
 
-    // Alert on memory threshold exceeded
-    if (heapUsed > memoryThreshold) {
-      toast({
-        title: 'Memory Usage Alert',
-        description: `Memory usage (${heapUsed.toFixed(1)}MB) exceeds threshold (${memoryThreshold}MB)`,
-        variant: 'destructive',
-      });
-    }
+      // Alert on memory threshold exceeded
+      if (heapUsed > memoryThreshold) {
+        toast({
+          title: 'Memory Usage Alert',
+          description: `Memory usage (${heapUsed.toFixed(1)}MB) exceeds threshold (${memoryThreshold}MB)`,
+          variant: 'destructive',
+        });
+      }
 
-    // Alert on suspicious memory growth
-    if (suspiciousGrowth && memoryGrowthRate > 1) {
-      toast({
-        title: 'Memory Leak Detected',
-        description: `Rapid memory growth detected: ${memoryGrowthRate.toFixed(2)}MB/second`,
-        variant: 'destructive',
-      });
-    }
+      // Alert on suspicious memory growth
+      if (suspiciousGrowth && memoryGrowthRate > 1) {
+        toast({
+          title: 'Memory Leak Detected',
+          description: `Rapid memory growth detected: ${memoryGrowthRate.toFixed(2)}MB/second`,
+          variant: 'destructive',
+        });
+      }
 
-    // Alert on heap limit approaching (90% of limit)
-    const heapUsagePercent = (heapUsed / memoryMetrics.heapLimit) * 100;
-    if (heapUsagePercent > 90) {
-      toast({
-        title: 'Memory Limit Warning',
-        description: `Heap usage at ${heapUsagePercent.toFixed(1)}% of limit`,
-        variant: 'destructive',
-      });
-    }
-  }, [memoryAlertEnabled, memoryThreshold]);
+      // Alert on heap limit approaching (90% of limit)
+      const heapUsagePercent = (heapUsed / memoryMetrics.heapLimit) * 100;
+      if (heapUsagePercent > 90) {
+        toast({
+          title: 'Memory Limit Warning',
+          description: `Heap usage at ${heapUsagePercent.toFixed(1)}% of limit`,
+          variant: 'destructive',
+        });
+      }
+    },
+    [memoryAlertEnabled, memoryThreshold]
+  );
 
   const analyzeMemoryTrends = useCallback(() => {
     if (!trendAnalysisEnabled || memoryHistoryRef.current.length < 3) {
@@ -194,13 +203,15 @@ export const usePerformanceMonitor = (config: PerformanceConfig = {}) => {
 
     const firstPoint = recentHistory[0];
     const lastPoint = recentHistory[recentHistory.length - 1];
-    const timeDiff = (lastPoint.timestamp.getTime() - firstPoint.timestamp.getTime()) / 1000; // seconds
+    const timeDiff =
+      (lastPoint.timestamp.getTime() - firstPoint.timestamp.getTime()) / 1000; // seconds
     const usageDiff = lastPoint.usage - firstPoint.usage;
     const growthRate = timeDiff > 0 ? usageDiff / timeDiff : 0; // MB/second
 
     // Determine trend direction
     let trend: 'stable' | 'growing' | 'declining' = 'stable';
-    if (Math.abs(growthRate) > 0.1) { // Threshold for significant change
+    if (Math.abs(growthRate) > 0.1) {
+      // Threshold for significant change
       trend = growthRate > 0 ? 'growing' : 'declining';
     }
 
@@ -222,7 +233,8 @@ export const usePerformanceMonitor = (config: PerformanceConfig = {}) => {
     });
 
     // Alert on concerning trends
-    if (trend === 'growing' && growthRate > 0.5) { // >0.5MB/second growth
+    if (trend === 'growing' && growthRate > 0.5) {
+      // >0.5MB/second growth
       toast({
         title: 'Memory Trend Alert',
         description: `Sustained memory growth detected: ${growthRate.toFixed(2)}MB/second`,
@@ -238,17 +250,27 @@ export const usePerformanceMonitor = (config: PerformanceConfig = {}) => {
     let score = 0;
 
     // Check for consistent growth
-    const growingTrends = recentTrends.filter(t => t.trend === 'growing').length;
+    const growingTrends = recentTrends.filter(
+      t => t.trend === 'growing'
+    ).length;
     score += (growingTrends / recentTrends.length) * 40; // Max 40 points
 
     // Check growth rate
-    const avgGrowthRate = recentTrends.reduce((sum, t) => sum + Math.max(0, t.growthRate), 0) / recentTrends.length;
+    const avgGrowthRate =
+      recentTrends.reduce((sum, t) => sum + Math.max(0, t.growthRate), 0) /
+      recentTrends.length;
     score += Math.min(avgGrowthRate * 20, 30); // Max 30 points
 
     // Check component/listener count correlation
-    const componentGrowth = recentTrends[recentTrends.length - 1].componentCount - recentTrends[0].componentCount;
-    const listenerGrowth = recentTrends[recentTrends.length - 1].eventListenerCount - recentTrends[0].eventListenerCount;
-    const intervalGrowth = recentTrends[recentTrends.length - 1].intervalCount - recentTrends[0].intervalCount;
+    const componentGrowth =
+      recentTrends[recentTrends.length - 1].componentCount -
+      recentTrends[0].componentCount;
+    const listenerGrowth =
+      recentTrends[recentTrends.length - 1].eventListenerCount -
+      recentTrends[0].eventListenerCount;
+    const intervalGrowth =
+      recentTrends[recentTrends.length - 1].intervalCount -
+      recentTrends[0].intervalCount;
 
     if (componentGrowth > 0 || listenerGrowth > 0 || intervalGrowth > 0) {
       score += 20; // Max 20 points
@@ -301,14 +323,20 @@ export const usePerformanceMonitor = (config: PerformanceConfig = {}) => {
           averageScrollTime:
             scrollTimesRef.current.length > 0
               ? scrollTimesRef.current.reduce((a, b) => a + b, 0) /
-              scrollTimesRef.current.length
+                scrollTimesRef.current.length
               : 0,
         };
       }
 
       setMetrics(newMetrics);
     },
-    [enableMemoryMonitoring, enableFPSMonitoring, enableScrollMonitoring, getMemoryMetrics, checkMemoryThreshold]
+    [
+      enableMemoryMonitoring,
+      enableFPSMonitoring,
+      enableScrollMonitoring,
+      getMemoryMetrics,
+      checkMemoryThreshold,
+    ]
   );
 
   const recordScrollEvent = useCallback(
@@ -356,7 +384,15 @@ export const usePerformanceMonitor = (config: PerformanceConfig = {}) => {
     }, memoryTrackingInterval);
 
     return () => clearInterval(interval);
-  }, [enableMemoryMonitoring, memoryAlertEnabled, trendAnalysisEnabled, memoryTrackingInterval, getMemoryMetrics, checkMemoryThreshold, analyzeMemoryTrends]);
+  }, [
+    enableMemoryMonitoring,
+    memoryAlertEnabled,
+    trendAnalysisEnabled,
+    memoryTrackingInterval,
+    getMemoryMetrics,
+    checkMemoryThreshold,
+    analyzeMemoryTrends,
+  ]);
 
   return {
     metrics,
@@ -377,7 +413,7 @@ export const usePerformanceMonitor = (config: PerformanceConfig = {}) => {
     registerTimeout: leakDetection.registerTimeout,
     unregisterTimeout: leakDetection.unregisterTimeout,
     getLeakStatistics: leakDetection.getLeakStatistics,
-    checkForLeaks: leakDetection.checkForLeaks
+    checkForLeaks: leakDetection.checkForLeaks,
   };
 };
 
@@ -569,7 +605,7 @@ export const useMemoryLeakDetection = () => {
     setComponentLifecycle(prev => ({
       ...prev,
       mounted: prev.mounted + 1,
-      active: prev.active + 1
+      active: prev.active + 1,
     }));
   }, []);
 
@@ -579,30 +615,36 @@ export const useMemoryLeakDetection = () => {
       setComponentLifecycle(prev => ({
         ...prev,
         unmounted: prev.unmounted + 1,
-        active: Math.max(0, prev.active - 1)
+        active: Math.max(0, prev.active - 1),
       }));
     }
   }, []);
 
-  const registerEventListener = useCallback((elementId: string, eventType: string) => {
-    const key = `${elementId}:${eventType}`;
-    const currentCount = eventListenerRefs.current.get(key) || 0;
-    eventListenerRefs.current.set(key, currentCount + 1);
-    setEventListenerCount(prev => prev + 1);
-  }, []);
+  const registerEventListener = useCallback(
+    (elementId: string, eventType: string) => {
+      const key = `${elementId}:${eventType}`;
+      const currentCount = eventListenerRefs.current.get(key) || 0;
+      eventListenerRefs.current.set(key, currentCount + 1);
+      setEventListenerCount(prev => prev + 1);
+    },
+    []
+  );
 
-  const unregisterEventListener = useCallback((elementId: string, eventType: string) => {
-    const key = `${elementId}:${eventType}`;
-    const currentCount = eventListenerRefs.current.get(key) || 0;
-    if (currentCount > 0) {
-      eventListenerRefs.current.set(key, currentCount - 1);
-      setEventListenerCount(prev => Math.max(0, prev - 1));
+  const unregisterEventListener = useCallback(
+    (elementId: string, eventType: string) => {
+      const key = `${elementId}:${eventType}`;
+      const currentCount = eventListenerRefs.current.get(key) || 0;
+      if (currentCount > 0) {
+        eventListenerRefs.current.set(key, currentCount - 1);
+        setEventListenerCount(prev => Math.max(0, prev - 1));
 
-      if (currentCount === 1) {
-        eventListenerRefs.current.delete(key);
+        if (currentCount === 1) {
+          eventListenerRefs.current.delete(key);
+        }
       }
-    }
-  }, []);
+    },
+    []
+  );
 
   const registerInterval = useCallback((intervalId: number) => {
     intervalRefs.current.add(intervalId);
@@ -639,7 +681,8 @@ export const useMemoryLeakDetection = () => {
     }
 
     // Check for event listener leaks
-    if (currentEventListenerCount > 50) { // Threshold for too many listeners
+    if (currentEventListenerCount > 50) {
+      // Threshold for too many listeners
       console.warn(
         `Potential event listener leak detected: ${currentEventListenerCount} listeners registered`
       );
@@ -651,7 +694,8 @@ export const useMemoryLeakDetection = () => {
     }
 
     // Check for interval leaks
-    if (currentIntervalCount > 10) { // Threshold for too many intervals
+    if (currentIntervalCount > 10) {
+      // Threshold for too many intervals
       console.warn(
         `Potential interval leak detected: ${currentIntervalCount} intervals active`
       );
@@ -673,7 +717,8 @@ export const useMemoryLeakDetection = () => {
     const { mounted, unmounted, active } = componentLifecycle;
     if (mounted > 0 && unmounted > 0) {
       const leakRatio = active / mounted;
-      if (leakRatio > 0.8 && mounted > 10) { // 80% of components still active after significant usage
+      if (leakRatio > 0.8 && mounted > 10) {
+        // 80% of components still active after significant usage
         console.warn(
           `Component lifecycle imbalance: ${active}/${mounted} components still active`
         );
@@ -716,6 +761,6 @@ export const useMemoryLeakDetection = () => {
     intervalCount,
     componentLifecycle,
     getLeakStatistics,
-    checkForLeaks
+    checkForLeaks,
   };
 };
