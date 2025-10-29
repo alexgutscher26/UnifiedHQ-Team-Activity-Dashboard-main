@@ -4,20 +4,37 @@ import { createEventListenerFixGenerator } from './event-listener-fix-generator'
 import { createTimerCleanupFixGenerator } from './timer-cleanup-fix-generator';
 import { createConnectionCleanupFixGenerator } from './connection-cleanup-fix-generator';
 
+/**
+ * Represents a generated fix for a memory leak
+ */
 export interface Fix {
+    /** Unique identifier for the fix */
     id: string;
+    /** Type of memory leak being fixed */
     type: LeakType;
+    /** File path where the fix is applied */
     file: string;
+    /** Original code before the fix */
     originalCode: string;
+    /** Fixed code after applying the transformation */
     fixedCode: string;
+    /** Human-readable description of what the fix does */
     description: string;
-    confidence: number; // 0-1
+    /** Confidence level of the fix (0-1, where 1 is highest confidence) */
+    confidence: number;
+    /** Whether the fix requires manual review before applying */
     requiresManualReview: boolean;
 }
 
+/**
+ * Result of attempting to generate a fix for a memory leak
+ */
 export interface FixGenerationResult {
+    /** Whether the fix generation was successful */
     success: boolean;
+    /** The generated fix (only present if success is true) */
     fix?: Fix;
+    /** Error message (only present if success is false) */
     error?: string;
 }
 
