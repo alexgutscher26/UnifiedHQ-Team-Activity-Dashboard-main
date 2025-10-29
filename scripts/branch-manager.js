@@ -17,10 +17,10 @@ class BranchManager {
   /**
    * Load branch management configuration.
    *
-   * This function constructs the path to the branch configuration YAML file and checks if it exists.
-   * If the file is found, it attempts to read and parse its contents. In case of a parsing error,
-   * a warning is logged, and the function falls back to the default configuration. If the file does
-   * not exist, it directly returns the default configuration.
+   * This function constructs the path to the branch configuration YAML file located in the project's
+   * `.github` directory. It checks for the existence of the file, and if found, reads and parses its
+   * contents. In case of a parsing error, a warning is logged, and the function falls back to the
+   * default configuration. If the file does not exist, it directly returns the default configuration.
    */
   loadConfig () {
     const configPath = path.join(
@@ -262,7 +262,7 @@ class BranchManager {
    * Clean up merged branches from both local and remote repositories.
    *
    * This function retrieves all merged branches excluding 'main' and 'develop', logs them, and attempts to delete each local branch.
-   * It also fetches merged remote branches and attempts to delete them. Errors during deletion are logged without stopping the process.
+   * It also fetches merged remote branches and attempts to delete them, logging any errors encountered during deletion without halting the process.
    *
    * @throws Error If there is an issue executing git commands or during the cleanup process.
    */
@@ -327,9 +327,9 @@ class BranchManager {
    * Validate branch naming convention.
    *
    * This function checks if the provided branchName adheres to the specified naming conventions.
-   * It verifies that the branch name starts with a valid type defined in the configuration,
-   * checks the length constraints, and ensures that it contains only allowed characters (lowercase letters, numbers, and hyphens).
-   * If any of these conditions are not met, appropriate error messages are logged.
+   * It verifies that the branch name starts with a valid type defined in the configuration, checks
+   * the length constraints, and ensures that it contains only allowed characters (lowercase letters,
+   * numbers, and hyphens). If any of these conditions are not met, appropriate error messages are logged.
    *
    * @param {string} branchName - The name of the branch to validate.
    */
@@ -483,9 +483,9 @@ class BranchManager {
    * Merge branch with proper workflow.
    *
    * This function merges a specified source branch into a target branch using a defined merge type.
-   * It first validates the existence of both branches, then switches to the target branch, pulls the latest changes,
-   * and performs the merge operation. Depending on the merge type, it either squashes the commits or merges them directly.
-   * Finally, it pushes the changes to the remote repository and logs the outcome.
+   * It validates the existence of both branches, switches to the target branch, pulls the latest changes,
+   * and performs the merge operation based on the specified merge type. Finally, it pushes the changes to
+   * the remote repository and logs the outcome.
    *
    * @param {string} sourceBranch - The name of the source branch to merge from.
    * @param {string} [targetBranch='develop'] - The name of the target branch to merge into.
