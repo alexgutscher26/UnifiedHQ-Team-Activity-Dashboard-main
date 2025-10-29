@@ -1,0 +1,470 @@
+// API Caching Middleware for Next.js
+
+import { NextRequest, NextResponse } from 'next/server';
+import { RedisCache, CacheKeyGenerator, TTLManager } from '@/lib/redis';
+
+export interface CacheConfig {
+  strategy: 'cache-first' | 'network-first' | 'stale-while-revalidate';
+  ttl?: number;
+  maxAge?: number;
+  staleWhileRevalidate?: number;
+  tags?: string[];
+  varyBy?: string[];
+  skipCache?: boolean;
+}
+
+export interface CacheContext {
+  key: string;
+  config: CacheConfig;
+  request: NextRequest;
+}
+
+// Default cache configurations for different content types
+const DEFAULT_CACHE_CONFIGS: Record<string, CacheConfig> = {
+  'application/json': {
+    strategy: 'stale-while-revalidate',
+    ttl: TTLManager.getTTL('API_MEDIUM'),
+    maxAge: 300, // 5 minutes browser cache
+    staleWhileRevalidate: 600, // 10 minutes stale-while-revalidate
+    tags: ['api'],
+  },
+  'text/html': {
+    strategy: 'network-first',
+    ttl: TTLManager.getTTL('API_FAST'),
+    maxAge: 60, // 1 minute browser cache
+    tags: ['html'],
+  },
+  'image/*': {
+    strategy: 'cache-first',
+    ttl: TTLManager.getTTL('CONFIG'),
+    maxAge: 86400, // 24 hours browser cache
+    tags: ['static', 'images'],
+  },
+  'text/css': {
+    strategy: 'cache-first',
+    ttl: TTLManager.getTTL('CONFIG'),
+    maxAge: 86400, // 24 hours browser cache
+    tags: ['static', 'css'],
+  },
+  'application/javascript': {
+    strategy: 'cache-first',
+    ttl: TTLManager.getTTL('CONFIG'),
+    maxAge: 86400, // 24 hours browser cache
+    tags: ['static', 'js'],
+  },
+};
+
+// Route-specific cache configurations
+const ROUTE_CACHE_CONFIGS: Record<string, CacheConfig> = {
+  '/api/github': {
+    strategy: 'stale-while-revalidate',
+    ttl: TTLManager.getTTL('GITHUB_REPOS'),
+    maxAge: 300,
+    staleWhileRevalidate: 900,
+    tags: ['github', 'api'],
+    varyBy: ['authorization'],
+  },
+  '/api/slack': {
+    strategy: 'stale-while-revalidate',
+    ttl: TTLManager.getTTL('SLACK_MESSAGES'),
+    maxAge: 180,
+    staleWhileRevalidate: 600,
+    tags: ['slack', 'api'],
+    varyBy: ['authorization'],
+  },
+  '/api/ai-summary': {
+    strategy: 'cache-first',
+    ttl: TTLManager.getTTL('AI_SUMMARY'),
+    maxAge: 1800,
+    tags: ['ai', 'summary', 'api'],
+    varyBy: ['authorization'],
+  },
+  '/api/user': {
+    strategy: 'network-first',
+    ttl: TTLManager.getTTL('USER_SESSION'),
+    maxAge: 300,
+    tags: ['user', 'api'],
+    varyBy: ['authorization'],
+  },
+};
+
+/**
+ * Generate cache key for API request
+ */
+function generateCacheKey(req: NextRequest, config: CacheConfig): string {
+  const url = new URL(req.url);
+  const pathname = url.pathname;
+  const searchParams = url.searchParams.toString();
+
+  // Base key components
+  const keyParts = [pathname];
+
+  if (searchParams) {
+    keyParts.push(searchParams);
+  }
+
+  // Add vary-by headers to key
+  if (config.varyBy) {
+    for (const header of config.varyBy) {
+      const value = req.headers.get(header);
+      if (value) {
+        // Hash sensitive headers like authorization
+        if (header.toLowerCase() === 'authorization') {
+          const hash = Buffer.from(value).toString('base64').slice(0, 8);
+          keyParts.push(`${header}:${hash}`);
+        } else {
+          keyParts.push(`${header}:${value}`);
+        }
+      }
+    }
+  }
+
+  return CacheKeyGenerator.api('response', ...keyParts);
+}
+
+/**
+ * Get cache configuration for request
+ */
+function getCacheConfig(req: NextRequest): CacheConfig {
+  const url = new URL(req.url);
+  const pathname = url.pathname;
+
+  // Check for route-specific configuration
+  for (const [route, config] of Object.entries(ROUTE_CACHE_CONFIGS)) {
+    if (pathname.startsWith(route)) {
+      return config;
+    }
+  }
+
+  // Check for content-type specific configuration
+  const acceptHeader = req.headers.get('accept') || '';
+  for (const [contentType, config] of Object.entries(DEFAULT_CACHE_CONFIGS)) {
+    if (acceptHeader.includes(contentType.replace('*', ''))) {
+      return config;
+    }
+  }
+
+  // Default configuration
+  return {
+    strategy: 'network-first',
+    ttl: TTLManager.getTTL('API_MEDIUM'),
+    maxAge: 300,
+    tags: ['api'],
+  };
+}
+
+/**
+ * Set cache-control headers based on configuration
+ */
+function setCacheHeaders(
+  response: NextResponse,
+  config: CacheConfig
+): NextResponse {
+  const cacheControl = [];
+
+  if (config.maxAge) {
+    cacheControl.push(`max-age=${config.maxAge}`);
+  }
+
+  if (config.staleWhileRevalidate) {
+    cacheControl.push(`stale-while-revalidate=${config.staleWhileRevalidate}`);
+  }
+
+  if (config.strategy === 'cache-first') {
+    cacheControl.push('public');
+  } else if (config.strategy === 'network-first') {
+    cacheControl.push('no-cache');
+  }
+
+  if (cacheControl.length > 0) {
+    response.headers.set('Cache-Control', cacheControl.join(', '));
+  }
+
+  // Add cache tags for CDN invalidation
+  if (config.tags && config.tags.length > 0) {
+    response.headers.set('Cache-Tag', config.tags.join(','));
+  }
+
+  // Add ETag for conditional requests
+  const etag = `"${Date.now()}-${Math.random().toString(36).substr(2, 9)}"`;
+  response.headers.set('ETag', etag);
+
+  return response;
+}
+
+/**
+ * Check if request should skip cache
+ */
+function shouldSkipCache(req: NextRequest, config: CacheConfig): boolean {
+  // Skip cache if explicitly configured
+  if (config.skipCache) {
+    return true;
+  }
+
+  // Skip cache for non-GET requests
+  if (req.method !== 'GET') {
+    return true;
+  }
+
+  // Skip cache if no-cache header is present
+  const cacheControl = req.headers.get('cache-control');
+  if (cacheControl && cacheControl.includes('no-cache')) {
+    return true;
+  }
+
+  // Skip cache for requests with authorization in development
+  if (
+    process.env.NODE_ENV === 'development' &&
+    req.headers.get('authorization')
+  ) {
+    const skipAuth = process.env.CACHE_SKIP_AUTH === 'true';
+    if (skipAuth) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Main caching middleware function
+ */
+export async function withCache(
+  req: NextRequest,
+  handler: (req: NextRequest) => Promise<NextResponse>
+): Promise<NextResponse> {
+  const config = getCacheConfig(req);
+
+  // Skip cache if conditions are met
+  if (shouldSkipCache(req, config)) {
+    const response = await handler(req);
+    return setCacheHeaders(response, config);
+  }
+
+  const cacheKey = generateCacheKey(req, config);
+
+  try {
+    // Try to get cached response
+    const cachedData = await RedisCache.get<{
+      body: string;
+      headers: Record<string, string>;
+      status: number;
+      timestamp: number;
+    }>(cacheKey);
+
+    if (cachedData) {
+      // Check if we should serve stale content
+      const age = Date.now() - cachedData.timestamp;
+      const isStale = config.ttl && age > config.ttl * 1000;
+
+      if (config.strategy === 'cache-first' || !isStale) {
+        // Serve from cache
+        const response = new NextResponse(cachedData.body, {
+          status: cachedData.status,
+          headers: cachedData.headers,
+        });
+
+        response.headers.set('X-Cache', 'HIT');
+        response.headers.set('X-Cache-Age', Math.floor(age / 1000).toString());
+
+        return setCacheHeaders(response, config);
+      }
+
+      if (config.strategy === 'stale-while-revalidate' && isStale) {
+        // Serve stale content and revalidate in background
+        const response = new NextResponse(cachedData.body, {
+          status: cachedData.status,
+          headers: cachedData.headers,
+        });
+
+        response.headers.set('X-Cache', 'STALE');
+        response.headers.set('X-Cache-Age', Math.floor(age / 1000).toString());
+
+        // Revalidate in background (fire and forget)
+        setImmediate(async () => {
+          try {
+            const freshResponse = await handler(req);
+            await cacheResponse(cacheKey, freshResponse, config);
+          } catch (error) {
+            console.error('Background revalidation failed:', error);
+          }
+        });
+
+        return setCacheHeaders(response, config);
+      }
+    }
+
+    // Cache miss or network-first strategy - fetch fresh data
+    const response = await handler(req);
+
+    // Cache the response if it's successful
+    if (response.status >= 200 && response.status < 300) {
+      await cacheResponse(cacheKey, response.clone(), config);
+    }
+
+    response.headers.set('X-Cache', 'MISS');
+
+    return setCacheHeaders(response, config);
+  } catch (error) {
+    console.error('Cache middleware error:', error);
+
+    // Fallback to handler without caching
+    const response = await handler(req);
+    response.headers.set('X-Cache', 'ERROR');
+
+    return setCacheHeaders(response, config);
+  }
+}
+
+/**
+ * Cache response data
+ */
+async function cacheResponse(
+  cacheKey: string,
+  response: NextResponse,
+  config: CacheConfig
+): Promise<void> {
+  try {
+    const body = await response.text();
+    const headers: Record<string, string> = {};
+
+    // Copy relevant headers
+    response.headers.forEach((value, key) => {
+      if (!key.startsWith('x-cache') && key !== 'set-cookie') {
+        headers[key] = value;
+      }
+    });
+
+    const cacheData = {
+      body,
+      headers,
+      status: response.status,
+      timestamp: Date.now(),
+    };
+
+    await RedisCache.set(cacheKey, cacheData, config.ttl);
+  } catch (error) {
+    console.error('Failed to cache response:', error);
+  }
+}
+
+/**
+ * Cache warming utility for frequently accessed endpoints
+ */
+export class CacheWarmer {
+  private static warmingQueue = new Set<string>();
+
+  /**
+   * Warm cache for specific endpoints
+   */
+  static async warmEndpoints(
+    endpoints: Array<{
+      url: string;
+      headers?: Record<string, string>;
+    }>
+  ): Promise<void> {
+    const promises = endpoints.map(async ({ url, headers = {} }) => {
+      if (this.warmingQueue.has(url)) {
+        return; // Already warming this endpoint
+      }
+
+      this.warmingQueue.add(url);
+
+      try {
+        const req = new NextRequest(url, {
+          method: 'GET',
+          headers: new Headers(headers),
+        });
+
+        // This would need to be called with the actual handler
+        // In practice, this would be integrated with the route handlers
+        console.log(`Warming cache for: ${url}`);
+      } catch (error) {
+        console.error(`Failed to warm cache for ${url}:`, error);
+      } finally {
+        this.warmingQueue.delete(url);
+      }
+    });
+
+    await Promise.allSettled(promises);
+  }
+
+  /**
+   * Warm cache for user-specific data
+   */
+  static async warmUserCache(userId: string): Promise<void> {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const endpoints = [
+      { url: `${baseUrl}/api/user/profile` },
+      { url: `${baseUrl}/api/github/repos` },
+      { url: `${baseUrl}/api/slack/channels` },
+    ];
+
+    await this.warmEndpoints(endpoints);
+  }
+
+  /**
+   * Warm cache for dashboard data
+   */
+  static async warmDashboardCache(): Promise<void> {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const endpoints = [
+      { url: `${baseUrl}/api/dashboard/summary` },
+      { url: `${baseUrl}/api/github/activity` },
+      { url: `${baseUrl}/api/slack/activity` },
+    ];
+
+    await this.warmEndpoints(endpoints);
+  }
+}
+
+/**
+ * Cache invalidation utilities
+ */
+export class CacheInvalidator {
+  /**
+   * Invalidate cache by tags
+   */
+  static async invalidateByTags(tags: string[]): Promise<void> {
+    const promises = tags.map(tag => RedisCache.invalidateByTag(tag));
+    await Promise.allSettled(promises);
+  }
+
+  /**
+   * Invalidate user-specific cache
+   */
+  static async invalidateUserCache(userId: string): Promise<void> {
+    const pattern = CacheKeyGenerator.user(userId, '*');
+    await RedisCache.deleteByPattern(pattern);
+  }
+
+  /**
+   * Invalidate GitHub cache
+   */
+  static async invalidateGitHubCache(identifier?: string): Promise<void> {
+    const pattern = identifier
+      ? CacheKeyGenerator.github(identifier, '*')
+      : CacheKeyGenerator.github('*', '*');
+    await RedisCache.deleteByPattern(pattern);
+  }
+
+  /**
+   * Invalidate Slack cache
+   */
+  static async invalidateSlackCache(identifier?: string): Promise<void> {
+    const pattern = identifier
+      ? CacheKeyGenerator.slack(identifier, '*')
+      : CacheKeyGenerator.slack('*', '*');
+    await RedisCache.deleteByPattern(pattern);
+  }
+
+  /**
+   * Invalidate AI summary cache
+   */
+  static async invalidateAISummaryCache(identifier?: string): Promise<void> {
+    const pattern = identifier
+      ? CacheKeyGenerator.aiSummary(identifier, '*')
+      : CacheKeyGenerator.aiSummary('*', '*');
+    await RedisCache.deleteByPattern(pattern);
+  }
+}
