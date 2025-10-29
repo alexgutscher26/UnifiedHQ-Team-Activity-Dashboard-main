@@ -186,7 +186,7 @@ export function TeamActivityContent({ className }: TeamActivityContentProps) {
       });
       console.log('[Team Activity Component] Stats data:', {
         success: statsData.success,
-        hasData: !!statsData.data,
+        hasData: Boolean(statsData.data),
       });
 
       const activitiesArray = activitiesData.data || [];

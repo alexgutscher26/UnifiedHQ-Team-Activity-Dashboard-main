@@ -880,7 +880,7 @@ export async function isGithubConnected(userId: string): Promise<boolean> {
       type: 'github',
     },
   });
-  return !!connection;
+  return Boolean(connection);
 }
 
 /**

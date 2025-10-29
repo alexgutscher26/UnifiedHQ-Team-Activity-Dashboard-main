@@ -77,7 +77,7 @@ export const AccessibleFormField: React.FC<AccessibleFormFieldProps> = ({
             description && descriptionId,
             error && errorId
           ),
-          'aria-invalid': !!error,
+          'aria-invalid': Boolean(error),
           'aria-required': required,
         } as any
       )}
@@ -259,7 +259,7 @@ export const AccessibleSelect: React.FC<AccessibleSelectProps> = ({
       <Select value={value} onValueChange={handleValueChange}>
         <SelectTrigger
           aria-describedby={cn(description && descriptionId, error && errorId)}
-          aria-invalid={!!error}
+          aria-invalid={Boolean(error)}
           aria-required={required}
         >
           <SelectValue placeholder={placeholder} />
@@ -339,7 +339,7 @@ export const AccessibleCheckbox: React.FC<AccessibleCheckboxProps> = ({
           checked={checked}
           onCheckedChange={handleCheckedChange}
           aria-describedby={cn(description && descriptionId, error && errorId)}
-          aria-invalid={!!error}
+          aria-invalid={Boolean(error)}
           aria-required={required}
         />
         <Label
@@ -441,7 +441,7 @@ export const AccessibleRadioGroup: React.FC<AccessibleRadioGroupProps> = ({
           value={value}
           onValueChange={handleValueChange}
           aria-describedby={cn(description && descriptionId, error && errorId)}
-          aria-invalid={!!error}
+          aria-invalid={Boolean(error)}
           aria-required={required}
           className='mt-2'
         >
@@ -527,7 +527,7 @@ export const AccessibleSwitch: React.FC<AccessibleSwitchProps> = ({
           checked={checked}
           onCheckedChange={handleCheckedChange}
           aria-describedby={cn(description && descriptionId, error && errorId)}
-          aria-invalid={!!error}
+          aria-invalid={Boolean(error)}
           aria-required={required}
         />
         <Label
@@ -635,7 +635,7 @@ export const AccessibleSlider: React.FC<AccessibleSliderProps> = ({
         max={max}
         step={step}
         aria-describedby={cn(description && descriptionId, error && errorId)}
-        aria-invalid={!!error}
+        aria-invalid={Boolean(error)}
         aria-required={required}
         aria-valuemin={min}
         aria-valuemax={max}
