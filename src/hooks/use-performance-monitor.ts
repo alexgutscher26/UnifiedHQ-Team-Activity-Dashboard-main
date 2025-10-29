@@ -52,7 +52,20 @@ export interface PerformanceConfig {
 }
 
 /**
- * Hook for monitoring component performance with enhanced memory leak detection
+ * Hook for monitoring component performance with enhanced memory leak detection.
+ *
+ * This hook provides functionality to monitor various performance metrics, including render time, memory usage, and scroll performance. It allows for memory monitoring, trend analysis, and alerts for memory thresholds and suspicious growth. The hook also integrates with a memory leak detection mechanism to track component lifecycles and event listeners, ensuring efficient resource management.
+ *
+ * @param config - Configuration options for performance monitoring.
+ * @param config.enableMemoryMonitoring - Flag to enable memory monitoring (default: true).
+ * @param config.enableFPSMonitoring - Flag to enable FPS monitoring (default: false).
+ * @param config.enableScrollMonitoring - Flag to enable scroll performance monitoring (default: true).
+ * @param config.sampleRate - The sampling rate for scroll events (default: 0.1).
+ * @param config.memoryThreshold - The memory usage threshold for alerts in MB (default: 100).
+ * @param config.memoryAlertEnabled - Flag to enable memory alert notifications (default: true).
+ * @param config.memoryTrackingInterval - The interval for tracking memory metrics in milliseconds (default: 5000).
+ * @param config.trendAnalysisEnabled - Flag to enable trend analysis for memory usage (default: true).
+ * @returns An object containing performance metrics and functions for monitoring and managing performance.
  */
 export const usePerformanceMonitor = (config: PerformanceConfig = {}) => {
   const {
@@ -547,7 +560,11 @@ export const performanceUtils = {
 };
 
 /**
- * Enhanced memory leak detection with runtime tracking
+ * Enhanced memory leak detection with runtime tracking.
+ *
+ * This hook monitors the registration and unregistration of components, event listeners, intervals, and timeouts to detect potential memory leaks. It maintains counts of each and checks for imbalances in component lifecycles, issuing warnings when thresholds are exceeded. The hook provides methods to register and unregister these entities, as well as to retrieve statistics about the current state of memory usage.
+ *
+ * @returns An object containing methods to register and unregister components, event listeners, intervals, and timeouts, as well as current counts and statistics related to memory leaks.
  */
 export const useMemoryLeakDetection = () => {
   const [leakCount, setLeakCount] = useState(0);
