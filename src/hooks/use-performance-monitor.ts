@@ -387,7 +387,7 @@ export const usePerformanceMonitor = (config: PerformanceConfig = {}) => {
           averageScrollTime:
             scrollTimesRef.current.length > 0
               ? scrollTimesRef.current.reduce((a, b) => a + b, 0) /
-              scrollTimesRef.current.length
+                scrollTimesRef.current.length
               : 0,
         };
       }

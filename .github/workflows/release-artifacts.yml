@@ -1,0 +1,943 @@
+name: Release Artifacts & Publishing
+
+on:
+  release:
+    types: [published]
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+      environment:
+        required: false
+        type: string
+        default: 'production'
+
+env:
+  NODE_VERSION: '20.x'
+  BUN_VERSION: 'latest'
+  REGISTRY_URL: 'ghcr.io'
+
+jobs:
+  # Job 1: Build Production Artifacts
+  build-production-artifacts:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      artifact-name: ${{ steps.artifact.outputs.name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          else
+            VERSION="${{ inputs.version }}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building artifacts for version: $VERSION"
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build application
+        run: |
+          echo "🏗️ Building production application..."
+          bun run build
+
+          # Verify build output
+          if [ ! -d ".next" ]; then
+            echo "❌ Build failed - .next directory not found"
+            exit 1
+          fi
+
+          echo "✅ Build completed successfully"
+
+      - name: Create production artifacts
+        id: artifact
+        run: |
+          echo "📦 Creating production artifacts..."
+
+          # Create artifacts directory
+          mkdir -p artifacts/production
+
+          # Copy essential files for production deployment
+          cp -r .next artifacts/production/
+          cp -r public artifacts/production/
+          cp package.json artifacts/production/
+          cp bun.lock artifacts/production/
+          cp next.config.mjs artifacts/production/
+
+          # Copy configuration files
+          if [ -f "tailwind.config.ts" ]; then
+            cp tailwind.config.ts artifacts/production/
+          fi
+          if [ -f "tsconfig.json" ]; then
+            cp tsconfig.json artifacts/production/
+          fi
+          if [ -f "postcss.config.mjs" ]; then
+            cp postcss.config.mjs artifacts/production/
+          fi
+
+          # Copy Prisma schema and generated client
+          if [ -d "prisma" ]; then
+            cp -r prisma artifacts/production/
+          fi
+
+          if [ -d "src/generated" ]; then
+            mkdir -p artifacts/production/src
+            cp -r src/generated artifacts/production/src/
+          fi
+
+          # Create production package.json with only production dependencies
+          node -e "
+            const pkg = require('./package.json');
+            const prodPkg = {
+              name: pkg.name,
+              version: pkg.version,
+              private: pkg.private,
+              type: pkg.type,
+              scripts: {
+                start: pkg.scripts.start,
+                'prisma:generate': 'prisma generate',
+                'prisma:migrate': 'prisma migrate deploy'
+              },
+              dependencies: pkg.dependencies,
+              engines: pkg.engines || { node: '>=18.0.0' }
+            };
+            require('fs').writeFileSync('artifacts/production/package.json', JSON.stringify(prodPkg, null, 2));
+          "
+
+          # Create production environment template
+          cat > artifacts/production/.env.example << 'EOF'
+          # Production Environment Variables
+          NODE_ENV=production
+          NEXT_TELEMETRY_DISABLED=1
+
+          # Database
+          DATABASE_URL=postgresql://user:password@host:5432/database
+
+          # Redis Cache
+          REDIS_URL=redis://host:6379
+
+          # Authentication
+          NEXTAUTH_SECRET=your-secret-key
+          NEXTAUTH_URL=https://your-domain.com
+
+          # GitHub Integration
+          GITHUB_CLIENT_ID=your-github-client-id
+          GITHUB_CLIENT_SECRET=your-github-client-secret
+
+          # Slack Integration
+          SLACK_CLIENT_ID=your-slack-client-id
+          SLACK_CLIENT_SECRET=your-slack-client-secret
+
+          # OpenAI Integration
+          OPENAI_API_KEY=your-openai-api-key
+
+          # Error Monitoring
+          SENTRY_DSN=your-sentry-dsn
+
+          # Deployment Platform
+          VERCEL_ENV=production
+          EOF
+
+          # Create deployment scripts
+          cat > artifacts/production/deploy.sh << 'EOF'
+          #!/bin/bash
+          set -e
+
+          echo "🚀 Starting UnifiedHQ deployment..."
+
+          # Install production dependencies
+          echo "📦 Installing dependencies..."
+          bun install --production --frozen-lockfile
+
+          # Run database migrations if needed
+          if [ -f "prisma/schema.prisma" ]; then
+            echo "🗄️ Running database migrations..."
+            bunx prisma migrate deploy
+            bunx prisma generate
+          fi
+
+          # Start the application
+          echo "🌟 Starting application..."
+          bun start
+          EOF
+
+          chmod +x artifacts/production/deploy.sh
+
+          # Create Docker-ready structure
+          cat > artifacts/production/Dockerfile << 'EOF'
+          FROM oven/bun:1-alpine AS base
+
+          # Install dependencies
+          FROM base AS deps
+          WORKDIR /app
+          COPY package.json bun.lock ./
+          RUN bun install --frozen-lockfile --production
+
+          # Build application
+          FROM base AS builder
+          WORKDIR /app
+          COPY package.json bun.lock ./
+          RUN bun install --frozen-lockfile
+          COPY . .
+          RUN bun run build
+
+          # Production image
+          FROM base AS runner
+          WORKDIR /app
+
+          ENV NODE_ENV=production
+          ENV NEXT_TELEMETRY_DISABLED=1
+
+          RUN addgroup --system --gid 1001 nodejs
+          RUN adduser --system --uid 1001 nextjs
+
+          COPY --from=builder /app/public ./public
+          COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+          COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+          USER nextjs
+
+          EXPOSE 3000
+          ENV PORT=3000
+          ENV HOSTNAME="0.0.0.0"
+
+          CMD ["bun", "server.js"]
+          EOF
+
+          # Create docker-compose for easy deployment
+          cat > artifacts/production/docker-compose.yml << 'EOF'
+          version: '3.8'
+
+          services:
+            unifiedhq:
+              build: .
+              ports:
+                - "3000:3000"
+              environment:
+                - NODE_ENV=production
+                - DATABASE_URL=${DATABASE_URL}
+                - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+                - NEXTAUTH_URL=${NEXTAUTH_URL}
+              restart: unless-stopped
+              
+            postgres:
+              image: postgres:15-alpine
+              environment:
+                - POSTGRES_DB=unifiedhq
+                - POSTGRES_USER=unifiedhq
+                - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+              volumes:
+                - postgres_data:/var/lib/postgresql/data
+              restart: unless-stopped
+              
+            redis:
+              image: redis:7-alpine
+              restart: unless-stopped
+              
+          volumes:
+            postgres_data:
+          EOF
+
+          # Create comprehensive deployment package
+          cd artifacts/production
+          tar -czf ../unifiedhq-${{ steps.version.outputs.version }}-production.tar.gz .
+          cd ../..
+
+          # Create source code archive
+          git archive --format=tar.gz --prefix=unifiedhq-${{ steps.version.outputs.version }}/ HEAD > artifacts/unifiedhq-${{ steps.version.outputs.version }}-source.tar.gz
+
+          # Generate checksums
+          cd artifacts
+          sha256sum *.tar.gz > checksums.txt
+          cd ..
+
+          echo "name=unifiedhq-${{ steps.version.outputs.version }}" >> $GITHUB_OUTPUT
+          echo "✅ Production artifacts created successfully"
+
+      - name: Upload production artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-artifacts-${{ steps.version.outputs.version }}
+          path: artifacts/
+          retention-days: 90
+
+      - name: Generate artifact manifest
+        run: |
+          echo "📋 Generating artifact manifest..."
+
+          cat > artifact-manifest.json << EOF
+          {
+            "version": "${{ steps.version.outputs.version }}",
+            "build_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "commit_sha": "${{ github.sha }}",
+            "commit_ref": "${{ github.ref }}",
+            "artifacts": {
+              "production_bundle": "unifiedhq-${{ steps.version.outputs.version }}-production.tar.gz",
+              "source_code": "unifiedhq-${{ steps.version.outputs.version }}-source.tar.gz",
+              "checksums": "checksums.txt"
+            },
+            "deployment": {
+              "docker_support": true,
+              "docker_compose": true,
+              "standalone": true
+            },
+            "requirements": {
+              "node_version": ">=18.0.0",
+              "bun_version": ">=1.0.0",
+              "database": "PostgreSQL 13+",
+              "cache": "Redis 6+"
+            }
+          }
+          EOF
+
+      - name: Upload manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: manifest-${{ steps.version.outputs.version }}
+          path: artifact-manifest.json
+          retention-days: 90
+
+  # Job 2: Build and Push Docker Image
+  build-docker-image:
+    runs-on: ubuntu-latest
+    needs: build-production-artifacts
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download production artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: production-artifacts-${{ needs.build-production-artifacts.outputs.version }}
+          path: artifacts/
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY_URL }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY_URL }}/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: artifacts/production
+          file: artifacts/production/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+  # Job 3: Deploy to Production Environment
+  deploy-production:
+    if: github.event_name == 'release' && !github.event.release.prerelease
+    runs-on: ubuntu-latest
+    needs: [build-production-artifacts, build-docker-image]
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Download production artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: production-artifacts-${{ needs.build-production-artifacts.outputs.version }}
+          path: artifacts/
+
+      - name: Download manifest
+        uses: actions/download-artifact@v4
+        with:
+          name: manifest-${{ needs.build-production-artifacts.outputs.version }}
+          path: .
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install Vercel CLI
+        run: bun add --global vercel@latest
+
+      - name: Verify artifacts
+        run: |
+          echo "🔍 Verifying artifacts..."
+
+          # Check if all required files exist
+          cd artifacts
+          if [ ! -f "unifiedhq-${{ needs.build-production-artifacts.outputs.version }}-production.tar.gz" ]; then
+            echo "❌ Production bundle not found"
+            exit 1
+          fi
+
+          # Verify checksums
+          if [ -f "checksums.txt" ]; then
+            sha256sum -c checksums.txt
+            echo "✅ Checksums verified"
+          fi
+
+          echo "✅ All artifacts verified successfully"
+
+      - name: Extract and prepare deployment
+        run: |
+          echo "📦 Extracting production artifacts..."
+          cd artifacts
+          tar -xzf unifiedhq-${{ needs.build-production-artifacts.outputs.version }}-production.tar.gz
+
+          # Verify extracted contents
+          if [ ! -d ".next" ]; then
+            echo "❌ Next.js build not found in artifacts"
+            exit 1
+          fi
+
+          if [ ! -f "package.json" ]; then
+            echo "❌ package.json not found in artifacts"
+            exit 1
+          fi
+
+          echo "✅ Artifacts extracted and verified"
+
+      - name: Setup production environment
+        run: |
+          cd artifacts
+          echo "🔧 Setting up production environment..."
+
+          # Create production environment file
+          cat > .env.production << EOF
+          NODE_ENV=production
+          NEXT_TELEMETRY_DISABLED=1
+          DATABASE_URL=${{ secrets.PRODUCTION_DATABASE_URL }}
+          REDIS_URL=${{ secrets.PRODUCTION_REDIS_URL }}
+          NEXTAUTH_SECRET=${{ secrets.PRODUCTION_NEXTAUTH_SECRET }}
+          NEXTAUTH_URL=${{ secrets.PRODUCTION_NEXTAUTH_URL }}
+          GITHUB_CLIENT_ID=${{ secrets.PRODUCTION_GITHUB_CLIENT_ID }}
+          GITHUB_CLIENT_SECRET=${{ secrets.PRODUCTION_GITHUB_CLIENT_SECRET }}
+          SLACK_CLIENT_ID=${{ secrets.PRODUCTION_SLACK_CLIENT_ID }}
+          SLACK_CLIENT_SECRET=${{ secrets.PRODUCTION_SLACK_CLIENT_SECRET }}
+          OPENAI_API_KEY=${{ secrets.PRODUCTION_OPENAI_API_KEY }}
+          SENTRY_DSN=${{ secrets.PRODUCTION_SENTRY_DSN }}
+          VERCEL_ENV=production
+          EOF
+
+      - name: Deploy to Production
+        id: deploy
+        run: |
+          echo "🚀 Deploying UnifiedHQ v${{ needs.build-production-artifacts.outputs.version }} to production..."
+          cd artifacts
+
+          # Pull Vercel environment information
+          vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+          # Deploy to production using prebuilt artifacts
+          DEPLOYMENT_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+
+          if [ -z "$DEPLOYMENT_URL" ]; then
+            echo "❌ Deployment failed - no URL returned"
+            exit 1
+          fi
+
+          echo "url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+          echo "deployment-id=$(echo "$DEPLOYMENT_URL" | sed 's/https:\/\///' | cut -d'.' -f1)" >> $GITHUB_OUTPUT
+          echo "✅ Deployment completed successfully"
+          echo "Production URL: $DEPLOYMENT_URL"
+
+          # Create deployment record
+          cat > deployment-record.json << EOF
+          {
+            "version": "${{ needs.build-production-artifacts.outputs.version }}",
+            "deployment_url": "$DEPLOYMENT_URL",
+            "deployment_time": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "commit_sha": "${{ github.sha }}",
+            "workflow_run": "${{ github.run_id }}",
+            "artifacts_used": {
+              "production_bundle": "unifiedhq-${{ needs.build-production-artifacts.outputs.version }}-production.tar.gz",
+              "docker_image": "ghcr.io/${{ github.repository_owner }}/unifiedhq:${{ needs.build-production-artifacts.outputs.version }}"
+            }
+          }
+          EOF
+
+      - name: Run database migrations
+        run: |
+          echo "🗄️ Running database migrations..."
+          cd artifacts
+
+          # Generate Prisma client for production
+          if [ -f "prisma/schema.prisma" ]; then
+            bunx prisma generate
+            bunx prisma migrate deploy
+            echo "✅ Database migrations completed"
+          else
+            echo "ℹ️ No Prisma schema found, skipping migrations"
+          fi
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+
+      - name: Warm up application
+        run: |
+          echo "🔥 Warming up application..."
+          PRODUCTION_URL="${{ steps.deploy.outputs.url }}"
+
+          # Wait for deployment to be ready
+          sleep 30
+
+          # Warm up critical endpoints
+          curl -f "$PRODUCTION_URL/api/health" || echo "⚠️ Health endpoint warming failed"
+          curl -f "$PRODUCTION_URL/dashboard" || echo "⚠️ Dashboard warming failed"
+          curl -f "$PRODUCTION_URL/" || echo "⚠️ Home page warming failed"
+
+          echo "✅ Application warmed up"
+
+      - name: Run comprehensive deployment verification
+        run: |
+          echo "🧪 Running comprehensive deployment verification..."
+          cd artifacts
+
+          # Run the deployment verification script
+          PRODUCTION_URL="${{ steps.deploy.outputs.url }}" node ../scripts/deployment-verification.js --verbose
+
+          if [ $? -eq 0 ]; then
+            echo "✅ Deployment verification passed"
+          else
+            echo "❌ Deployment verification failed"
+            exit 1
+          fi
+
+      - name: Update deployment status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✅ Production deployment successful!"
+            echo "Version: ${{ needs.build-production-artifacts.outputs.version }}"
+            echo "URL: ${{ steps.deploy.outputs.url }}"
+          else
+            echo "❌ Production deployment failed!"
+            exit 1
+          fi
+
+  # Job 4: Publish Release Assets
+  publish-release-assets:
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    needs: build-production-artifacts
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download production artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: production-artifacts-${{ needs.build-production-artifacts.outputs.version }}
+          path: artifacts/
+
+      - name: Download manifest
+        uses: actions/download-artifact@v4
+        with:
+          name: manifest-${{ needs.build-production-artifacts.outputs.version }}
+          path: .
+
+      - name: Generate comprehensive release notes
+        id: release_notes
+        run: |
+          VERSION="${{ needs.build-production-artifacts.outputs.version }}"
+
+          # Create detailed release notes
+          cat > release-notes.md << EOF
+          # UnifiedHQ v${VERSION}
+
+          ## 🚀 What's New
+
+          This release includes the latest features and improvements for UnifiedHQ.
+
+          ## 📦 Artifacts
+
+          - **Production Bundle**: \`unifiedhq-${VERSION}-production.tar.gz\`
+          - **Source Code**: \`unifiedhq-${VERSION}-source.tar.gz\`
+          - **Docker Image**: \`ghcr.io/${{ github.repository }}:${VERSION}\`
+          - **Checksums**: \`checksums.txt\`
+
+          ## 🔧 Installation
+
+          ### Using Production Bundle
+          \`\`\`bash
+          # Download and extract
+          wget https://github.com/${{ github.repository }}/releases/download/v${VERSION}/unifiedhq-${VERSION}-production.tar.gz
+          tar -xzf unifiedhq-${VERSION}-production.tar.gz
+          cd unifiedhq-${VERSION}
+
+          # Install dependencies
+          bun install --production
+
+          # Setup environment
+          cp .env.example .env
+          # Edit .env with your configuration
+
+          # Run database migrations
+          bun run prisma:migrate
+
+          # Start the application
+          bun start
+          \`\`\`
+
+          ### Using Docker
+          \`\`\`bash
+          docker run -p 3000:3000 ghcr.io/${{ github.repository }}:${VERSION}
+          \`\`\`
+
+          ### Using Docker Compose
+          \`\`\`bash
+          # Download docker-compose.yml from the release
+          wget https://github.com/${{ github.repository }}/releases/download/v${VERSION}/unifiedhq-${VERSION}-production.tar.gz
+          tar -xzf unifiedhq-${VERSION}-production.tar.gz docker-compose.yml
+          docker-compose up -d
+          \`\`\`
+
+          ## 🔍 Verification
+
+          Verify the integrity of downloaded files using the provided checksums:
+          \`\`\`bash
+          sha256sum -c checksums.txt
+          \`\`\`
+
+          ## 📋 System Requirements
+
+          - Node.js 18.0.0 or higher
+          - Bun 1.0.0 or higher
+          - PostgreSQL 13 or higher
+          - Redis 6 or higher
+
+          ## 🔗 Links
+
+          - [Documentation](https://github.com/${{ github.repository }}/blob/main/README.md)
+          - [Installation Guide](https://github.com/${{ github.repository }}/blob/main/docs/)
+          - [Docker Hub](https://ghcr.io/${{ github.repository }})
+
+          ---
+
+          **Full Changelog**: https://github.com/${{ github.repository }}/compare/v${VERSION}...HEAD
+          EOF
+
+      - name: Create release asset index
+        run: |
+          VERSION="${{ needs.build-production-artifacts.outputs.version }}"
+
+          # Create an index of all release assets
+          cat > release-index.json << EOF
+          {
+            "version": "${VERSION}",
+            "release_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "assets": {
+              "production_bundle": {
+                "filename": "unifiedhq-${VERSION}-production.tar.gz",
+                "description": "Complete production deployment bundle",
+                "size": "$(stat -c%s artifacts/unifiedhq-${VERSION}-production.tar.gz 2>/dev/null || echo 'unknown')",
+                "checksum": "$(sha256sum artifacts/unifiedhq-${VERSION}-production.tar.gz | cut -d' ' -f1)"
+              },
+              "source_code": {
+                "filename": "unifiedhq-${VERSION}-source.tar.gz", 
+                "description": "Complete source code archive",
+                "size": "$(stat -c%s artifacts/unifiedhq-${VERSION}-source.tar.gz 2>/dev/null || echo 'unknown')",
+                "checksum": "$(sha256sum artifacts/unifiedhq-${VERSION}-source.tar.gz | cut -d' ' -f1)"
+              },
+              "docker_image": {
+                "registry": "ghcr.io/${{ github.repository }}",
+                "tags": ["${VERSION}", "latest"],
+                "description": "Docker container image"
+              },
+              "checksums": {
+                "filename": "checksums.txt",
+                "description": "SHA256 checksums for all artifacts"
+              },
+              "manifest": {
+                "filename": "artifact-manifest.json",
+                "description": "Detailed artifact and deployment information"
+              }
+            },
+            "deployment": {
+              "production_url": "https://unifiedhq.com",
+              "docker_compose": true,
+              "kubernetes": false,
+              "vercel": true
+            }
+          }
+          EOF
+
+      - name: Upload release assets to GitHub
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/unifiedhq-${{ needs.build-production-artifacts.outputs.version }}-production.tar.gz
+            artifacts/unifiedhq-${{ needs.build-production-artifacts.outputs.version }}-source.tar.gz
+            artifacts/checksums.txt
+            artifact-manifest.json
+            release-index.json
+          body_path: release-notes.md
+          draft: false
+          prerelease: ${{ contains(github.event.release.tag_name, 'rc') || contains(github.event.release.tag_name, 'beta') || contains(github.event.release.tag_name, 'alpha') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to GitHub Packages
+        run: |
+          echo "📦 Publishing artifacts to GitHub Packages..."
+          VERSION="${{ needs.build-production-artifacts.outputs.version }}"
+
+          # Create a simple package.json for GitHub Packages
+          cat > package-registry.json << EOF
+          {
+            "name": "@${{ github.repository_owner }}/unifiedhq",
+            "version": "${VERSION}",
+            "description": "UnifiedHQ team activity dashboard",
+            "main": "index.js",
+            "repository": {
+              "type": "git",
+              "url": "git+https://github.com/${{ github.repository }}.git"
+            },
+            "publishConfig": {
+              "registry": "https://npm.pkg.github.com"
+            }
+          }
+          EOF
+
+          # Note: Actual npm publishing would require additional setup
+          echo "ℹ️ GitHub Packages publishing configured (requires npm setup)"
+
+      - name: Update release statistics
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const version = '${{ needs.build-production-artifacts.outputs.version }}';
+
+            // Update release with additional metadata
+            try {
+              const release = await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag: `v${version}`
+              });
+              
+              // Add deployment badge to release
+              const deploymentBadge = `\n\n[![Deployment Status](https://img.shields.io/badge/deployment-success-brightgreen)](https://unifiedhq.com)`;
+              
+              await github.rest.repos.updateRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: release.data.id,
+                body: release.data.body + deploymentBadge
+              });
+              
+              console.log('✅ Release updated with deployment information');
+            } catch (error) {
+              console.log('⚠️ Could not update release:', error.message);
+            }
+
+  # Job 5: Rollback on Deployment Failure
+  rollback-deployment:
+    if: failure() && needs.deploy-production.result == 'failure'
+    runs-on: ubuntu-latest
+    needs: [build-production-artifacts, deploy-production]
+    environment:
+      name: production-rollback
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get previous release
+        id: previous
+        run: |
+          VERSION="${{ needs.build-production-artifacts.outputs.version }}"
+
+          # Get the previous stable release
+          PREVIOUS_RELEASE=$(git tag -l --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$'$' | grep -v "v${VERSION}" | head -1)
+
+          if [ -z "$PREVIOUS_RELEASE" ]; then
+            echo "❌ No previous release found for rollback"
+            exit 1
+          fi
+
+          echo "previous-release=$PREVIOUS_RELEASE" >> $GITHUB_OUTPUT
+          echo "Previous release for rollback: $PREVIOUS_RELEASE"
+
+      - name: Trigger rollback deployment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const previousRelease = '${{ steps.previous.outputs.previous-release }}';
+
+            console.log(`🔄 Triggering rollback to ${previousRelease}`);
+
+            // Trigger the production deployment workflow for the previous release
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'deploy-production.yml',
+              ref: 'main',
+              inputs: {
+                release_tag: previousRelease,
+                skip_approval: 'true'
+              }
+            });
+
+            console.log('✅ Rollback deployment triggered');
+
+      - name: Create rollback issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const version = '${{ needs.build-production-artifacts.outputs.version }}';
+            const previousRelease = '${{ steps.previous.outputs.previous-release }}';
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🔄 Production Rollback - v${version} → ${previousRelease}`,
+              body: `## Automatic Rollback Triggered
+              
+              **Failed Release:** v${version}
+              **Rolled Back To:** ${previousRelease}
+              **Trigger:** Production deployment failure
+              **Workflow:** [View Details](${context.payload.repository.html_url}/actions/runs/${context.runId})
+              
+              ## Action Required
+              
+              1. ✅ Rollback deployment has been automatically triggered
+              2. 🔍 Investigate the deployment failure
+              3. 🛠️ Fix the issues in the failed release
+              4. 🧪 Test the fixes thoroughly
+              5. 🚀 Create a new release when ready
+              
+              ## Investigation Checklist
+              
+              - [ ] Review deployment logs
+              - [ ] Check for configuration issues
+              - [ ] Verify database migrations
+              - [ ] Test in staging environment
+              - [ ] Validate all integrations
+              
+              **Priority:** High
+              **Assignees:** @${{ github.actor }}`,
+              labels: ['deployment', 'rollback', 'production', 'urgent'],
+              assignees: ['${{ github.actor }}']
+            });
+
+  # Job 6: Notify Stakeholders
+  notify-release:
+    if: always() && github.event_name == 'release'
+    runs-on: ubuntu-latest
+    needs: [deploy-production, publish-release-assets, rollback-deployment]
+    steps:
+      - name: Prepare notification
+        id: notification
+        run: |
+          VERSION="${{ needs.build-production-artifacts.outputs.version }}"
+          STATUS="${{ needs.deploy-production.result }}"
+
+          if [ "$STATUS" = "success" ]; then
+            MESSAGE="🎉 UnifiedHQ v$VERSION has been successfully released and deployed to production!"
+            COLOR="good"
+          else
+            MESSAGE="⚠️ UnifiedHQ v$VERSION release completed, but deployment encountered issues."
+            COLOR="warning"
+          fi
+
+          echo "message=$MESSAGE" >> $GITHUB_OUTPUT
+          echo "color=$COLOR" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Notify Slack
+        if: vars.SLACK_WEBHOOK_URL
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              "text": "${{ steps.notification.outputs.message }}",
+              "attachments": [
+                {
+                  "color": "${{ steps.notification.outputs.color }}",
+                  "fields": [
+                    {
+                      "title": "Version",
+                      "value": "${{ steps.notification.outputs.version }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Repository",
+                      "value": "${{ github.repository }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Release URL",
+                      "value": "${{ github.event.release.html_url }}",
+                      "short": false
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ vars.SLACK_WEBHOOK_URL }}
+
+      - name: Create deployment summary
+        run: |
+          echo "## 🚀 Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ steps.notification.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ needs.deploy-production.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Release URL:** ${{ github.event.release.html_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifacts Published" >> $GITHUB_STEP_SUMMARY
+          echo "- Production Bundle" >> $GITHUB_STEP_SUMMARY
+          echo "- Source Code Archive" >> $GITHUB_STEP_SUMMARY
+          echo "- Docker Image" >> $GITHUB_STEP_SUMMARY
+          echo "- Deployment Manifest" >> $GITHUB_STEP_SUMMARY

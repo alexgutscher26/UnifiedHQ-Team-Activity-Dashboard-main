@@ -1,0 +1,335 @@
+name: Security Scanning
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run weekly security scan on Sundays at 2 AM UTC
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  codeql-analysis:
+    name: CodeQL Security Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['javascript']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: +security-and-quality
+          config: |
+            name: "CodeQL Config"
+            queries:
+              - uses: security-and-quality
+              - uses: security-extended
+            paths-ignore:
+              - "node_modules"
+              - ".next"
+              - "dist"
+              - "build"
+            paths:
+              - "src"
+              - "prisma"
+              - "scripts"
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: bunx prisma generate
+
+      - name: Build application for analysis
+        run: |
+          echo "DATABASE_URL=postgresql://test:test@localhost:5432/test" >> .env
+          echo "REDIS_URL=redis://localhost:6379" >> .env
+          echo "NEXTAUTH_SECRET=test-secret" >> .env
+          echo "NEXTAUTH_URL=http://localhost:3000" >> .env
+          bun run build
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:${{matrix.language}}'
+          upload: true
+
+      - name: Comment PR with CodeQL results
+        if: github.event_name == 'pull_request' && failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🔒 **CodeQL Security Analysis Failed**\n\nCodeQL has detected potential security vulnerabilities in your code. Please review the Security tab for detailed findings and fix any critical issues before merging.'
+            })
+
+  dependency-vulnerability-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run Bun audit
+        run: bun audit --audit-level moderate
+        continue-on-error: true
+
+      - name: OWASP Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'UnifiedHQ'
+          path: '.'
+          format: 'SARIF'
+          args: >
+            --enableRetired
+            --enableExperimental
+            --nodeAuditSkipDevDependencies
+            --nodePackageSkipDevDependencies
+            --exclude "**/node_modules/**"
+            --exclude "**/.next/**"
+            --exclude "**/dist/**"
+            --exclude "**/build/**"
+
+      - name: Upload OWASP results to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: reports/dependency-check-report.sarif
+          category: dependency-check
+
+      - name: Upload OWASP report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: reports/
+          retention-days: 30
+
+      - name: Check for critical vulnerabilities
+        run: |
+          if [ -f "reports/dependency-check-report.json" ]; then
+            CRITICAL_COUNT=$(jq '.dependencies[] | select(.vulnerabilities[]?.severity == "CRITICAL") | length' reports/dependency-check-report.json | wc -l)
+            HIGH_COUNT=$(jq '.dependencies[] | select(.vulnerabilities[]?.severity == "HIGH") | length' reports/dependency-check-report.json | wc -l)
+            
+            echo "Critical vulnerabilities found: $CRITICAL_COUNT"
+            echo "High vulnerabilities found: $HIGH_COUNT"
+            
+            if [ "$CRITICAL_COUNT" -gt 0 ]; then
+              echo "❌ Critical vulnerabilities detected - blocking merge"
+              exit 1
+            fi
+            
+            if [ "$HIGH_COUNT" -gt 5 ]; then
+              echo "⚠️ Too many high-severity vulnerabilities detected"
+              exit 1
+            fi
+          fi
+
+      - name: Comment PR with vulnerability results
+        if: github.event_name == 'pull_request' && failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🚨 **Critical Security Vulnerabilities Detected**\n\nDependency vulnerability scanning has found critical or high-severity vulnerabilities. Please review the Security tab and update vulnerable dependencies before merging.\n\n**Action Required:**\n- Check the dependency-check report artifact\n- Update vulnerable packages\n- Run `bun audit` locally to verify fixes'
+            })
+
+  secret-scanning:
+    name: Secret Detection and SAST
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install TruffleHog
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
+
+      - name: Run TruffleHog secret scan
+        run: |
+          trufflehog git file://. --branch=${{ github.ref_name }} --only-verified --json > trufflehog-results.json || true
+
+      - name: Process TruffleHog results
+        run: |
+          if [ -s trufflehog-results.json ]; then
+            echo "🔍 Secrets detected by TruffleHog:"
+            cat trufflehog-results.json | jq -r '.DetectorName + ": " + .Raw[:50] + "..."' || true
+            
+            # Check for verified secrets
+            VERIFIED_SECRETS=$(cat trufflehog-results.json | jq -r 'select(.Verified == true)' | wc -l)
+            if [ "$VERIFIED_SECRETS" -gt 0 ]; then
+              echo "❌ Verified secrets found - blocking merge"
+              exit 1
+            fi
+          else
+            echo "✅ No secrets detected"
+          fi
+
+      - name: Install Semgrep
+        run: |
+          python3 -m pip install semgrep
+
+      - name: Run Semgrep SAST scan
+        run: |
+          semgrep --config=auto --json --output=semgrep-results.json src/ || true
+
+      - name: Process Semgrep results
+        run: |
+          if [ -f semgrep-results.json ]; then
+            CRITICAL_ISSUES=$(cat semgrep-results.json | jq '.results[] | select(.extra.severity == "ERROR")' | wc -l)
+            WARNING_ISSUES=$(cat semgrep-results.json | jq '.results[] | select(.extra.severity == "WARNING")' | wc -l)
+            
+            echo "Critical SAST issues: $CRITICAL_ISSUES"
+            echo "Warning SAST issues: $WARNING_ISSUES"
+            
+            if [ "$CRITICAL_ISSUES" -gt 0 ]; then
+              echo "❌ Critical SAST issues detected"
+              cat semgrep-results.json | jq -r '.results[] | select(.extra.severity == "ERROR") | .message + " (" + .path + ":" + (.start.line | tostring) + ")"'
+              exit 1
+            fi
+          fi
+
+      - name: Upload security scan artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-scan-results
+          path: |
+            trufflehog-results.json
+            semgrep-results.json
+          retention-days: 30
+
+      - name: Comment PR with secret/SAST results
+        if: github.event_name == 'pull_request' && failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🔐 **Security Issues Detected**\n\nSecret scanning or static analysis has detected security issues:\n\n- **Secrets**: Verified secrets or API keys may be exposed in your code\n- **SAST**: Critical security vulnerabilities found in code patterns\n\n**Action Required:**\n- Review the security-scan-results artifact\n- Remove any exposed secrets and rotate compromised credentials\n- Fix critical security issues identified by static analysis\n- Consider using environment variables or GitHub Secrets for sensitive data'
+            })
+
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [codeql-analysis, dependency-vulnerability-scan, secret-scanning]
+    if: always()
+    steps:
+      - name: Security gate check
+        run: |
+          if [[ "${{ needs.codeql-analysis.result }}" != "success" ]]; then
+            echo "❌ CodeQL analysis failed"
+            FAILED=true
+          fi
+          if [[ "${{ needs.dependency-vulnerability-scan.result }}" != "success" ]]; then
+            echo "❌ Dependency vulnerability scan failed"
+            FAILED=true
+          fi
+          if [[ "${{ needs.secret-scanning.result }}" != "success" ]]; then
+            echo "❌ Secret scanning failed"
+            FAILED=true
+          fi
+
+          if [[ "$FAILED" == "true" ]]; then
+            echo "🚨 Security gate failed - critical security issues detected"
+            exit 1
+          else
+            echo "✅ All security checks passed"
+          fi
+
+      - name: Comment PR with security summary
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const codeqlResult = '${{ needs.codeql-analysis.result }}';
+            const depResult = '${{ needs.dependency-vulnerability-scan.result }}';
+            const secretResult = '${{ needs.secret-scanning.result }}';
+
+            let status = '✅';
+            let message = 'All security checks passed successfully!';
+
+            if (codeqlResult !== 'success' || depResult !== 'success' || secretResult !== 'success') {
+              status = '❌';
+              message = 'Security issues detected. Please review and fix before merging.';
+            }
+
+            const body = `${status} **Security Scan Summary**\n\n` +
+              `- CodeQL Analysis: ${codeqlResult === 'success' ? '✅' : '❌'}\n` +
+              `- Dependency Scan: ${depResult === 'success' ? '✅' : '❌'}\n` +
+              `- Secret/SAST Scan: ${secretResult === 'success' ? '✅' : '❌'}\n\n` +
+              `${message}`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });

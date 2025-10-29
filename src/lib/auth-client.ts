@@ -59,7 +59,7 @@ class RateLimitManager {
 
   subscribe(listener: (state: RateLimitState) => void) {
     if (this.isDestroyed) {
-      return () => { }; // Return no-op unsubscribe function
+      return () => {}; // Return no-op unsubscribe function
     }
 
     this.listeners.push(listener);
@@ -171,7 +171,7 @@ class ToastManager {
 
   subscribe(listener: (toasts: typeof this.toasts) => void) {
     if (this.isDestroyed) {
-      return () => { }; // Return no-op unsubscribe function
+      return () => {}; // Return no-op unsubscribe function
     }
 
     this.listeners.push(listener);

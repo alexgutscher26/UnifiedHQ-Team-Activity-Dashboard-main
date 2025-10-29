@@ -2,7 +2,7 @@
 
 /**
  * Memory Leak Detection CLI Tool
- * 
+ *
  * Command-line interface for running memory leak detection and applying fixes
  * Integrates with the existing memory leak detection system
  */
@@ -17,160 +17,173 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Import memory leak detection system
-const { createMemoryLeakDetector, cliScan, quickScan } = await import('../src/lib/memory-leak-detection/index.js');
+const { createMemoryLeakDetector, cliScan, quickScan } = await import(
+  '../src/lib/memory-leak-detection/index.js'
+);
 
 // CLI version
 const CLI_VERSION = '1.0.0';
 
 // Color codes for terminal output
 const colors = {
-    reset: '\x1b[0m',
-    bright: '\x1b[1m',
-    red: '\x1b[31m',
-    green: '\x1b[32m',
-    yellow: '\x1b[33m',
-    blue: '\x1b[34m',
-    magenta: '\x1b[35m',
-    cyan: '\x1b[36m',
+  reset: '\x1b[0m',
+  bright: '\x1b[1m',
+  red: '\x1b[31m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  blue: '\x1b[34m',
+  magenta: '\x1b[35m',
+  cyan: '\x1b[36m',
 };
 
 // Utility functions
 function colorize(text, color) {
-    return `${colors[color]}${text}${colors.reset}`;
+  return `${colors[color]}${text}${colors.reset}`;
 }
 
 function logSuccess(message) {
-    console.log(colorize(`✓ ${message}`, 'green'));
+  console.log(colorize(`✓ ${message}`, 'green'));
 }
 
 function logError(message) {
-    console.error(colorize(`✗ ${message}`, 'red'));
+  console.error(colorize(`✗ ${message}`, 'red'));
 }
 
 function logWarning(message) {
-    console.warn(colorize(`⚠ ${message}`, 'yellow'));
+  console.warn(colorize(`⚠ ${message}`, 'yellow'));
 }
 
 function logInfo(message) {
-    console.log(colorize(`ℹ ${message}`, 'blue'));
+  console.log(colorize(`ℹ ${message}`, 'blue'));
 }
 
 // Format leak report for display
 function formatLeakReport(report) {
-    const severityColor = {
-        critical: 'red',
-        high: 'red',
-        medium: 'yellow',
-        low: 'cyan'
-    };
+  const severityColor = {
+    critical: 'red',
+    high: 'red',
+    medium: 'yellow',
+    low: 'cyan',
+  };
 
-    return [
-        colorize(`${report.severity.toUpperCase()}`, severityColor[report.severity]),
-        colorize(`${report.type}`, 'bright'),
-        `${report.file}:${report.line}:${report.column}`,
-        report.description
-    ].join(' | ');
+  return [
+    colorize(
+      `${report.severity.toUpperCase()}`,
+      severityColor[report.severity]
+    ),
+    colorize(`${report.type}`, 'bright'),
+    `${report.file}:${report.line}:${report.column}`,
+    report.description,
+  ].join(' | ');
 }
 
 // Generate detailed report
 function generateDetailedReport(reports) {
-    if (reports.length === 0) {
-        logSuccess('No memory leaks detected!');
-        return;
+  if (reports.length === 0) {
+    logSuccess('No memory leaks detected!');
+    return;
+  }
+
+  console.log(colorize('\n📊 Memory Leak Detection Report', 'bright'));
+  console.log('='.repeat(50));
+
+  // Summary
+  const summary = {
+    total: reports.length,
+    critical: reports.filter(r => r.severity === 'critical').length,
+    high: reports.filter(r => r.severity === 'high').length,
+    medium: reports.filter(r => r.severity === 'medium').length,
+    low: reports.filter(r => r.severity === 'low').length,
+    fixable: reports.filter(r => r.suggestedFix).length,
+  };
+
+  console.log(`\n${colorize('Summary:', 'bright')}`);
+  console.log(`Total issues: ${colorize(summary.total, 'bright')}`);
+  console.log(`Critical: ${colorize(summary.critical, 'red')}`);
+  console.log(`High: ${colorize(summary.high, 'red')}`);
+  console.log(`Medium: ${colorize(summary.medium, 'yellow')}`);
+  console.log(`Low: ${colorize(summary.low, 'cyan')}`);
+  console.log(`Fixable: ${colorize(summary.fixable, 'green')}`);
+
+  // Group by file
+  const byFile = {};
+  reports.forEach(report => {
+    if (!byFile[report.file]) {
+      byFile[report.file] = [];
     }
+    byFile[report.file].push(report);
+  });
 
-    console.log(colorize('\n📊 Memory Leak Detection Report', 'bright'));
-    console.log('='.repeat(50));
-
-    // Summary
-    const summary = {
-        total: reports.length,
-        critical: reports.filter(r => r.severity === 'critical').length,
-        high: reports.filter(r => r.severity === 'high').length,
-        medium: reports.filter(r => r.severity === 'medium').length,
-        low: reports.filter(r => r.severity === 'low').length,
-        fixable: reports.filter(r => r.suggestedFix).length
-    };
-
-    console.log(`\n${colorize('Summary:', 'bright')}`);
-    console.log(`Total issues: ${colorize(summary.total, 'bright')}`);
-    console.log(`Critical: ${colorize(summary.critical, 'red')}`);
-    console.log(`High: ${colorize(summary.high, 'red')}`);
-    console.log(`Medium: ${colorize(summary.medium, 'yellow')}`);
-    console.log(`Low: ${colorize(summary.low, 'cyan')}`);
-    console.log(`Fixable: ${colorize(summary.fixable, 'green')}`);
-
-    // Group by file
-    const byFile = {};
-    reports.forEach(report => {
-        if (!byFile[report.file]) {
-            byFile[report.file] = [];
-        }
-        byFile[report.file].push(report);
+  console.log(`\n${colorize('Issues by file:', 'bright')}`);
+  Object.entries(byFile).forEach(([file, fileReports]) => {
+    console.log(`\n${colorize(file, 'cyan')} (${fileReports.length} issues)`);
+    fileReports.forEach((report, index) => {
+      console.log(`  ${index + 1}. ${formatLeakReport(report)}`);
+      if (report.suggestedFix) {
+        console.log(`     ${colorize('Fix:', 'green')} ${report.suggestedFix}`);
+      }
     });
-
-    console.log(`\n${colorize('Issues by file:', 'bright')}`);
-    Object.entries(byFile).forEach(([file, fileReports]) => {
-        console.log(`\n${colorize(file, 'cyan')} (${fileReports.length} issues)`);
-        fileReports.forEach((report, index) => {
-            console.log(`  ${index + 1}. ${formatLeakReport(report)}`);
-            if (report.suggestedFix) {
-                console.log(`     ${colorize('Fix:', 'green')} ${report.suggestedFix}`);
-            }
-        });
-    });
+  });
 }
 
 // Save report to file
 async function saveReport(reports, format, outputPath) {
-    try {
-        let content;
+  try {
+    let content;
 
-        switch (format) {
-            case 'json':
-                content = JSON.stringify(reports, null, 2);
-                break;
+    switch (format) {
+      case 'json':
+        content = JSON.stringify(reports, null, 2);
+        break;
 
-            case 'csv':
-                const headers = ['File', 'Line', 'Column', 'Severity', 'Type', 'Description', 'Fix'];
-                const rows = reports.map(r => [
-                    r.file,
-                    r.line,
-                    r.column,
-                    r.severity,
-                    r.type,
-                    r.description.replace(/,/g, ';'),
-                    r.suggestedFix || ''
-                ]);
-                content = [headers, ...rows].map(row => row.join(',')).join('\n');
-                break;
+      case 'csv':
+        const headers = [
+          'File',
+          'Line',
+          'Column',
+          'Severity',
+          'Type',
+          'Description',
+          'Fix',
+        ];
+        const rows = reports.map(r => [
+          r.file,
+          r.line,
+          r.column,
+          r.severity,
+          r.type,
+          r.description.replace(/,/g, ';'),
+          r.suggestedFix || '',
+        ]);
+        content = [headers, ...rows].map(row => row.join(',')).join('\n');
+        break;
 
-            case 'html':
-                content = generateHTMLReport(reports);
-                break;
+      case 'html':
+        content = generateHTMLReport(reports);
+        break;
 
-            default:
-                throw new Error(`Unsupported format: ${format}`);
-        }
-
-        await fs.writeFile(outputPath, content, 'utf-8');
-        logSuccess(`Report saved to ${outputPath}`);
-    } catch (error) {
-        logError(`Failed to save report: ${error.message}`);
+      default:
+        throw new Error(`Unsupported format: ${format}`);
     }
+
+    await fs.writeFile(outputPath, content, 'utf-8');
+    logSuccess(`Report saved to ${outputPath}`);
+  } catch (error) {
+    logError(`Failed to save report: ${error.message}`);
+  }
 }
 
 // Generate HTML report
 function generateHTMLReport(reports) {
-    const summary = {
-        total: reports.length,
-        critical: reports.filter(r => r.severity === 'critical').length,
-        high: reports.filter(r => r.severity === 'high').length,
-        medium: reports.filter(r => r.severity === 'medium').length,
-        low: reports.filter(r => r.severity === 'low').length,
-    };
+  const summary = {
+    total: reports.length,
+    critical: reports.filter(r => r.severity === 'critical').length,
+    high: reports.filter(r => r.severity === 'high').length,
+    medium: reports.filter(r => r.severity === 'medium').length,
+    low: reports.filter(r => r.severity === 'low').length,
+  };
 
-    return `
+  return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -213,7 +226,9 @@ function generateHTMLReport(reports) {
             </tr>
         </thead>
         <tbody>
-            ${reports.map(r => `
+            ${reports
+              .map(
+                r => `
                 <tr>
                     <td>${r.file}</td>
                     <td>${r.line}</td>
@@ -222,7 +237,9 @@ function generateHTMLReport(reports) {
                     <td>${r.description}</td>
                     <td class="fix">${r.suggestedFix || 'Manual review required'}</td>
                 </tr>
-            `).join('')}
+            `
+              )
+              .join('')}
         </tbody>
     </table>
 </body>
@@ -232,291 +249,319 @@ function generateHTMLReport(reports) {
 
 // Apply fixes automatically
 async function applyFixes(reports, options = {}) {
-    const { dryRun = false, backup = true, interactive = false } = options;
+  const { dryRun = false, backup = true, interactive = false } = options;
 
-    const fixableReports = reports.filter(r => r.suggestedFix && !r.requiresManualReview);
+  const fixableReports = reports.filter(
+    r => r.suggestedFix && !r.requiresManualReview
+  );
 
-    if (fixableReports.length === 0) {
-        logWarning('No automatically fixable issues found');
-        return;
-    }
+  if (fixableReports.length === 0) {
+    logWarning('No automatically fixable issues found');
+    return;
+  }
 
-    logInfo(`Found ${fixableReports.length} automatically fixable issues`);
+  logInfo(`Found ${fixableReports.length} automatically fixable issues`);
 
-    if (dryRun) {
-        console.log(colorize('\n🔍 Dry run - showing fixes that would be applied:', 'bright'));
-        fixableReports.forEach((report, index) => {
-            console.log(`\n${index + 1}. ${report.file}:${report.line}`);
-            console.log(`   Issue: ${report.description}`);
-            console.log(`   Fix: ${colorize(report.suggestedFix, 'green')}`);
-        });
-        return;
-    }
+  if (dryRun) {
+    console.log(
+      colorize('\n🔍 Dry run - showing fixes that would be applied:', 'bright')
+    );
+    fixableReports.forEach((report, index) => {
+      console.log(`\n${index + 1}. ${report.file}:${report.line}`);
+      console.log(`   Issue: ${report.description}`);
+      console.log(`   Fix: ${colorize(report.suggestedFix, 'green')}`);
+    });
+    return;
+  }
 
-    // TODO: Implement actual fix application
-    // This would integrate with the fix generation system
-    logWarning('Automatic fix application is not yet implemented');
-    logInfo('Use the detection results to manually apply fixes');
+  // TODO: Implement actual fix application
+  // This would integrate with the fix generation system
+  logWarning('Automatic fix application is not yet implemented');
+  logInfo('Use the detection results to manually apply fixes');
 }
 
 // CLI Commands
 
 // Scan command
 program
-    .command('scan')
-    .description('Scan files or project for memory leaks')
-    .option('-f, --files <files...>', 'specific files to scan')
-    .option('-o, --output <format>', 'output format (json|table|summary|html|csv)', 'summary')
-    .option('-s, --severity <level>', 'minimum severity level (low|medium|high|critical)', 'low')
-    .option('-c, --confidence <number>', 'minimum confidence threshold (0-1)', '0.5')
-    .option('--save <path>', 'save report to file')
-    .option('--detailed', 'show detailed report')
-    .action(async (options) => {
-        try {
-            logInfo('Starting memory leak detection...');
+  .command('scan')
+  .description('Scan files or project for memory leaks')
+  .option('-f, --files <files...>', 'specific files to scan')
+  .option(
+    '-o, --output <format>',
+    'output format (json|table|summary|html|csv)',
+    'summary'
+  )
+  .option(
+    '-s, --severity <level>',
+    'minimum severity level (low|medium|high|critical)',
+    'low'
+  )
+  .option(
+    '-c, --confidence <number>',
+    'minimum confidence threshold (0-1)',
+    '0.5'
+  )
+  .option('--save <path>', 'save report to file')
+  .option('--detailed', 'show detailed report')
+  .action(async options => {
+    try {
+      logInfo('Starting memory leak detection...');
 
-            const confidence = parseFloat(options.confidence);
-            if (isNaN(confidence) || confidence < 0 || confidence > 1) {
-                logError('Confidence must be a number between 0 and 1');
-                process.exit(1);
-            }
+      const confidence = parseFloat(options.confidence);
+      if (isNaN(confidence) || confidence < 0 || confidence > 1) {
+        logError('Confidence must be a number between 0 and 1');
+        process.exit(1);
+      }
 
-            const reports = await cliScan({
-                files: options.files,
-                output: options.detailed ? 'detailed' : options.output,
-                severity: options.severity,
-                confidence: confidence
-            });
+      const reports = await cliScan({
+        files: options.files,
+        output: options.detailed ? 'detailed' : options.output,
+        severity: options.severity,
+        confidence: confidence,
+      });
 
-            if (options.detailed || options.output === 'summary') {
-                generateDetailedReport(reports);
-            }
+      if (options.detailed || options.output === 'summary') {
+        generateDetailedReport(reports);
+      }
 
-            if (options.save) {
-                const format = path.extname(options.save).slice(1) || 'json';
-                await saveReport(reports, format, options.save);
-            }
+      if (options.save) {
+        const format = path.extname(options.save).slice(1) || 'json';
+        await saveReport(reports, format, options.save);
+      }
 
-            // Exit with error code if critical issues found
-            const criticalIssues = reports.filter(r => r.severity === 'critical').length;
-            if (criticalIssues > 0) {
-                logError(`Found ${criticalIssues} critical memory leak issues`);
-                process.exit(1);
-            }
-
-        } catch (error) {
-            logError(`Scan failed: ${error.message}`);
-            process.exit(1);
-        }
-    });
+      // Exit with error code if critical issues found
+      const criticalIssues = reports.filter(
+        r => r.severity === 'critical'
+      ).length;
+      if (criticalIssues > 0) {
+        logError(`Found ${criticalIssues} critical memory leak issues`);
+        process.exit(1);
+      }
+    } catch (error) {
+      logError(`Scan failed: ${error.message}`);
+      process.exit(1);
+    }
+  });
 
 // Fix command
 program
-    .command('fix')
-    .description('Apply automatic fixes for detected memory leaks')
-    .option('-f, --files <files...>', 'specific files to fix')
-    .option('--dry-run', 'show fixes without applying them')
-    .option('--no-backup', 'skip creating backup files')
-    .option('-i, --interactive', 'prompt before applying each fix')
-    .action(async (options) => {
-        try {
-            logInfo('Scanning for fixable memory leaks...');
+  .command('fix')
+  .description('Apply automatic fixes for detected memory leaks')
+  .option('-f, --files <files...>', 'specific files to fix')
+  .option('--dry-run', 'show fixes without applying them')
+  .option('--no-backup', 'skip creating backup files')
+  .option('-i, --interactive', 'prompt before applying each fix')
+  .action(async options => {
+    try {
+      logInfo('Scanning for fixable memory leaks...');
 
-            const reports = await quickScan({
-                files: options.files,
-                severity: 'medium' // Only fix medium+ severity issues
-            });
+      const reports = await quickScan({
+        files: options.files,
+        severity: 'medium', // Only fix medium+ severity issues
+      });
 
-            await applyFixes(reports, {
-                dryRun: options.dryRun,
-                backup: options.backup,
-                interactive: options.interactive
-            });
-
-        } catch (error) {
-            logError(`Fix failed: ${error.message}`);
-            process.exit(1);
-        }
-    });
+      await applyFixes(reports, {
+        dryRun: options.dryRun,
+        backup: options.backup,
+        interactive: options.interactive,
+      });
+    } catch (error) {
+      logError(`Fix failed: ${error.message}`);
+      process.exit(1);
+    }
+  });
 
 // Monitor command
 program
-    .command('monitor')
-    .description('Start real-time memory leak monitoring')
-    .option('-i, --interval <ms>', 'monitoring interval in milliseconds', '5000')
-    .option('-t, --threshold <mb>', 'memory threshold in MB', '100')
-    .option('--duration <seconds>', 'monitoring duration in seconds (0 for infinite)', '0')
-    .action(async (options) => {
-        try {
-            const interval = parseInt(options.interval);
-            const threshold = parseInt(options.threshold);
-            const duration = parseInt(options.duration);
+  .command('monitor')
+  .description('Start real-time memory leak monitoring')
+  .option('-i, --interval <ms>', 'monitoring interval in milliseconds', '5000')
+  .option('-t, --threshold <mb>', 'memory threshold in MB', '100')
+  .option(
+    '--duration <seconds>',
+    'monitoring duration in seconds (0 for infinite)',
+    '0'
+  )
+  .action(async options => {
+    try {
+      const interval = parseInt(options.interval);
+      const threshold = parseInt(options.threshold);
+      const duration = parseInt(options.duration);
 
-            logInfo(`Starting memory leak monitoring (interval: ${interval}ms, threshold: ${threshold}MB)`);
+      logInfo(
+        `Starting memory leak monitoring (interval: ${interval}ms, threshold: ${threshold}MB)`
+      );
 
-            const { startRuntimeMonitoring } = await import('../src/lib/memory-leak-detection/index.js');
+      const { startRuntimeMonitoring } = await import(
+        '../src/lib/memory-leak-detection/index.js'
+      );
 
-            const cleanup = startRuntimeMonitoring({
-                interval,
-                memoryThreshold: threshold,
-                onLeak: (report) => {
-                    logWarning(`Memory leak detected! Current usage: ${report.memoryUsage.current.toFixed(1)}MB`);
-                    if (report.suspiciousPatterns.length > 0) {
-                        console.log(`Suspicious patterns: ${report.suspiciousPatterns.length}`);
-                        report.suspiciousPatterns.forEach(pattern => {
-                            console.log(`  - ${pattern.description}`);
-                        });
-                    }
-                }
+      const cleanup = startRuntimeMonitoring({
+        interval,
+        memoryThreshold: threshold,
+        onLeak: report => {
+          logWarning(
+            `Memory leak detected! Current usage: ${report.memoryUsage.current.toFixed(1)}MB`
+          );
+          if (report.suspiciousPatterns.length > 0) {
+            console.log(
+              `Suspicious patterns: ${report.suspiciousPatterns.length}`
+            );
+            report.suspiciousPatterns.forEach(pattern => {
+              console.log(`  - ${pattern.description}`);
             });
+          }
+        },
+      });
 
-            // Handle graceful shutdown
-            process.on('SIGINT', () => {
-                logInfo('Stopping monitoring...');
-                cleanup();
-                process.exit(0);
-            });
+      // Handle graceful shutdown
+      process.on('SIGINT', () => {
+        logInfo('Stopping monitoring...');
+        cleanup();
+        process.exit(0);
+      });
 
-            // Auto-stop after duration if specified
-            if (duration > 0) {
-                setTimeout(() => {
-                    logInfo('Monitoring duration completed');
-                    cleanup();
-                    process.exit(0);
-                }, duration * 1000);
-            }
+      // Auto-stop after duration if specified
+      if (duration > 0) {
+        setTimeout(() => {
+          logInfo('Monitoring duration completed');
+          cleanup();
+          process.exit(0);
+        }, duration * 1000);
+      }
 
-            // Keep process alive
-            if (duration === 0) {
-                logInfo('Monitoring started. Press Ctrl+C to stop.');
-                await new Promise(() => { }); // Keep alive indefinitely
-            }
-
-        } catch (error) {
-            logError(`Monitor failed: ${error.message}`);
-            process.exit(1);
-        }
-    });
+      // Keep process alive
+      if (duration === 0) {
+        logInfo('Monitoring started. Press Ctrl+C to stop.');
+        await new Promise(() => {}); // Keep alive indefinitely
+      }
+    } catch (error) {
+      logError(`Monitor failed: ${error.message}`);
+      process.exit(1);
+    }
+  });
 
 // Report command
 program
-    .command('report')
-    .description('Generate comprehensive memory leak report')
-    .option('-o, --output <path>', 'output file path', 'memory-leak-report.html')
-    .option('-f, --format <format>', 'report format (html|json|csv)', 'html')
-    .option('--include-fixes', 'include suggested fixes in report')
-    .action(async (options) => {
-        try {
-            logInfo('Generating comprehensive memory leak report...');
+  .command('report')
+  .description('Generate comprehensive memory leak report')
+  .option('-o, --output <path>', 'output file path', 'memory-leak-report.html')
+  .option('-f, --format <format>', 'report format (html|json|csv)', 'html')
+  .option('--include-fixes', 'include suggested fixes in report')
+  .action(async options => {
+    try {
+      logInfo('Generating comprehensive memory leak report...');
 
-            const detector = createMemoryLeakDetector();
-            const projectReport = await detector.scanProject();
+      const detector = createMemoryLeakDetector();
+      const projectReport = await detector.scanProject();
 
-            const reportData = {
-                ...projectReport,
-                generatedAt: new Date().toISOString(),
-                includeFixes: options.includeFixes
-            };
+      const reportData = {
+        ...projectReport,
+        generatedAt: new Date().toISOString(),
+        includeFixes: options.includeFixes,
+      };
 
-            await saveReport(projectReport.reports, options.format, options.output);
+      await saveReport(projectReport.reports, options.format, options.output);
 
-            logSuccess(`Comprehensive report generated: ${options.output}`);
-            logInfo(`Total issues: ${projectReport.totalLeaks}`);
-            logInfo(`Files scanned: ${projectReport.files.length}`);
-
-        } catch (error) {
-            logError(`Report generation failed: ${error.message}`);
-            process.exit(1);
-        }
-    });
+      logSuccess(`Comprehensive report generated: ${options.output}`);
+      logInfo(`Total issues: ${projectReport.totalLeaks}`);
+      logInfo(`Files scanned: ${projectReport.files.length}`);
+    } catch (error) {
+      logError(`Report generation failed: ${error.message}`);
+      process.exit(1);
+    }
+  });
 
 // Config command
 program
-    .command('config')
-    .description('Manage memory leak detection configuration')
-    .option('--init', 'create default configuration file')
-    .option('--show', 'show current configuration')
-    .option('--set <key=value>', 'set configuration value')
-    .action(async (options) => {
-        try {
-            const { ConfigManager, createDefaultConfigFile } = await import('../src/lib/memory-leak-detection/config.js');
+  .command('config')
+  .description('Manage memory leak detection configuration')
+  .option('--init', 'create default configuration file')
+  .option('--show', 'show current configuration')
+  .option('--set <key=value>', 'set configuration value')
+  .action(async options => {
+    try {
+      const { ConfigManager, createDefaultConfigFile } = await import(
+        '../src/lib/memory-leak-detection/config.js'
+      );
 
-            if (options.init) {
-                await createDefaultConfigFile();
-                logSuccess('Default configuration file created: memory-leak-config.json');
-                return;
-            }
+      if (options.init) {
+        await createDefaultConfigFile();
+        logSuccess(
+          'Default configuration file created: memory-leak-config.json'
+        );
+        return;
+      }
 
-            if (options.show) {
-                const configManager = new ConfigManager();
-                const config = configManager.getConfig();
-                console.log(JSON.stringify(config, null, 2));
-                return;
-            }
+      if (options.show) {
+        const configManager = new ConfigManager();
+        const config = configManager.getConfig();
+        console.log(JSON.stringify(config, null, 2));
+        return;
+      }
 
-            if (options.set) {
-                const [key, value] = options.set.split('=');
-                if (!key || value === undefined) {
-                    logError('Invalid format. Use: --set key=value');
-                    process.exit(1);
-                }
-
-                // TODO: Implement config setting
-                logInfo(`Setting ${key} = ${value}`);
-                logWarning('Configuration setting is not yet implemented');
-                return;
-            }
-
-            logError('No action specified. Use --init, --show, or --set');
-            process.exit(1);
-
-        } catch (error) {
-            logError(`Config command failed: ${error.message}`);
-            process.exit(1);
+      if (options.set) {
+        const [key, value] = options.set.split('=');
+        if (!key || value === undefined) {
+          logError('Invalid format. Use: --set key=value');
+          process.exit(1);
         }
-    });
+
+        // TODO: Implement config setting
+        logInfo(`Setting ${key} = ${value}`);
+        logWarning('Configuration setting is not yet implemented');
+        return;
+      }
+
+      logError('No action specified. Use --init, --show, or --set');
+      process.exit(1);
+    } catch (error) {
+      logError(`Config command failed: ${error.message}`);
+      process.exit(1);
+    }
+  });
 
 // Stats command
 program
-    .command('stats')
-    .description('Show memory leak detection statistics')
-    .option('--reset', 'reset statistics')
-    .action(async (options) => {
-        try {
-            if (options.reset) {
-                logInfo('Statistics reset (not yet implemented)');
-                return;
-            }
+  .command('stats')
+  .description('Show memory leak detection statistics')
+  .option('--reset', 'reset statistics')
+  .action(async options => {
+    try {
+      if (options.reset) {
+        logInfo('Statistics reset (not yet implemented)');
+        return;
+      }
 
-            // TODO: Implement statistics tracking
-            logInfo('Memory Leak Detection Statistics:');
-            console.log('  Total scans: N/A');
-            console.log('  Issues found: N/A');
-            console.log('  Issues fixed: N/A');
-            console.log('  Last scan: N/A');
-            logWarning('Statistics tracking is not yet implemented');
-
-        } catch (error) {
-            logError(`Stats command failed: ${error.message}`);
-            process.exit(1);
-        }
-    });
+      // TODO: Implement statistics tracking
+      logInfo('Memory Leak Detection Statistics:');
+      console.log('  Total scans: N/A');
+      console.log('  Issues found: N/A');
+      console.log('  Issues fixed: N/A');
+      console.log('  Last scan: N/A');
+      logWarning('Statistics tracking is not yet implemented');
+    } catch (error) {
+      logError(`Stats command failed: ${error.message}`);
+      process.exit(1);
+    }
+  });
 
 // Main program setup
 program
-    .name('memory-leak-cli')
-    .description('Memory Leak Detection and Fixing CLI Tool')
-    .version(CLI_VERSION);
+  .name('memory-leak-cli')
+  .description('Memory Leak Detection and Fixing CLI Tool')
+  .version(CLI_VERSION);
 
 // Global error handling
 process.on('unhandledRejection', (reason, promise) => {
-    logError(`Unhandled Rejection at: ${promise}, reason: ${reason}`);
-    process.exit(1);
+  logError(`Unhandled Rejection at: ${promise}, reason: ${reason}`);
+  process.exit(1);
 });
 
-process.on('uncaughtException', (error) => {
-    logError(`Uncaught Exception: ${error.message}`);
-    process.exit(1);
+process.on('uncaughtException', error => {
+  logError(`Uncaught Exception: ${error.message}`);
+  process.exit(1);
 });
 
 // Parse command line arguments

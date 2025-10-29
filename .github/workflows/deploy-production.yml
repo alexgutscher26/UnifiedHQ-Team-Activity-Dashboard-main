@@ -1,0 +1,474 @@
+name: Deploy to Production
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to deploy (e.g., v1.0.0)'
+        required: true
+        type: string
+      skip_approval:
+        description: 'Skip manual approval (emergency deployment)'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  validate:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    outputs:
+      release-tag: ${{ steps.validate.outputs.release-tag }}
+      release-notes: ${{ steps.validate.outputs.release-notes }}
+      previous-release: ${{ steps.validate.outputs.previous-release }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate release
+        id: validate
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            RELEASE_TAG="${{ github.event.release.tag_name }}"
+            RELEASE_NOTES="${{ github.event.release.body }}"
+          else
+            RELEASE_TAG="${{ github.event.inputs.release_tag }}"
+            # Get release notes from the tag
+            RELEASE_NOTES=$(git tag -l --format='%(contents)' "$RELEASE_TAG" | head -20)
+          fi
+
+          # Validate tag format (semantic versioning)
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$ ]]; then
+            echo "❌ Invalid release tag format: $RELEASE_TAG"
+            echo "Expected format: v1.0.0 or v1.0.0-beta"
+            exit 1
+          fi
+
+          # Check if tag exists
+          if ! git rev-parse "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "❌ Release tag $RELEASE_TAG does not exist"
+            exit 1
+          fi
+
+          # Get previous release for rollback reference
+          PREVIOUS_RELEASE=$(git tag -l --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' | grep -v "$RELEASE_TAG" | head -1)
+
+          echo "release-tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
+          echo "release-notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "previous-release=$PREVIOUS_RELEASE" >> $GITHUB_OUTPUT
+
+          echo "✅ Release validation passed"
+          echo "Release tag: $RELEASE_TAG"
+          echo "Previous release: $PREVIOUS_RELEASE"
+
+  pre-deployment-checks:
+    name: Pre-deployment Checks
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - name: Checkout release
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate.outputs.release-tag }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run security audit
+        run: |
+          echo "🔍 Running security audit..."
+          bun audit || echo "⚠️ Security audit found issues, review before deployment"
+
+      - name: Run linting
+        run: bun run lint
+
+      - name: Run type checking
+        run: bunx tsc --noEmit
+
+      - name: Test build
+        run: |
+          echo "DATABASE_URL=postgresql://test:test@localhost:5432/test" >> .env
+          echo "REDIS_URL=redis://localhost:6379" >> .env
+          echo "NEXTAUTH_SECRET=test-secret" >> .env
+          echo "NEXTAUTH_URL=https://app.unifiedhq.com" >> .env
+          bunx prisma generate
+          bun run build
+
+  approval:
+    name: Manual Approval
+    runs-on: ubuntu-latest
+    needs: [validate, pre-deployment-checks]
+    if: github.event.inputs.skip_approval != 'true'
+    environment:
+      name: production-approval
+    steps:
+      - name: Request deployment approval
+        run: |
+          echo "🚀 Production deployment approval requested"
+          echo "Release: ${{ needs.validate.outputs.release-tag }}"
+          echo "Previous release: ${{ needs.validate.outputs.previous-release }}"
+
+  build:
+    name: Build Production Release
+    runs-on: ubuntu-latest
+    needs: [validate, pre-deployment-checks, approval]
+    if: always() && (needs.approval.result == 'success' || github.event.inputs.skip_approval == 'true')
+    steps:
+      - name: Checkout release
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate.outputs.release-tag }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Setup production environment
+        run: |
+          echo "DATABASE_URL=${{ secrets.PRODUCTION_DATABASE_URL }}" >> .env
+          echo "REDIS_URL=${{ secrets.PRODUCTION_REDIS_URL }}" >> .env
+          echo "NEXTAUTH_SECRET=${{ secrets.PRODUCTION_NEXTAUTH_SECRET }}" >> .env
+          echo "NEXTAUTH_URL=${{ secrets.PRODUCTION_NEXTAUTH_URL }}" >> .env
+          echo "GITHUB_CLIENT_ID=${{ secrets.PRODUCTION_GITHUB_CLIENT_ID }}" >> .env
+          echo "GITHUB_CLIENT_SECRET=${{ secrets.PRODUCTION_GITHUB_CLIENT_SECRET }}" >> .env
+          echo "SLACK_CLIENT_ID=${{ secrets.PRODUCTION_SLACK_CLIENT_ID }}" >> .env
+          echo "SLACK_CLIENT_SECRET=${{ secrets.PRODUCTION_SLACK_CLIENT_SECRET }}" >> .env
+          echo "OPENAI_API_KEY=${{ secrets.PRODUCTION_OPENAI_API_KEY }}" >> .env
+          echo "SENTRY_DSN=${{ secrets.PRODUCTION_SENTRY_DSN }}" >> .env
+          echo "VERCEL_ENV=production" >> .env
+
+      - name: Generate Prisma client
+        run: bunx prisma generate
+
+      - name: Build application
+        run: bun run build
+
+      - name: Upload production build
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-build-${{ needs.validate.outputs.release-tag }}
+          path: |
+            .next/
+            !.next/cache
+            prisma/
+            public/
+            package.json
+            bun.lockb
+          retention-days: 30
+
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [validate, build]
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.production-url }}
+    outputs:
+      production-url: ${{ steps.deploy.outputs.production-url }}
+      deployment-id: ${{ steps.deploy.outputs.deployment-id }}
+    steps:
+      - name: Checkout release
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate.outputs.release-tag }}
+
+      - name: Download production build
+        uses: actions/download-artifact@v4
+        with:
+          name: production-build-${{ needs.validate.outputs.release-tag }}
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Create deployment backup point
+        id: backup
+        run: |
+          # Store current production deployment for rollback
+          CURRENT_DEPLOYMENT=$(vercel ls --token=${{ secrets.VERCEL_TOKEN }} | grep production | head -1 | awk '{print $2}')
+          echo "backup-deployment=$CURRENT_DEPLOYMENT" >> $GITHUB_OUTPUT
+          echo "Backup deployment ID: $CURRENT_DEPLOYMENT"
+
+      - name: Deploy to production
+        id: deploy
+        run: |
+          DEPLOYMENT_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          DEPLOYMENT_ID=$(echo "$DEPLOYMENT_URL" | sed 's/https:\/\///' | cut -d'.' -f1)
+
+          echo "production-url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+          echo "deployment-id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
+          echo "Deployed to: $DEPLOYMENT_URL"
+
+      - name: Run database migrations
+        run: |
+          echo "DATABASE_URL=${{ secrets.PRODUCTION_DATABASE_URL }}" > .env
+          bunx prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+
+      - name: Warm up application
+        run: |
+          echo "🔥 Warming up application..."
+          PRODUCTION_URL="${{ steps.deploy.outputs.production-url }}"
+
+          # Warm up critical endpoints
+          curl -f "$PRODUCTION_URL/api/health" || echo "Health endpoint warming failed"
+          curl -f "$PRODUCTION_URL/dashboard" || echo "Dashboard warming failed"
+          curl -f "$PRODUCTION_URL/api/auth/session" || echo "Auth endpoint warming failed"
+
+          sleep 10
+
+      - name: Run smoke tests
+        run: |
+          echo "🧪 Running smoke tests..."
+          PRODUCTION_URL="${{ steps.deploy.outputs.production-url }}"
+
+          # Test critical functionality
+          if ! curl -f "$PRODUCTION_URL/api/health" > /dev/null 2>&1; then
+            echo "❌ Health check failed"
+            exit 1
+          fi
+
+          # Test database connectivity
+          if ! curl -f "$PRODUCTION_URL/api/health/db" > /dev/null 2>&1; then
+            echo "❌ Database connectivity test failed"
+            exit 1
+          fi
+
+          # Test Redis connectivity
+          if ! curl -f "$PRODUCTION_URL/api/health/redis" > /dev/null 2>&1; then
+            echo "❌ Redis connectivity test failed"
+            exit 1
+          fi
+
+          echo "✅ All smoke tests passed"
+
+  post-deployment:
+    name: Post-deployment Tasks
+    runs-on: ubuntu-latest
+    needs: [validate, deploy]
+    if: success()
+    steps:
+      - name: Update release status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Update the release with deployment information
+            const releaseTag = '${{ needs.validate.outputs.release-tag }}';
+            const productionUrl = '${{ needs.deploy.outputs.production-url }}';
+
+            try {
+              const release = await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag: releaseTag
+              });
+              
+              const updatedBody = release.data.body + `\n\n🚀 **Deployed to Production**: ${productionUrl}`;
+              
+              await github.rest.repos.updateRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: release.data.id,
+                body: updatedBody
+              });
+            } catch (error) {
+              console.log('Could not update release:', error.message);
+            }
+
+      - name: Create deployment record
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: '${{ needs.validate.outputs.release-tag }}',
+              environment: 'production',
+              description: 'Production deployment of ${{ needs.validate.outputs.release-tag }}',
+              auto_merge: false,
+              required_contexts: []
+            });
+
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    needs: [validate, deploy]
+    if: failure() && needs.deploy.result == 'failure'
+    steps:
+      - name: Rollback to previous release
+        run: |
+          echo "🔄 Rolling back deployment..."
+          PREVIOUS_RELEASE="${{ needs.validate.outputs.previous-release }}"
+
+          if [[ -n "$PREVIOUS_RELEASE" ]]; then
+            echo "Rolling back to: $PREVIOUS_RELEASE"
+            # Trigger rollback deployment
+            curl -X POST \
+              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              "${{ github.api_url }}/repos/${{ github.repository }}/actions/workflows/deploy-production.yml/dispatches" \
+              -d "{\"ref\":\"main\",\"inputs\":{\"release_tag\":\"$PREVIOUS_RELEASE\",\"skip_approval\":\"true\"}}"
+          else
+            echo "❌ No previous release found for rollback"
+          fi
+
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    needs: [validate, deploy, post-deployment, rollback]
+    if: always()
+    steps:
+      - name: Determine deployment status
+        id: status
+        run: |
+          if [[ "${{ needs.deploy.result }}" == "success" && "${{ needs.post-deployment.result }}" == "success" ]]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "emoji=🚀" >> $GITHUB_OUTPUT
+            echo "message=SUCCESS" >> $GITHUB_OUTPUT
+            echo "color=36a64f" >> $GITHUB_OUTPUT
+          elif [[ "${{ needs.rollback.result }}" == "success" ]]; then
+            echo "status=rolled-back" >> $GITHUB_OUTPUT
+            echo "emoji=🔄" >> $GITHUB_OUTPUT
+            echo "message=ROLLED BACK" >> $GITHUB_OUTPUT
+            echo "color=ff9900" >> $GITHUB_OUTPUT
+          else
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "emoji=❌" >> $GITHUB_OUTPUT
+            echo "message=FAILED" >> $GITHUB_OUTPUT
+            echo "color=ff0000" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send deployment notification
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const status = '${{ steps.status.outputs.status }}';
+            const emoji = '${{ steps.status.outputs.emoji }}';
+            const message = '${{ steps.status.outputs.message }}';
+            const releaseTag = '${{ needs.validate.outputs.release-tag }}';
+            const productionUrl = '${{ needs.deploy.outputs.production-url }}' || 'N/A';
+
+            let notificationBody = `${emoji} **Production Deployment ${message}**
+
+            **Release:** \`${releaseTag}\`
+            **Production URL:** ${productionUrl}
+            **Workflow:** [View Details](${context.payload.repository.html_url}/actions/runs/${context.runId})
+            `;
+
+            if (status === 'success') {
+              notificationBody += `\n**Release Notes:**\n${{ needs.validate.outputs.release-notes }}`;
+            } else if (status === 'rolled-back') {
+              notificationBody += `\n⚠️ **Deployment failed and was automatically rolled back to previous release**`;
+            }
+
+            // Create issue for failed deployments
+            if (status === 'failed') {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `🚨 Production Deployment Failed - ${releaseTag}`,
+                body: `${notificationBody}\n\n**Action Required:** Please investigate the deployment failure and take appropriate action.`,
+                labels: ['deployment', 'production', 'urgent']
+              });
+            }
+
+            // Comment on the release
+            try {
+              const release = await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag: releaseTag
+              });
+              
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: release.data.id,
+                body: notificationBody
+              });
+            } catch (error) {
+              console.log('Could not comment on release:', error.message);
+            }
+
+  cleanup:
+    name: Cleanup Artifacts
+    runs-on: ubuntu-latest
+    needs: [validate, notify]
+    if: always()
+    steps:
+      - name: Cleanup old build artifacts
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const releaseTag = '${{ needs.validate.outputs.release-tag }}';
+
+            // Keep production builds for 30 days, but clean up old ones
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+            const artifacts = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+
+            for (const artifact of artifacts.data.artifacts) {
+              if (artifact.name.startsWith('production-build-') && 
+                  artifact.name !== `production-build-${releaseTag}` &&
+                  new Date(artifact.created_at) < thirtyDaysAgo) {
+                
+                await github.rest.actions.deleteArtifact({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  artifact_id: artifact.id,
+                });
+                
+                console.log(`Deleted old artifact: ${artifact.name}`);
+              }
+            }
