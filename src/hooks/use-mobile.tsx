@@ -33,8 +33,12 @@ export function useResponsiveBreakpoints() {
 
   React.useEffect(() => {
     const mobileQuery = window.matchMedia('(max-width: 767px)');
-    const tabletQuery = window.matchMedia('(min-width: 768px) and (max-width: 1023px)');
-    const desktopQuery = window.matchMedia('(min-width: 1024px) and (max-width: 1279px)');
+    const tabletQuery = window.matchMedia(
+      '(min-width: 768px) and (max-width: 1023px)'
+    );
+    const desktopQuery = window.matchMedia(
+      '(min-width: 1024px) and (max-width: 1279px)'
+    );
     const largeQuery = window.matchMedia('(min-width: 1280px)');
 
     const updateBreakpoints = () => {
@@ -69,7 +73,9 @@ export function useResponsiveBreakpoints() {
 
 // Hook for detecting orientation changes
 export function useOrientation() {
-  const [orientation, setOrientation] = React.useState<'portrait' | 'landscape'>('portrait');
+  const [orientation, setOrientation] = React.useState<
+    'portrait' | 'landscape'
+  >('portrait');
 
   React.useEffect(() => {
     const orientationQuery = window.matchMedia('(orientation: landscape)');

@@ -5,32 +5,32 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
 import { ESLintUtils } from '@typescript-eslint/utils';
 import {
-    useEffectCleanupRule,
-    eventListenerCleanupRule,
-    intervalTimeoutCleanupRule,
-    subscriptionCleanupRule
+  useEffectCleanupRule,
+  eventListenerCleanupRule,
+  intervalTimeoutCleanupRule,
+  subscriptionCleanupRule,
 } from '../eslint-rules';
 
 // Create rule tester
 const ruleTester = new ESLintUtils.RuleTester({
-    parser: '@typescript-eslint/parser',
-    parserOptions: {
-        ecmaVersion: 2020,
-        sourceType: 'module',
-        ecmaFeatures: {
-            jsx: true,
-        },
+  parser: '@typescript-eslint/parser',
+  parserOptions: {
+    ecmaVersion: 2020,
+    sourceType: 'module',
+    ecmaFeatures: {
+      jsx: true,
     },
+  },
 });
 
 describe('Memory Leak ESLint Rules', () => {
-    describe('useEffect cleanup rule', () => {
-        it('should detect useEffect without cleanup', () => {
-            ruleTester.run('useeffect-cleanup', useEffectCleanupRule, {
-                valid: [
-                    // Valid: useEffect with cleanup
-                    {
-                        code: `
+  describe('useEffect cleanup rule', () => {
+    it('should detect useEffect without cleanup', () => {
+      ruleTester.run('useeffect-cleanup', useEffectCleanupRule, {
+        valid: [
+          // Valid: useEffect with cleanup
+          {
+            code: `
               useEffect(() => {
                 const listener = () => {};
                 window.addEventListener('resize', listener);
@@ -39,40 +39,40 @@ describe('Memory Leak ESLint Rules', () => {
                 };
               }, []);
             `,
-                    },
-                    // Valid: useEffect without side effects
-                    {
-                        code: `
+          },
+          // Valid: useEffect without side effects
+          {
+            code: `
               useEffect(() => {
                 console.log('Component mounted');
               }, []);
             `,
-                    },
-                    // Valid: useEffect with only state updates
-                    {
-                        code: `
+          },
+          // Valid: useEffect with only state updates
+          {
+            code: `
               useEffect(() => {
                 setCount(count + 1);
               }, [count]);
             `,
-                    },
-                ],
-                invalid: [
-                    // Invalid: addEventListener without cleanup
-                    {
-                        code: `
+          },
+        ],
+        invalid: [
+          // Invalid: addEventListener without cleanup
+          {
+            code: `
               useEffect(() => {
                 const listener = () => {};
                 window.addEventListener('resize', listener);
               }, []);
             `,
-                        errors: [
-                            {
-                                messageId: 'missingCleanup',
-                                type: 'CallExpression',
-                            },
-                        ],
-                        output: `
+            errors: [
+              {
+                messageId: 'missingCleanup',
+                type: 'CallExpression',
+              },
+            ],
+            output: `
               useEffect(() => {
                 const listener = () => {};
                 window.addEventListener('resize', listener);
@@ -81,23 +81,23 @@ describe('Memory Leak ESLint Rules', () => {
                 };
               }, []);
             `,
-                    },
-                    // Invalid: setInterval without cleanup
-                    {
-                        code: `
+          },
+          // Invalid: setInterval without cleanup
+          {
+            code: `
               useEffect(() => {
                 const interval = setInterval(() => {
                   console.log('tick');
                 }, 1000);
               }, []);
             `,
-                        errors: [
-                            {
-                                messageId: 'missingCleanup',
-                                type: 'CallExpression',
-                            },
-                        ],
-                        output: `
+            errors: [
+              {
+                messageId: 'missingCleanup',
+                type: 'CallExpression',
+              },
+            ],
+            output: `
               useEffect(() => {
                 const interval = setInterval(() => {
                   console.log('tick');
@@ -107,23 +107,23 @@ describe('Memory Leak ESLint Rules', () => {
                 };
               }, []);
             `,
-                    },
-                    // Invalid: setTimeout without cleanup
-                    {
-                        code: `
+          },
+          // Invalid: setTimeout without cleanup
+          {
+            code: `
               useEffect(() => {
                 const timeout = setTimeout(() => {
                   console.log('delayed');
                 }, 1000);
               }, []);
             `,
-                        errors: [
-                            {
-                                messageId: 'missingCleanup',
-                                type: 'CallExpression',
-                            },
-                        ],
-                        output: `
+            errors: [
+              {
+                messageId: 'missingCleanup',
+                type: 'CallExpression',
+              },
+            ],
+            output: `
               useEffect(() => {
                 const timeout = setTimeout(() => {
                   console.log('delayed');
@@ -133,27 +133,27 @@ describe('Memory Leak ESLint Rules', () => {
                 };
               }, []);
             `,
-                    },
-                ],
-            });
-        });
+          },
+        ],
+      });
     });
+  });
 
-    describe('event listener cleanup rule', () => {
-        it('should detect addEventListener without removeEventListener', () => {
-            ruleTester.run('event-listener-cleanup', eventListenerCleanupRule, {
-                valid: [
-                    // Valid: addEventListener with removeEventListener
-                    {
-                        code: `
+  describe('event listener cleanup rule', () => {
+    it('should detect addEventListener without removeEventListener', () => {
+      ruleTester.run('event-listener-cleanup', eventListenerCleanupRule, {
+        valid: [
+          // Valid: addEventListener with removeEventListener
+          {
+            code: `
               const listener = () => {};
               element.addEventListener('click', listener);
               element.removeEventListener('click', listener);
             `,
-                    },
-                    // Valid: addEventListener in useEffect with cleanup
-                    {
-                        code: `
+          },
+          // Valid: addEventListener in useEffect with cleanup
+          {
+            code: `
               useEffect(() => {
                 const listener = () => {};
                 element.addEventListener('click', listener);
@@ -162,173 +162,173 @@ describe('Memory Leak ESLint Rules', () => {
                 };
               }, []);
             `,
-                    },
-                ],
-                invalid: [
-                    // Invalid: addEventListener without removeEventListener
-                    {
-                        code: `
+          },
+        ],
+        invalid: [
+          // Invalid: addEventListener without removeEventListener
+          {
+            code: `
               const listener = () => {};
               element.addEventListener('click', listener);
             `,
-                        errors: [
-                            {
-                                messageId: 'missingRemoveEventListener',
-                                type: 'CallExpression',
-                            },
-                        ],
-                    },
-                    // Invalid: window.addEventListener without cleanup
-                    {
-                        code: `
+            errors: [
+              {
+                messageId: 'missingRemoveEventListener',
+                type: 'CallExpression',
+              },
+            ],
+          },
+          // Invalid: window.addEventListener without cleanup
+          {
+            code: `
               window.addEventListener('resize', () => {
                 console.log('resized');
               });
             `,
-                        errors: [
-                            {
-                                messageId: 'missingRemoveEventListener',
-                                type: 'CallExpression',
-                            },
-                        ],
-                    },
-                ],
-            });
-        });
+            errors: [
+              {
+                messageId: 'missingRemoveEventListener',
+                type: 'CallExpression',
+              },
+            ],
+          },
+        ],
+      });
     });
+  });
 
-    describe('interval/timeout cleanup rule', () => {
-        it('should detect setInterval without clearInterval', () => {
-            ruleTester.run('interval-timeout-cleanup', intervalTimeoutCleanupRule, {
-                valid: [
-                    // Valid: setInterval with clearInterval
-                    {
-                        code: `
+  describe('interval/timeout cleanup rule', () => {
+    it('should detect setInterval without clearInterval', () => {
+      ruleTester.run('interval-timeout-cleanup', intervalTimeoutCleanupRule, {
+        valid: [
+          // Valid: setInterval with clearInterval
+          {
+            code: `
               const interval = setInterval(() => {}, 1000);
               clearInterval(interval);
             `,
-                    },
-                    // Valid: setTimeout with clearTimeout
-                    {
-                        code: `
+          },
+          // Valid: setTimeout with clearTimeout
+          {
+            code: `
               const timeout = setTimeout(() => {}, 1000);
               clearTimeout(timeout);
             `,
-                    },
-                ],
-                invalid: [
-                    // Invalid: setInterval without clearInterval
-                    {
-                        code: `
+          },
+        ],
+        invalid: [
+          // Invalid: setInterval without clearInterval
+          {
+            code: `
               const interval = setInterval(() => {
                 console.log('tick');
               }, 1000);
             `,
-                        errors: [
-                            {
-                                messageId: 'missingClearInterval',
-                                type: 'CallExpression',
-                            },
-                        ],
-                    },
-                    // Invalid: setTimeout without clearTimeout
-                    {
-                        code: `
+            errors: [
+              {
+                messageId: 'missingClearInterval',
+                type: 'CallExpression',
+              },
+            ],
+          },
+          // Invalid: setTimeout without clearTimeout
+          {
+            code: `
               const timeout = setTimeout(() => {
                 console.log('delayed');
               }, 1000);
             `,
-                        errors: [
-                            {
-                                messageId: 'missingClearTimeout',
-                                type: 'CallExpression',
-                            },
-                        ],
-                    },
-                ],
-            });
-        });
+            errors: [
+              {
+                messageId: 'missingClearTimeout',
+                type: 'CallExpression',
+              },
+            ],
+          },
+        ],
+      });
     });
+  });
 
-    describe('subscription cleanup rule', () => {
-        it('should detect subscriptions without unsubscribe', () => {
-            ruleTester.run('subscription-cleanup', subscriptionCleanupRule, {
-                valid: [
-                    // Valid: subscription with unsubscribe
-                    {
-                        code: `
+  describe('subscription cleanup rule', () => {
+    it('should detect subscriptions without unsubscribe', () => {
+      ruleTester.run('subscription-cleanup', subscriptionCleanupRule, {
+        valid: [
+          // Valid: subscription with unsubscribe
+          {
+            code: `
               const subscription = observable.subscribe();
               subscription.unsubscribe();
             `,
-                    },
-                    // Valid: EventSource with close
-                    {
-                        code: `
+          },
+          // Valid: EventSource with close
+          {
+            code: `
               const eventSource = new EventSource('/api/events');
               eventSource.close();
             `,
-                    },
-                    // Valid: WebSocket with close
-                    {
-                        code: `
+          },
+          // Valid: WebSocket with close
+          {
+            code: `
               const ws = new WebSocket('ws://localhost');
               ws.close();
             `,
-                    },
-                ],
-                invalid: [
-                    // Invalid: subscription without unsubscribe
-                    {
-                        code: `
+          },
+        ],
+        invalid: [
+          // Invalid: subscription without unsubscribe
+          {
+            code: `
               const subscription = observable.subscribe(() => {
                 console.log('data received');
               });
             `,
-                        errors: [
-                            {
-                                messageId: 'missingUnsubscribe',
-                                type: 'CallExpression',
-                            },
-                        ],
-                    },
-                    // Invalid: EventSource without close
-                    {
-                        code: `
+            errors: [
+              {
+                messageId: 'missingUnsubscribe',
+                type: 'CallExpression',
+              },
+            ],
+          },
+          // Invalid: EventSource without close
+          {
+            code: `
               const eventSource = new EventSource('/api/events');
               eventSource.onmessage = (event) => {
                 console.log(event.data);
               };
             `,
-                        errors: [
-                            {
-                                messageId: 'missingClose',
-                                type: 'NewExpression',
-                            },
-                        ],
-                    },
-                    // Invalid: WebSocket without close
-                    {
-                        code: `
+            errors: [
+              {
+                messageId: 'missingClose',
+                type: 'NewExpression',
+              },
+            ],
+          },
+          // Invalid: WebSocket without close
+          {
+            code: `
               const ws = new WebSocket('ws://localhost');
               ws.onmessage = (event) => {
                 console.log(event.data);
               };
             `,
-                        errors: [
-                            {
-                                messageId: 'missingClose',
-                                type: 'NewExpression',
-                            },
-                        ],
-                    },
-                ],
-            });
-        });
+            errors: [
+              {
+                messageId: 'missingClose',
+                type: 'NewExpression',
+              },
+            ],
+          },
+        ],
+      });
     });
+  });
 
-    describe('rule integration', () => {
-        it('should work with TypeScript React components', () => {
-            const code = `
+  describe('rule integration', () => {
+    it('should work with TypeScript React components', () => {
+      const code = `
         import React, { useEffect, useState } from 'react';
 
         const MyComponent: React.FC = () => {
@@ -357,24 +357,22 @@ describe('Memory Leak ESLint Rules', () => {
         };
       `;
 
-            // Test useEffect cleanup rule
-            expect(() => {
-                ruleTester.run('useeffect-cleanup-integration', useEffectCleanupRule, {
-                    valid: [],
-                    invalid: [
-                        {
-                            code,
-                            errors: [
-                                { messageId: 'missingCleanup', type: 'CallExpression' },
-                            ],
-                        },
-                    ],
-                });
-            }).not.toThrow();
+      // Test useEffect cleanup rule
+      expect(() => {
+        ruleTester.run('useeffect-cleanup-integration', useEffectCleanupRule, {
+          valid: [],
+          invalid: [
+            {
+              code,
+              errors: [{ messageId: 'missingCleanup', type: 'CallExpression' }],
+            },
+          ],
         });
+      }).not.toThrow();
+    });
 
-        it('should provide correct auto-fixes', () => {
-            const code = `
+    it('should provide correct auto-fixes', () => {
+      const code = `
         useEffect(() => {
           const interval = setInterval(() => {}, 1000);
           const listener = () => {};
@@ -382,7 +380,7 @@ describe('Memory Leak ESLint Rules', () => {
         }, []);
       `;
 
-            const expectedOutput = `
+      const expectedOutput = `
         useEffect(() => {
           const interval = setInterval(() => {}, 1000);
           const listener = () => {};
@@ -394,22 +392,22 @@ describe('Memory Leak ESLint Rules', () => {
         }, []);
       `;
 
-            ruleTester.run('useeffect-cleanup-autofix', useEffectCleanupRule, {
-                valid: [],
-                invalid: [
-                    {
-                        code,
-                        errors: [{ messageId: 'missingCleanup', type: 'CallExpression' }],
-                        output: expectedOutput,
-                    },
-                ],
-            });
-        });
+      ruleTester.run('useeffect-cleanup-autofix', useEffectCleanupRule, {
+        valid: [],
+        invalid: [
+          {
+            code,
+            errors: [{ messageId: 'missingCleanup', type: 'CallExpression' }],
+            output: expectedOutput,
+          },
+        ],
+      });
     });
+  });
 
-    describe('edge cases', () => {
-        it('should handle nested useEffect calls', () => {
-            const code = `
+  describe('edge cases', () => {
+    it('should handle nested useEffect calls', () => {
+      const code = `
         useEffect(() => {
           const outerInterval = setInterval(() => {
             useEffect(() => {
@@ -421,22 +419,22 @@ describe('Memory Leak ESLint Rules', () => {
         }, []);
       `;
 
-            ruleTester.run('nested-useeffect', useEffectCleanupRule, {
-                valid: [],
-                invalid: [
-                    {
-                        code,
-                        errors: [
-                            { messageId: 'missingCleanup', type: 'CallExpression' },
-                            { messageId: 'missingCleanup', type: 'CallExpression' },
-                        ],
-                    },
-                ],
-            });
-        });
+      ruleTester.run('nested-useeffect', useEffectCleanupRule, {
+        valid: [],
+        invalid: [
+          {
+            code,
+            errors: [
+              { messageId: 'missingCleanup', type: 'CallExpression' },
+              { messageId: 'missingCleanup', type: 'CallExpression' },
+            ],
+          },
+        ],
+      });
+    });
 
-        it('should handle conditional event listeners', () => {
-            const code = `
+    it('should handle conditional event listeners', () => {
+      const code = `
         useEffect(() => {
           if (condition) {
             const listener = () => {};
@@ -446,19 +444,19 @@ describe('Memory Leak ESLint Rules', () => {
         }, [condition]);
       `;
 
-            ruleTester.run('conditional-listeners', useEffectCleanupRule, {
-                valid: [],
-                invalid: [
-                    {
-                        code,
-                        errors: [{ messageId: 'missingCleanup', type: 'CallExpression' }],
-                    },
-                ],
-            });
-        });
+      ruleTester.run('conditional-listeners', useEffectCleanupRule, {
+        valid: [],
+        invalid: [
+          {
+            code,
+            errors: [{ messageId: 'missingCleanup', type: 'CallExpression' }],
+          },
+        ],
+      });
+    });
 
-        it('should handle multiple event listeners on same element', () => {
-            const code = `
+    it('should handle multiple event listeners on same element', () => {
+      const code = `
         useEffect(() => {
           const clickListener = () => {};
           const hoverListener = () => {};
@@ -473,19 +471,24 @@ describe('Memory Leak ESLint Rules', () => {
         }, []);
       `;
 
-            ruleTester.run('multiple-listeners', eventListenerCleanupRule, {
-                valid: [],
-                invalid: [
-                    {
-                        code,
-                        errors: [{ messageId: 'missingRemoveEventListener', type: 'CallExpression' }],
-                    },
-                ],
-            });
-        });
+      ruleTester.run('multiple-listeners', eventListenerCleanupRule, {
+        valid: [],
+        invalid: [
+          {
+            code,
+            errors: [
+              {
+                messageId: 'missingRemoveEventListener',
+                type: 'CallExpression',
+              },
+            ],
+          },
+        ],
+      });
+    });
 
-        it('should handle dynamic event names', () => {
-            const code = `
+    it('should handle dynamic event names', () => {
+      const code = `
         useEffect(() => {
           const eventName = 'click';
           const listener = () => {};
@@ -494,117 +497,125 @@ describe('Memory Leak ESLint Rules', () => {
         }, []);
       `;
 
-            ruleTester.run('dynamic-event-names', eventListenerCleanupRule, {
-                valid: [],
-                invalid: [
-                    {
-                        code,
-                        errors: [{ messageId: 'missingRemoveEventListener', type: 'CallExpression' }],
-                    },
-                ],
-            });
-        });
+      ruleTester.run('dynamic-event-names', eventListenerCleanupRule, {
+        valid: [],
+        invalid: [
+          {
+            code,
+            errors: [
+              {
+                messageId: 'missingRemoveEventListener',
+                type: 'CallExpression',
+              },
+            ],
+          },
+        ],
+      });
     });
+  });
 
-    describe('performance', () => {
-        it('should handle large files efficiently', () => {
-            // Generate a large file with many useEffect calls
-            const largeCode = Array.from({ length: 100 }, (_, i) => `
+  describe('performance', () => {
+    it('should handle large files efficiently', () => {
+      // Generate a large file with many useEffect calls
+      const largeCode = Array.from(
+        { length: 100 },
+        (_, i) => `
         useEffect(() => {
           const interval${i} = setInterval(() => {}, 1000);
           // Missing cleanup
         }, []);
-      `).join('\n');
+      `
+      ).join('\n');
 
-            const startTime = Date.now();
+      const startTime = Date.now();
 
-            expect(() => {
-                ruleTester.run('large-file-performance', useEffectCleanupRule, {
-                    valid: [],
-                    invalid: [
-                        {
-                            code: largeCode,
-                            errors: Array.from({ length: 100 }, () => ({
-                                messageId: 'missingCleanup',
-                                type: 'CallExpression',
-                            })),
-                        },
-                    ],
-                });
-            }).not.toThrow();
-
-            const endTime = Date.now();
-            const duration = endTime - startTime;
-
-            // Should complete within reasonable time (less than 5 seconds)
-            expect(duration).toBeLessThan(5000);
+      expect(() => {
+        ruleTester.run('large-file-performance', useEffectCleanupRule, {
+          valid: [],
+          invalid: [
+            {
+              code: largeCode,
+              errors: Array.from({ length: 100 }, () => ({
+                messageId: 'missingCleanup',
+                type: 'CallExpression',
+              })),
+            },
+          ],
         });
+      }).not.toThrow();
+
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+
+      // Should complete within reasonable time (less than 5 seconds)
+      expect(duration).toBeLessThan(5000);
     });
+  });
 
-    describe('configuration', () => {
-        it('should respect rule configuration options', () => {
-            const ruleWithOptions = {
-                ...useEffectCleanupRule,
-                defaultOptions: [
-                    {
-                        checkIntervals: true,
-                        checkTimeouts: true,
-                        checkEventListeners: true,
-                        checkSubscriptions: false, // Disabled
-                    },
-                ],
-            };
+  describe('configuration', () => {
+    it('should respect rule configuration options', () => {
+      const ruleWithOptions = {
+        ...useEffectCleanupRule,
+        defaultOptions: [
+          {
+            checkIntervals: true,
+            checkTimeouts: true,
+            checkEventListeners: true,
+            checkSubscriptions: false, // Disabled
+          },
+        ],
+      };
 
-            const code = `
+      const code = `
         useEffect(() => {
           const subscription = observable.subscribe();
           // Should not trigger error because subscriptions are disabled
         }, []);
       `;
 
-            ruleTester.run('rule-configuration', ruleWithOptions, {
-                valid: [{ code }],
-                invalid: [],
-            });
-        });
+      ruleTester.run('rule-configuration', ruleWithOptions, {
+        valid: [{ code }],
+        invalid: [],
+      });
     });
+  });
 });
 
 // Helper function to test rule messages
 describe('Rule Messages', () => {
-    it('should have clear and helpful error messages', () => {
-        const rules = [
-            useEffectCleanupRule,
-            eventListenerCleanupRule,
-            intervalTimeoutCleanupRule,
-            subscriptionCleanupRule,
-        ];
+  it('should have clear and helpful error messages', () => {
+    const rules = [
+      useEffectCleanupRule,
+      eventListenerCleanupRule,
+      intervalTimeoutCleanupRule,
+      subscriptionCleanupRule,
+    ];
 
-        rules.forEach(rule => {
-            expect(rule.meta.messages).toBeDefined();
+    rules.forEach(rule => {
+      expect(rule.meta.messages).toBeDefined();
 
-            Object.values(rule.meta.messages).forEach(message => {
-                expect(typeof message).toBe('string');
-                expect(message.length).toBeGreaterThan(10);
-                expect(message).toMatch(/[A-Z]/); // Should start with capital letter
-            });
-        });
+      Object.values(rule.meta.messages).forEach(message => {
+        expect(typeof message).toBe('string');
+        expect(message.length).toBeGreaterThan(10);
+        expect(message).toMatch(/[A-Z]/); // Should start with capital letter
+      });
     });
+  });
 
-    it('should have proper rule metadata', () => {
-        const rules = [
-            useEffectCleanupRule,
-            eventListenerCleanupRule,
-            intervalTimeoutCleanupRule,
-            subscriptionCleanupRule,
-        ];
+  it('should have proper rule metadata', () => {
+    const rules = [
+      useEffectCleanupRule,
+      eventListenerCleanupRule,
+      intervalTimeoutCleanupRule,
+      subscriptionCleanupRule,
+    ];
 
-        rules.forEach(rule => {
-            expect(rule.meta.type).toBe('problem');
-            expect(rule.meta.docs).toBeDefined();
-            expect(rule.meta.docs.description).toBeDefined();
-            expect(rule.meta.fixable).toBe('code');
-            expect(rule.meta.schema).toBeDefined();
-        });
+    rules.forEach(rule => {
+      expect(rule.meta.type).toBe('problem');
+      expect(rule.meta.docs).toBeDefined();
+      expect(rule.meta.docs.description).toBeDefined();
+      expect(rule.meta.fixable).toBe('code');
+      expect(rule.meta.schema).toBeDefined();
     });
+  });
 });

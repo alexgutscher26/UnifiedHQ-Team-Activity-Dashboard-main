@@ -2,23 +2,23 @@
  * Tests for Memory Leak Prevention ESLint Rules
  */
 
-import { RuleTester } from 'eslint';
+import { RuleTester } from 'eslint'
 import {
   requireUseEffectCleanup,
   requireEventListenerCleanup,
   requireTimerCleanup,
-  requireSubscriptionCleanup,
-} from '../memory-leak-prevention.js';
+  requireSubscriptionCleanup
+} from '../memory-leak-prevention.js'
 
 const ruleTester = new RuleTester({
   parserOptions: {
     ecmaVersion: 2022,
     sourceType: 'module',
     ecmaFeatures: {
-      jsx: true,
-    },
-  },
-});
+      jsx: true
+    }
+  }
+})
 
 describe('Memory Leak Prevention ESLint Rules', () => {
   describe('require-useeffect-cleanup', () => {
@@ -36,7 +36,7 @@ describe('Memory Leak Prevention ESLint Rules', () => {
                 };
               }, []);
             }
-          `,
+          `
         },
         // useEffect without risky patterns
         {
@@ -46,7 +46,7 @@ describe('Memory Leak Prevention ESLint Rules', () => {
                 console.log('mounted');
               }, []);
             }
-          `,
+          `
         },
         // Non-React function
         {
@@ -56,8 +56,8 @@ describe('Memory Leak Prevention ESLint Rules', () => {
                 element.addEventListener('click', handler);
               }, []);
             }
-          `,
-        },
+          `
+        }
       ],
       invalid: [
         // useEffect with addEventListener but no cleanup
@@ -82,7 +82,7 @@ describe('Memory Leak Prevention ESLint Rules', () => {
     };
               }, []);
             }
-          `,
+          `
         },
         // useEffect with setInterval but no cleanup
         {
@@ -104,11 +104,11 @@ describe('Memory Leak Prevention ESLint Rules', () => {
     };
               }, []);
             }
-          `,
-        },
-      ],
-    });
-  });
+          `
+        }
+      ]
+    })
+  })
 
   describe('require-event-listener-cleanup', () => {
     ruleTester.run(
@@ -122,7 +122,7 @@ describe('Memory Leak Prevention ESLint Rules', () => {
             function regularFunction() {
               element.addEventListener('click', handler);
             }
-          `,
+          `
           },
           // addEventListener outside useEffect
           {
@@ -130,8 +130,8 @@ describe('Memory Leak Prevention ESLint Rules', () => {
             function MyComponent() {
               element.addEventListener('click', handler);
             }
-          `,
-          },
+          `
+          }
         ],
         invalid: [
           // addEventListener in React component useEffect
@@ -144,7 +144,7 @@ describe('Memory Leak Prevention ESLint Rules', () => {
               }, []);
             }
           `,
-            errors: [{ messageId: 'missingRemoveListener' }],
+            errors: [{ messageId: 'missingRemoveListener' }]
           },
           // MediaQueryList.addListener in React component useEffect
           {
@@ -157,12 +157,12 @@ describe('Memory Leak Prevention ESLint Rules', () => {
               }, []);
             }
           `,
-            errors: [{ messageId: 'missingMediaQueryCleanup' }],
-          },
-        ],
+            errors: [{ messageId: 'missingMediaQueryCleanup' }]
+          }
+        ]
       }
-    );
-  });
+    )
+  })
 
   describe('require-timer-cleanup', () => {
     ruleTester.run('require-timer-cleanup', requireTimerCleanup, {
@@ -173,7 +173,7 @@ describe('Memory Leak Prevention ESLint Rules', () => {
             function regularFunction() {
               const interval = setInterval(() => {}, 1000);
             }
-          `,
+          `
         },
         // setTimeout not assigned to variable (fire-and-forget)
         {
@@ -183,8 +183,8 @@ describe('Memory Leak Prevention ESLint Rules', () => {
                 setTimeout(() => {}, 1000);
               }, []);
             }
-          `,
-        },
+          `
+        }
       ],
       invalid: [
         // setInterval in React component useEffect
@@ -196,7 +196,7 @@ describe('Memory Leak Prevention ESLint Rules', () => {
               }, []);
             }
           `,
-          errors: [{ messageId: 'missingClearInterval' }],
+          errors: [{ messageId: 'missingClearInterval' }]
         },
         // setTimeout assigned to variable in React component useEffect
         {
@@ -207,11 +207,11 @@ describe('Memory Leak Prevention ESLint Rules', () => {
               }, []);
             }
           `,
-          errors: [{ messageId: 'missingClearTimeout' }],
-        },
-      ],
-    });
-  });
+          errors: [{ messageId: 'missingClearTimeout' }]
+        }
+      ]
+    })
+  })
 
   describe('require-subscription-cleanup', () => {
     ruleTester.run('require-subscription-cleanup', requireSubscriptionCleanup, {
@@ -222,7 +222,7 @@ describe('Memory Leak Prevention ESLint Rules', () => {
             function regularFunction() {
               const sub = observable.subscribe();
             }
-          `,
+          `
         },
         // EventSource outside useEffect
         {
@@ -230,8 +230,8 @@ describe('Memory Leak Prevention ESLint Rules', () => {
             function MyComponent() {
               const eventSource = new EventSource('/api/events');
             }
-          `,
-        },
+          `
+        }
       ],
       invalid: [
         // Subscription in React component useEffect
@@ -243,7 +243,7 @@ describe('Memory Leak Prevention ESLint Rules', () => {
               }, []);
             }
           `,
-          errors: [{ messageId: 'missingUnsubscribe' }],
+          errors: [{ messageId: 'missingUnsubscribe' }]
         },
         // EventSource in React component useEffect
         {
@@ -254,7 +254,7 @@ describe('Memory Leak Prevention ESLint Rules', () => {
               }, []);
             }
           `,
-          errors: [{ messageId: 'missingEventSourceClose' }],
+          errors: [{ messageId: 'missingEventSourceClose' }]
         },
         // WebSocket in React component useEffect
         {
@@ -265,7 +265,7 @@ describe('Memory Leak Prevention ESLint Rules', () => {
               }, []);
             }
           `,
-          errors: [{ messageId: 'missingWebSocketClose' }],
+          errors: [{ messageId: 'missingWebSocketClose' }]
         },
         // IntersectionObserver in React component useEffect
         {
@@ -276,9 +276,9 @@ describe('Memory Leak Prevention ESLint Rules', () => {
               }, []);
             }
           `,
-          errors: [{ messageId: 'missingObserverDisconnect' }],
-        },
-      ],
-    });
-  });
-});
+          errors: [{ messageId: 'missingObserverDisconnect' }]
+        }
+      ]
+    })
+  })
+})
