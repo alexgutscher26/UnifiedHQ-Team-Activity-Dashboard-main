@@ -146,3 +146,180 @@ export function useSafeState<T>(initialState: T | (() => T)) {
 
   return [state, safeSetState] as const;
 }
+
+// Hook for safe EventSource connections
+export function useSafeEventSource(
+  url: string | null,
+  options?: EventSourceInit
+) {
+  const [eventSource, setEventSource] = React.useState<EventSource | null>(null);
+  const [connectionState, setConnectionState] = React.useState<'connecting' | 'open' | 'closed'>('closed');
+  const [error, setError] = React.useState<Event | null>(null);
+  const cleanupRef = React.useRef<(() => void) | null>(null);
+
+  React.useEffect(() => {
+    if (!url) {
+      setEventSource(null);
+      setConnectionState('closed');
+      return;
+    }
+
+    const es = new EventSource(url, options);
+    setEventSource(es);
+    setConnectionState('connecting');
+
+    es.onopen = () => {
+      setConnectionState('open');
+      setError(null);
+    };
+
+    es.onerror = (event) => {
+      setError(event);
+      setConnectionState('closed');
+    };
+
+    cleanupRef.current = () => {
+      if (es.readyState !== EventSource.CLOSED) {
+        es.close();
+      }
+    };
+
+    return () => {
+      if (cleanupRef.current) {
+        cleanupRef.current();
+        cleanupRef.current = null;
+      }
+      setEventSource(null);
+      setConnectionState('closed');
+    };
+  }, [url, options]);
+
+  const addEventListener = React.useCallback((
+    type: string,
+    listener: (event: MessageEvent) => void
+  ) => {
+    if (!eventSource) return () => { };
+
+    eventSource.addEventListener(type, listener);
+    return () => {
+      if (eventSource) {
+        eventSource.removeEventListener(type, listener);
+      }
+    };
+  }, [eventSource]);
+
+  const close = React.useCallback(() => {
+    if (cleanupRef.current) {
+      cleanupRef.current();
+      cleanupRef.current = null;
+    }
+    setConnectionState('closed');
+  }, []);
+
+  return {
+    eventSource,
+    connectionState,
+    error,
+    addEventListener,
+    close
+  };
+}
+
+// Hook for safe WebSocket connections
+export function useSafeWebSocket(
+  url: string | null,
+  protocols?: string | string[]
+) {
+  const [webSocket, setWebSocket] = React.useState<WebSocket | null>(null);
+  const [connectionState, setConnectionState] = React.useState<'connecting' | 'open' | 'closing' | 'closed'>('closed');
+  const [error, setError] = React.useState<Event | null>(null);
+  const cleanupRef = React.useRef<(() => void) | null>(null);
+
+  React.useEffect(() => {
+    if (!url) {
+      setWebSocket(null);
+      setConnectionState('closed');
+      return;
+    }
+
+    const ws = new WebSocket(url, protocols);
+    setWebSocket(ws);
+    setConnectionState('connecting');
+
+    ws.onopen = () => {
+      setConnectionState('open');
+      setError(null);
+    };
+
+    ws.onclose = () => {
+      setConnectionState('closed');
+    };
+
+    ws.onerror = (event) => {
+      setError(event);
+    };
+
+    cleanupRef.current = () => {
+      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+        ws.close();
+      }
+    };
+
+    return () => {
+      if (cleanupRef.current) {
+        cleanupRef.current();
+        cleanupRef.current = null;
+      }
+      setWebSocket(null);
+      setConnectionState('closed');
+    };
+  }, [url, protocols]);
+
+  const send = React.useCallback((data: string | ArrayBufferLike | Blob | ArrayBufferView) => {
+    if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+      webSocket.send(data);
+    }
+  }, [webSocket]);
+
+  const close = React.useCallback((code?: number, reason?: string) => {
+    if (cleanupRef.current) {
+      cleanupRef.current();
+      cleanupRef.current = null;
+    }
+    setConnectionState('closing');
+  }, []);
+
+  return {
+    webSocket,
+    connectionState,
+    error,
+    send,
+    close
+  };
+}
+
+// Hook for safe subscription patterns (like auth client subscriptions)
+export function useSafeSubscription<T>(
+  manager: { subscribe: (listener: (value: T) => void) => () => void },
+  initialValue?: T
+) {
+  const [value, setValue] = React.useState<T | undefined>(initialValue);
+  const unsubscribeRef = React.useRef<(() => void) | null>(null);
+
+  React.useEffect(() => {
+    const unsubscribe = manager.subscribe((newValue) => {
+      setValue(newValue);
+    });
+
+    unsubscribeRef.current = unsubscribe;
+
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
+    };
+  }, [manager]);
+
+  return value;
+}

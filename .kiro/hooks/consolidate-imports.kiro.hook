@@ -1,0 +1,24 @@
+{
+  "enabled": true,
+  "name": "Consolidate Duplicate Imports",
+  "description": "Detects when multiple import statements from the same module path are added and suggests consolidating them into a single import declaration for better code readability and maintainability.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "src/**/*.js",
+      "src/**/*.jsx",
+      "scripts/**/*.js",
+      "*.ts",
+      "*.tsx",
+      "*.js",
+      "*.jsx"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "I need you to analyze the recently modified JavaScript/TypeScript files and check for duplicate import statements from the same module path. Look for cases where multiple import declarations are importing from the same source (e.g., `import calc from './calc.js'` and `import { add } from './calc.js'`). If you find such cases, provide a refactored version that consolidates them into a single import statement (e.g., `import calc, { add } from './calc.js'`). Focus on improving code organization and readability by grouping all imports from a single path into one declaration."
+  }
+}

@@ -363,17 +363,32 @@ export function OptimizedActivityFeed() {
     setRefreshInterval(interval);
 
     return () => {
-      if (eventSource) {
-        eventSource.close();
-      }
+      // Clean up EventSource connection
+      setEventSource(currentEventSource => {
+        if (currentEventSource) {
+          currentEventSource.close();
+        }
+        return null;
+      });
+
+      // Clean up refresh interval
       if (interval) {
         clearInterval(interval);
       }
+      setRefreshInterval(null);
     };
-  }, []);
+  }, [fetchActivities, connectToLiveUpdates]);
 
   const connectToLiveUpdates = useCallback(() => {
     try {
+      // Clean up existing EventSource before creating new one
+      setEventSource(currentEventSource => {
+        if (currentEventSource) {
+          currentEventSource.close();
+        }
+        return null;
+      });
+
       // Test if EventSource is supported
       if (typeof EventSource === 'undefined') {
         console.error('❌ EventSource not supported in this browser');

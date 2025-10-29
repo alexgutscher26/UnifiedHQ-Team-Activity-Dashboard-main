@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "name": "React Key Prop Validator",
+  "description": "Detects when React components use array indices as keys in map operations, which can cause unnecessary re-renders and performance issues when items are added, removed, or reordered",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.tsx",
+      "src/**/*.jsx"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the React components in the changed files and identify any instances where array indices are being used as keys in map operations (e.g., key={index}). Flag these as potential performance issues and suggest using stable, unique identifiers instead. Look for patterns like .map((item, index) => <Component key={index} />) and recommend alternatives like using item.id or other unique properties."
+  }
+}

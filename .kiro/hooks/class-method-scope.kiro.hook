@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "Class Method Scope Warning",
+  "description": "Warns when class methods are destructured or assigned to variables without proper binding, which can cause 'this' to lose its class context",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "src/**/*.js",
+      "src/**/*.jsx"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the code changes for class methods being used outside of method calls. Look for patterns like:\n1. Destructuring class methods: `const { methodName } = instance`\n2. Assigning methods to variables: `const myMethod = instance.methodName`\n3. Passing methods as callbacks without binding: `callback(instance.methodName)`\n\nWhen you find these patterns, warn the user that the method will lose its class scope and suggest alternatives:\n- Use arrow functions in the class: `methodName = () => { ... }`\n- Use .bind(): `instance.methodName.bind(instance)`\n- Use wrapper functions: `() => instance.methodName()`\n\nFocus on TypeScript/JavaScript files in the src directory and provide specific examples of the problematic code along with recommended fixes."
+  }
+}

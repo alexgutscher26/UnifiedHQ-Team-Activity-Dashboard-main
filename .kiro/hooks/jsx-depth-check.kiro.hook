@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "JSX Depth Checker",
+  "description": "Monitors JSX/TSX files for deeply nested elements (>4 levels) and suggests refactoring to improve code readability and maintainability",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.jsx",
+      "src/**/*.tsx",
+      "src/**/*.js",
+      "src/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Analyze the modified JSX/TSX files for deeply nested JSX elements (more than 4 levels deep). If you find any JSX trees that exceed 4 levels of nesting, provide specific suggestions to refactor the code by extracting nested components or restructuring the JSX. Focus on improving readability and maintainability. Show the problematic code sections and provide recommended refactored versions that reduce nesting depth while maintaining functionality."
+  }
+}

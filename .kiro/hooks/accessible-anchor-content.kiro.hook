@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "Accessible Anchor Content",
+  "description": "Monitors React component files to ensure anchor elements contain accessible content and are not hidden using aria-hidden prop. Flags bad practices like empty anchors or anchors with aria-hidden content.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/components/**/*.tsx",
+      "src/app/**/*.tsx",
+      "src/**/*.jsx",
+      "src/**/*.js"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the modified React component files for anchor element accessibility. Check for:\n\n1. Empty anchor tags `<a />` or `<a></a>` - these should have meaningful content\n2. Anchor tags with only aria-hidden content like `<a><TextWrapper aria-hidden /></a>` - this hides content from screen readers\n3. Recommend proper patterns like:\n   - `<a>Anchor Content!</a>` - visible text content\n   - `<a><TextWrapper /></a>` - component without aria-hidden\n   - `<a dangerouslySetInnerHTML={{ __html: 'foo' }} />` - HTML content\n\nFlag any accessibility violations and suggest corrections to make anchor elements accessible to screen readers and keyboard navigation."
+  }
+}

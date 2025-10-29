@@ -1,0 +1,21 @@
+{
+  "enabled": true,
+  "name": "Error Throw Validation",
+  "description": "Validates that only Error objects or Error-based objects are thrown as exceptions, preventing literals and non-Error objects from being thrown which helps maintain proper error tracking and stack traces",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "src/**/*.js",
+      "src/**/*.jsx",
+      "scripts/**/*.js",
+      "eslint.config.js"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the modified code for any throw statements. Ensure that only Error objects or objects that extend Error are being thrown. Flag any instances where literals (strings, numbers, objects) or non-Error objects are thrown as exceptions. Suggest corrections to use proper Error objects with descriptive messages that will provide better stack traces and debugging information."
+  }
+}

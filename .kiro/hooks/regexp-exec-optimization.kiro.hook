@@ -1,0 +1,20 @@
+{
+  "enabled": true,
+  "name": "RegExp.exec Performance Optimization",
+  "description": "Detects usage of String.match() without global flag and suggests using RegExp.exec() for better performance",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.js",
+      "src/**/*.ts",
+      "src/**/*.jsx",
+      "src/**/*.tsx",
+      "scripts/**/*.js"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the code changes and identify any instances where String.match() is used without the global flag (/g). For each occurrence, suggest replacing it with RegExp.exec() for better performance. Provide specific examples showing the before and after code, explaining that RegExp.exec() is faster than String.match() when not using the global flag since both work the same way in this context. Format your response as actionable suggestions with code examples."
+  }
+}

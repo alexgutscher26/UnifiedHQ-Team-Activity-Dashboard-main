@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "Process Exit Guard",
+  "description": "Detects dangerous process.exit() calls in JavaScript/TypeScript files and suggests safer error handling alternatives like throwing errors or setting process.exitCode",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "**/*.js",
+      "**/*.ts",
+      "**/*.jsx",
+      "**/*.tsx"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the modified files for any usage of process.exit() calls. If found, analyze whether these calls are dangerous (i.e., they could terminate the entire application unexpectedly) and suggest safer alternatives such as: 1) Throwing an error instead to allow proper error handling, 2) Using process.exitCode to set the exit code without immediately terminating, 3) Implementing proper error boundaries or handlers. Provide specific code suggestions showing how to replace process.exit() with safer patterns while maintaining the same functionality."
+  }
+}

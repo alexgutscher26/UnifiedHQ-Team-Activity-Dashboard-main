@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "Async Without Await Detector",
+  "description": "Detects async functions that don't contain any await expressions, which is often a code smell indicating unnecessary async declarations or refactoring artifacts",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "scripts/**/*.js",
+      "scripts/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the modified TypeScript/JavaScript files and identify any async functions that don't contain await expressions. For each function found:\n\n1. Check if the function is truly async (declared with 'async' keyword)\n2. Verify it contains no 'await' expressions in its body\n3. Ignore async generator functions (async function*)\n4. Consider TypeScript interface compliance cases\n\nFor violations found, suggest:\n- Remove 'async' keyword if no await is needed\n- Use Promise.resolve() for interface compliance cases\n- Add explanatory comments for intentional Promise.resolve() usage\n- Refactor to use await if the function should be asynchronous\n\nProvide specific line numbers and function names, along with recommended fixes following the established patterns in the codebase."
+  }
+}

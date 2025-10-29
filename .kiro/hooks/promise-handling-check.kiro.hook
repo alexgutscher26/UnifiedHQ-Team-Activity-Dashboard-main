@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "Promise Handling Validator",
+  "description": "Detects and flags TypeScript code where promises are used but not properly handled with await or .catch(), preventing potential runtime errors from unhandled promise rejections.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "scripts/**/*.js",
+      "scripts/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the modified TypeScript/JavaScript files for any promises that are not properly handled. Look for:\n\n1. Function calls that return promises but are missing 'await' keyword\n2. Promise chains without proper .catch() error handling\n3. Async functions being called without await in non-async contexts\n4. Promise constructors or async operations that could fail silently\n\nFor each issue found, provide:\n- The specific line and location\n- Why this is problematic (potential for unhandled rejections)\n- The correct way to handle it (add await, .catch(), or proper error handling)\n- Any TypeScript compiler settings that might help catch these issues\n\nFocus on practical fixes that ensure all promises are properly awaited or have error handling."
+  }
+}

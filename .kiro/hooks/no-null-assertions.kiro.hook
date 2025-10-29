@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "Avoid Non-Null Assertions",
+  "description": "Detects usage of non-null assertion operator (!) in TypeScript files and suggests safer alternatives like optional chaining, type guards, or validation functions",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "scripts/**/*.ts",
+      "scripts/**/*.js"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the modified TypeScript files for non-null assertion operators (!). For each usage found:\n\n1. Identify the specific line and context where the non-null assertion is used\n2. Explain why this is potentially unsafe and could cause runtime errors\n3. Suggest safer alternatives such as:\n   - Optional chaining (?.) for property access\n   - Conditional checks with ternary operators\n   - Type guard functions with proper return type predicates\n   - Validation functions that confirm values aren't null/undefined\n4. If a non-null assertion is absolutely necessary, recommend adding a skipcq comment explaining why it's safe\n5. Provide code examples showing the recommended refactoring\n\nFocus on maintaining TypeScript's strict null-checking benefits while preventing potential runtime errors."
+  }
+}

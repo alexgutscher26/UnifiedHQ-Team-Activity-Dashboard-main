@@ -1,0 +1,20 @@
+{
+  "enabled": true,
+  "name": "Callback Error Pattern Validator",
+  "description": "Validates that callback functions follow the Node.js error-first callback pattern, ensuring errors are proper Error objects or null/undefined, not strings or other types.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.js",
+      "src/**/*.ts",
+      "scripts/**/*.js",
+      "**/*.js",
+      "**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the modified code for callback function invocations. Check that all callback calls follow the Node.js error-first callback pattern:\n\nCORRECT patterns:\n- cb(null, result)\n- cb(undefined, data) \n- callback(new Error('message'))\n- callback(someErrorVariable)\n\nINCORRECT patterns to flag:\n- cb('error string') - strings should be Error objects\n- cb({error: 'message'}) - objects should be Error instances\n- callback(0) or callback(false) - falsy non-null/undefined values\n- Any callback where first parameter is not null, undefined, or Error instance\n\nFor any violations found, suggest the proper Error object usage and explain why the error-first callback pattern is important for Node.js applications."
+  }
+}

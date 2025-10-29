@@ -1,0 +1,24 @@
+{
+  "enabled": true,
+  "name": "Variables at Top",
+  "description": "Enforces that variable declarations are placed at the top of their containing scope to improve code readability, performance, and navigation by making JavaScript's hoisting behavior explicit",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.js",
+      "src/**/*.jsx",
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "scripts/**/*.js",
+      "eslint.config.js",
+      "next.config.mjs",
+      "postcss.config.mjs",
+      "tailwind.config.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the modified JavaScript/TypeScript files and ensure all variable declarations (var, let, const) are placed at the top of their containing function scope or program scope. Check that variables are declared before they are used and that the hoisting behavior is made explicit. Suggest refactoring if variables are declared in the middle of functions or blocks where they could be moved to the top for better readability and performance."
+  }
+}

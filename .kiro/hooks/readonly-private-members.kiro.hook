@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "Readonly Private Members",
+  "description": "Detects private class members that are never modified outside of the constructor and suggests marking them as readonly for better code quality and immutability",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "scripts/**/*.ts",
+      "prisma/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the TypeScript class definitions in the modified files and identify any private members that are never modified outside of the constructor. Suggest marking these members as readonly to improve code quality and enforce immutability. Look for:\n\n1. Private properties that are only assigned in their declaration or constructor\n2. Private parameter properties in constructors that could be marked readonly\n3. Members that are never reassigned after initialization\n\nProvide specific recommendations with code examples showing the before and after, explaining why marking these as readonly improves the code quality and prevents accidental modifications."
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "enabled": true,
+  "name": "Switch Default Case Enforcer",
+  "description": "Monitors JavaScript and TypeScript files for switch statements and ensures they have explicit default cases or comments indicating intentional omission",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "src/**/*.js",
+      "src/**/*.jsx",
+      "scripts/**/*.js"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the modified code for switch statements. Check that each switch statement either has a default case with appropriate handling, or has a comment like \"// no default\" or \"// No Default\" to explicitly indicate the developer intentionally omitted the default case. If any switch statements are missing both a default case and an explicit comment, suggest adding either a default case with appropriate handling or a comment to make the intention clear."
+  }
+}

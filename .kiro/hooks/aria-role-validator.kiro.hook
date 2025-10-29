@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "ARIA Role Validator",
+  "description": "Validates that interactive ARIA roles are not applied to non-interactive HTML elements to maintain proper accessibility standards",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.tsx",
+      "src/**/*.jsx",
+      "src/**/*.ts",
+      "src/**/*.js"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the modified files for accessibility violations where interactive ARIA roles (button, link, checkbox, menuitem, menuitemcheckbox, menuitemradio, option, radio, searchbox, switch, textbox) are incorrectly applied to non-interactive HTML elements (main, area, h1-h6, img, li, ul, ol). Flag any violations and suggest proper alternatives that maintain semantic meaning while ensuring accessibility compliance. Focus on React/JSX components and TypeScript files."
+  }
+}

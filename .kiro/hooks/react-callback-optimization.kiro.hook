@@ -1,0 +1,21 @@
+{
+  "enabled": true,
+  "name": "React Callback Optimization",
+  "description": "Detects React components using .bind() or local callback functions as props that could benefit from useCallback optimization or moving callbacks outside the component to improve performance",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/components/**/*.tsx",
+      "src/components/**/*.ts",
+      "src/app/**/*.tsx",
+      "src/app/**/*.ts",
+      "src/hooks/**/*.tsx",
+      "src/hooks/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Analyze the React component code for performance issues related to callback functions. Look for:\n\n1. Usage of .bind() in JSX props\n2. Arrow functions or function expressions defined directly in JSX props\n3. Local callback functions passed as props that get recreated on every render\n4. Components that could benefit from React.useCallback optimization\n\nFor each issue found, provide:\n- The specific line and pattern causing the performance issue\n- Why this pattern causes unnecessary re-renders\n- A refactored solution using useCallback or moving the callback outside the component\n- Consider if the component is rendered frequently enough to warrant optimization\n- Suggest adding skipcq comments for single-render components if appropriate\n\nFocus on components in the UnifiedHQ dashboard that handle real-time updates, lists, or frequent re-renders where callback optimization would have meaningful performance impact."
+  }
+}
