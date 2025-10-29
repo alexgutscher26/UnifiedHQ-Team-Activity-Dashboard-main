@@ -92,8 +92,8 @@ jobs:
         run: |
           echo "DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}" >> .env
           echo "REDIS_URL=${{ secrets.STAGING_REDIS_URL }}" >> .env
-          echo "NEXTAUTH_SECRET=${{ secrets.STAGING_NEXTAUTH_SECRET }}" >> .env
-          echo "NEXTAUTH_URL=${{ secrets.STAGING_NEXTAUTH_URL }}" >> .env
+          echo "BETTER_AUTH_SECRET=${{ secrets.STAGING_BETTER_AUTH_SECRET }}" >> .env
+          echo "BETTER_AUTH_URL=${{ secrets.STAGING_BETTER_AUTH_URL }}" >> .env
           echo "GITHUB_CLIENT_ID=${{ secrets.STAGING_GITHUB_CLIENT_ID }}" >> .env
           echo "GITHUB_CLIENT_SECRET=${{ secrets.STAGING_GITHUB_CLIENT_SECRET }}" >> .env
           echo "SLACK_CLIENT_ID=${{ secrets.STAGING_SLACK_CLIENT_ID }}" >> .env

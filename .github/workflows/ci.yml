@@ -161,8 +161,8 @@ jobs:
         run: |
           echo "DATABASE_URL=postgresql://test:test@localhost:5432/test" >> .env
           echo "REDIS_URL=redis://localhost:6379" >> .env
-          echo "NEXTAUTH_SECRET=test-secret" >> .env
-          echo "NEXTAUTH_URL=http://localhost:3000" >> .env
+          echo "BETTER_AUTH_SECRET=test-secret" >> .env
+          echo "BETTER_AUTH_URL=http://localhost:3000" >> .env
 
       - name: Generate Prisma client
         run: bunx prisma generate
