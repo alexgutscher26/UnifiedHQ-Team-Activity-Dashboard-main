@@ -45,7 +45,9 @@
     "perf:analyze": "node scripts/performance-analyzer.js",
     "perf:compare": "node scripts/performance-comparison.js",
     "ai-summary:setup": "node scripts/setup-ai-summary.js",
-    "ai-summary:test": "node scripts/test-ai-summary.js"
+    "ai-summary:test": "node scripts/test-ai-summary.js",
+    "test:eslint-rules": "node --test src/lib/eslint-rules/__tests__/*.test.js",
+    "lint:memory-leaks": "eslint --ext .js,.jsx,.ts,.tsx --rule 'memory-leak-prevention/require-useeffect-cleanup: error' --rule 'memory-leak-prevention/require-event-listener-cleanup: error' --rule 'memory-leak-prevention/require-timer-cleanup: error' --rule 'memory-leak-prevention/require-subscription-cleanup: error' src/"
   },
   "dependencies": {
     "@dnd-kit/core": "latest",
