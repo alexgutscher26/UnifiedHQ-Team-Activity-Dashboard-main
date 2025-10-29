@@ -19,6 +19,16 @@ let totalTests = 0
 let passedTests = 0
 let failedTests = 0
 
+/**
+ * Run a test file using Node.js and capture the results.
+ *
+ * This function spawns a child process to execute the test file, collects the standard output and error,
+ * and parses the results to determine how many tests passed or failed. It also handles cases where no
+ * specific test results are found by checking the exit code of the process. The results are logged to the console.
+ *
+ * @param testFile - The name of the test file to be executed.
+ * @returns A promise that resolves to a boolean indicating whether the tests passed.
+ */
 async function runTest (testFile) {
   return new Promise(resolve => {
     console.log(`📝 Running ${testFile}...`)
@@ -89,6 +99,13 @@ async function runTest (testFile) {
   })
 }
 
+/**
+ * Executes all test files and summarizes the results.
+ *
+ * The function iterates over each test file in the testFiles array, running each test asynchronously using the runTest function.
+ * It collects the results and logs a summary of the total tests, passed tests, and failed tests.
+ * Based on the results, it determines if all tests passed and exits the process with the appropriate status code.
+ */
 async function runAllTests () {
   const results = []
 
