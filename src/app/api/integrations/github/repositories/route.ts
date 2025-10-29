@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { Octokit } from '@octokit/rest';
 import { PrismaClient } from '@/generated/prisma';
+import { RedisCache, CacheKeyGenerator, TTLManager } from '@/lib/redis';
+import { CacheInvalidationService } from '@/lib/cache-invalidation-service';
 
 const prisma = new PrismaClient();
 
@@ -48,6 +50,18 @@ export async function GET(request: NextRequest) {
       email: session.user.email,
       image: session.user.image,
     };
+
+    // Generate cache key for user's repositories
+    const cacheKey = CacheKeyGenerator.github(user.id, 'repositories');
+
+    // Try to get from cache first
+    const cachedRepos = await RedisCache.get(cacheKey);
+    if (cachedRepos) {
+      console.log(`[GitHub Cache] Cache hit for repositories: ${user.id}`);
+      return NextResponse.json(cachedRepos);
+    }
+
+    console.log(`[GitHub Cache] Cache miss for repositories: ${user.id}`);
 
     // Get GitHub connection
     const connection = await prisma.connection.findFirst({
@@ -99,10 +113,17 @@ export async function GET(request: NextRequest) {
       stars: repo.stargazers_count,
     }));
 
-    return NextResponse.json({
+    const responseData = {
       repositories: formattedRepos,
       total: repos.length,
-    });
+      cached: false,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Cache the response for 30 minutes (repositories don't change frequently)
+    await RedisCache.set(cacheKey, responseData, TTLManager.getTTL('GITHUB_REPOS'));
+
+    return NextResponse.json(responseData);
   } catch (error: any) {
     console.error('Error fetching repositories:', error);
 
@@ -172,6 +193,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Invalidate repositories cache since selection changed
+    const cacheKey = CacheKeyGenerator.github(user.id, 'repositories');
+    await RedisCache.del(cacheKey);
+
+    // Invalidate GitHub activity cache since repository selection changed
+    await CacheInvalidationService.invalidateGitHubData(user.id, repoName);
+
     // Broadcast repository change
     broadcastRepositoryChange(user.id, 'added', repoName);
 
@@ -212,6 +240,14 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    // Get repository name before deletion for cache invalidation
+    const selectedRepo = await prisma.selectedRepository.findFirst({
+      where: {
+        userId: user.id,
+        repoId: parseInt(repoId),
+      },
+    });
+
     // Remove repository from selected list
     await prisma.selectedRepository.deleteMany({
       where: {
@@ -219,6 +255,18 @@ export async function DELETE(request: NextRequest) {
         repoId: parseInt(repoId),
       },
     });
+
+    // Invalidate repositories cache since selection changed
+    const cacheKey = CacheKeyGenerator.github(user.id, 'repositories');
+    await RedisCache.del(cacheKey);
+
+    // Invalidate GitHub activity cache for this repository
+    if (selectedRepo) {
+      await CacheInvalidationService.invalidateGitHubData(user.id, selectedRepo.repoName);
+
+      // Broadcast repository change
+      broadcastRepositoryChange(user.id, 'removed', selectedRepo.repoName);
+    }
 
     return NextResponse.json({ message: 'Repository removed successfully' });
   } catch (error: any) {
