@@ -387,7 +387,7 @@ export const usePerformanceMonitor = (config: PerformanceConfig = {}) => {
           averageScrollTime:
             scrollTimesRef.current.length > 0
               ? scrollTimesRef.current.reduce((a, b) => a + b, 0) /
-                scrollTimesRef.current.length
+              scrollTimesRef.current.length
               : 0,
         };
       }
@@ -465,6 +465,20 @@ export const usePerformanceMonitor = (config: PerformanceConfig = {}) => {
     checkMemoryThreshold,
     analyzeMemoryTrends,
   ]);
+
+  // Cleanup all references on unmount
+  useEffect(() => {
+    return () => {
+      // Clear all performance tracking references
+      scrollTimesRef.current = [];
+      memoryHistoryRef.current = [];
+      frameCountRef.current = 0;
+      scrollEventsRef.current = 0;
+      componentCountRef.current = 0;
+      eventListenerCountRef.current = 0;
+      intervalCountRef.current = 0;
+    };
+  }, []);
 
   return {
     /** Current performance metrics including memory usage and render times */
@@ -588,10 +602,16 @@ export const useIntersectionObserver = (
   options: IntersectionObserverInit = {}
 ) => {
   const [isIntersecting, setIsIntersecting] = useState(false);
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
     const element = elementRef.current;
     if (!element) return;
+
+    // Clean up any existing observer
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -604,10 +624,15 @@ export const useIntersectionObserver = (
       }
     );
 
+    observerRef.current = observer;
     observer.observe(element);
 
     return () => {
-      observer.unobserve(element);
+      if (observerRef.current) {
+        observerRef.current.unobserve(element);
+        observerRef.current.disconnect();
+        observerRef.current = null;
+      }
     };
   }, [elementRef, options]);
 
@@ -958,6 +983,17 @@ export const useMemoryLeakDetection = () => {
     const interval = setInterval(checkForLeaks, 10000); // Check every 10 seconds
     return () => clearInterval(interval);
   }, [checkForLeaks]);
+
+  // Cleanup all tracking references on unmount
+  useEffect(() => {
+    return () => {
+      // Clear all tracking references to prevent memory leaks
+      componentRefs.current.clear();
+      eventListenerRefs.current.clear();
+      intervalRefs.current.clear();
+      timeoutRefs.current.clear();
+    };
+  }, []);
 
   return {
     registerComponent,
