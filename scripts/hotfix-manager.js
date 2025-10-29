@@ -14,7 +14,7 @@ class HotfixManager {
   }
 
   /**
-   * Load hotfix configuration from a YAML file.
+   * Load hotfix configuration from a YAML file or return default config.
    */
   loadConfig () {
     const configPath = path.join(
@@ -51,13 +51,12 @@ class HotfixManager {
   }
 
   /**
-   * Create hotfix branch
+   * Create hotfix branch.
    *
    * This function generates a hotfix branch name based on the provided description and severity level.
-   * It first formats the description and appends a timestamp to create a unique branch name.
-   * The function checks if the branch already exists, switches to the main branch, pulls the latest changes,
-   * and then creates the new hotfix branch. If any errors occur during this process, they are logged,
-   * and the function returns null.
+   * It formats the description, appends a timestamp, and checks if the branch already exists.
+   * If the branch does not exist, it switches to the main branch, pulls the latest changes,
+   * and creates the new hotfix branch. Errors during this process are logged, and the function returns null.
    *
    * @param {string} description - The description for the hotfix branch.
    * @param {string} [severity='high'] - The severity level of the hotfix.
@@ -275,6 +274,10 @@ class HotfixManager {
 
   /**
    * Generate hotfix PR body.
+   * @param {string} branchName - The name of the branch for the hotfix.
+   * @param {string} description - A description of the issue being fixed.
+   * @param {string} severity - The severity level of the issue (critical, high, medium).
+   * @returns {string} The formatted hotfix PR body.
    */
   generateHotfixPRBody (branchName, description, severity) {
     const timestamp = new Date().toISOString()
@@ -377,12 +380,9 @@ ${description}
   }
 
   /**
-   * Deploy hotfix
+   * Deploys a hotfix to the main branch and optionally triggers an auto-deploy.
    *
-   * This function deploys a hotfix by first validating the provided branch name.
-   * If validation passes, it merges the hotfix into the main branch and pushes the changes.
-   * It also backports the hotfix to the develop branch and optionally triggers an auto-deploy
-   * to production based on the provided parameter or configuration setting.
+   * This function validates the provided branch name for the hotfix. If validation is successful, it merges the hotfix into the main branch, pushes the changes, and backports the hotfix to the develop branch. If the autoDeploy parameter is true or the configuration setting allows it, the function will also trigger an auto-deploy to production. Warnings from validation are logged for caution.
    *
    * @param {string} branchName - The name of the branch containing the hotfix.
    * @param {boolean} [autoDeploy=false] - Indicates whether to automatically deploy the hotfix to production.
@@ -433,6 +433,8 @@ ${description}
 
   /**
    * Backports a hotfix branch to the develop branch.
+   * @param {string} branchName - The name of the hotfix branch to backport.
+   * @returns {boolean} - Returns true if the backport was successful, false otherwise.
    */
   backportToDevelop (branchName) {
     console.log(`🔀 Backporting hotfix to develop: ${branchName}`)
@@ -463,6 +465,8 @@ ${description}
 
   /**
    * Rollback a hotfix using the specified commit hash.
+   * @param {string} commitHash - The commit hash of the hotfix to rollback.
+   * @returns {boolean} True if the rollback was successful, false otherwise.
    */
   rollbackHotfix (commitHash) {
     console.log(`🔄 Rolling back hotfix: ${commitHash}`)
@@ -487,7 +491,9 @@ ${description}
   }
 
   /**
-   * Clean up the specified hotfix branch by deleting it locally and remotely.
+   * Cleans up the specified hotfix branch by deleting it locally and remotely.
+   * @param {string} branchName - The name of the hotfix branch to clean up.
+   * @returns {boolean} - Returns true if the cleanup was successful, false otherwise.
    */
   cleanupHotfixBranch (branchName) {
     console.log(`🧹 Cleaning up hotfix branch: ${branchName}`)
@@ -604,11 +610,11 @@ ${description}
   /**
    * List active hotfixes.
    *
-   * This function retrieves all remote branches that are categorized as hotfixes by executing a Git command.
-   * It processes the branch names to remove the 'origin/' prefix and filters out any non-hotfix branches.
+   * This function retrieves all remote branches categorized as hotfixes by executing a Git command.
+   * It processes the branch names to remove the 'origin/' prefix and filters out non-hotfix branches.
    * If no active hotfix branches are found, it logs a message and returns an empty array.
    * For each active hotfix branch, it retrieves additional information such as severity and age,
-   * and logs this information to the console. In case of an error during execution, it logs the error message and returns an empty array.
+   * logging this information to the console. In case of an error during execution, it logs the error message and returns an empty array.
    */
   listActiveHotfixes () {
     console.log('🚨 Active Hotfixes:')
@@ -645,9 +651,9 @@ ${description}
    * Get hotfix information.
    *
    * This function retrieves the severity and age of a hotfix based on the provided branch name.
-   * It splits the branch name to determine the severity, defaults to 'unknown' if not specified,
-   * and calculates the age of the branch by executing a git command to get the last commit time.
-   * If an error occurs during execution, it returns 'unknown' for both severity and age.
+   * It splits the branch name to determine the severity, defaulting to 'unknown' if not specified.
+   * The age of the branch is calculated by executing a git command to get the last commit time.
+   * In case of an error during execution, it returns 'unknown' for both severity and age.
    *
    * @param {string} branchName - The name of the branch to retrieve hotfix information for.
    */
