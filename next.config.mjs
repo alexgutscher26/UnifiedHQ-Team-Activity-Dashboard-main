@@ -1,17 +1,17 @@
-import bundleAnalyzer from '@next/bundle-analyzer';
+import bundleAnalyzer from '@next/bundle-analyzer'
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
-  openAnalyzer: false,
-});
+  openAnalyzer: false
+})
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: true
   },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: true
   },
   images: {
     formats: ['image/webp', 'image/avif'],
@@ -23,14 +23,14 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**',
-      },
-    ],
+        hostname: '**'
+      }
+    ]
   },
   // Bundle analyzer configuration
   ...(process.env.ANALYZE === 'true' && {
-    outputFileTracing: false,
-  }),
-};
+    outputFileTracing: false
+  })
+}
 
-export default withBundleAnalyzer(nextConfig);
+export default withBundleAnalyzer(nextConfig)
