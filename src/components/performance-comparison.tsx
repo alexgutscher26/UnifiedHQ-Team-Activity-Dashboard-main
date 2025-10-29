@@ -18,6 +18,16 @@ interface PerformanceComparisonProps {
   activities: any[];
 }
 
+/**
+ * Renders a performance comparison between the original and optimized activity feeds.
+ *
+ * This component manages the state for selected tabs and performance metrics, generates mock activities,
+ * measures performance for both feed types, and calculates performance improvements. It displays the
+ * performance metrics and optimization features, allowing users to switch between the original and
+ * optimized feeds for comparison.
+ *
+ * @param {PerformanceComparisonProps} props - The properties for the PerformanceComparison component.
+ */
 export function PerformanceComparison({
   activities,
 }: PerformanceComparisonProps) {
