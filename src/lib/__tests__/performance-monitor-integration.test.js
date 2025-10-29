@@ -176,12 +176,18 @@ describe('Performance Monitor Memory Leak Detection Integration', () => {
             let unmounted = 0;
             let active = 0;
 
+            /**
+             * Registers a component by name and updates counters.
+             */
             const registerComponent = (name) => {
                 componentSet.add(name);
                 mounted++;
                 active++;
             };
 
+            /**
+             * Unregisters a component by its name.
+             */
             const unregisterComponent = (name) => {
                 const wasRemoved = componentSet.delete(name);
                 if (wasRemoved) {
@@ -230,6 +236,9 @@ describe('Performance Monitor Memory Leak Detection Integration', () => {
             const eventListenerMap = new Map();
             let totalCount = 0;
 
+            /**
+             * Registers an event listener for a specific element and event type.
+             */
             const registerEventListener = (elementId, eventType) => {
                 const key = `${elementId}:${eventType}`;
                 const currentCount = eventListenerMap.get(key) || 0;
@@ -237,6 +246,9 @@ describe('Performance Monitor Memory Leak Detection Integration', () => {
                 totalCount++;
             };
 
+            /**
+             * Decreases the count of event listeners for a specified element and event type.
+             */
             const unregisterEventListener = (elementId, eventType) => {
                 const key = `${elementId}:${eventType}`;
                 const currentCount = eventListenerMap.get(key) || 0;
@@ -285,9 +297,18 @@ describe('Performance Monitor Memory Leak Detection Integration', () => {
             const intervalSet = new Set();
             const timeoutSet = new Set();
 
+            /**
+             * Adds an interval ID to the set of registered intervals.
+             */
             const registerInterval = (id) => intervalSet.add(id);
+            /**
+             * Removes an interval from the interval set by its ID.
+             */
             const unregisterInterval = (id) => intervalSet.delete(id);
             const registerTimeout = (id) => timeoutSet.add(id);
+            /**
+             * Removes a timeout ID from the timeout set.
+             */
             const unregisterTimeout = (id) => timeoutSet.delete(id);
 
             registerInterval(123);
@@ -431,6 +452,9 @@ describe('Performance Monitor Memory Leak Detection Integration', () => {
             const eventListeners = new Map();
             let alertCount = 0;
 
+            /**
+             * Increments the alert count.
+             */
             const mockAlert = () => alertCount++;
 
             // Simulate memory measurements over time
