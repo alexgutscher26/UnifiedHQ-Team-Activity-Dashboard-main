@@ -331,7 +331,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download production artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: production-artifacts-${{ needs.build-production-artifacts.outputs.version }}
           path: artifacts/
@@ -386,13 +386,13 @@ jobs:
           ref: ${{ github.event.release.tag_name }}
 
       - name: Download production artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: production-artifacts-${{ needs.build-production-artifacts.outputs.version }}
           path: artifacts/
 
       - name: Download manifest
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: manifest-${{ needs.build-production-artifacts.outputs.version }}
           path: .
@@ -573,13 +573,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download production artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: production-artifacts-${{ needs.build-production-artifacts.outputs.version }}
           path: artifacts/
 
       - name: Download manifest
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: manifest-${{ needs.build-production-artifacts.outputs.version }}
           path: .
