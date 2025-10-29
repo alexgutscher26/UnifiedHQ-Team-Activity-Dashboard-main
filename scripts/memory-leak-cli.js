@@ -39,23 +39,38 @@ function colorize (text, color) {
   return `${colors[color]}${text}${colors.reset}`
 }
 
+/**
+ * Logs a success message to the console in green.
+ */
 function logSuccess (message) {
   console.log(colorize(`✓ ${message}`, 'green'))
 }
 
+/**
+ * Logs an error message to the console in red.
+ */
 function logError (message) {
   console.error(colorize(`✗ ${message}`, 'red'))
 }
 
+/**
+ * Logs a warning message to the console.
+ */
 function logWarning (message) {
   console.warn(colorize(`⚠ ${message}`, 'yellow'))
 }
 
+/**
+ * Logs an informational message to the console.
+ */
 function logInfo (message) {
   console.log(colorize(`ℹ ${message}`, 'blue'))
 }
 
 // Format leak report for display
+/**
+ * Formats a leak report into a string representation.
+ */
 function formatLeakReport (report) {
   const severityColor = {
     critical: 'red',
@@ -76,6 +91,15 @@ function formatLeakReport (report) {
 }
 
 // Generate detailed report
+/**
+ * Generate a detailed report of memory leak detection results.
+ *
+ * This function processes an array of reports, logging a summary of the total issues categorized by severity levels.
+ * It also groups the issues by file and displays each report along with any suggested fixes.
+ * If no reports are provided, a success message is logged indicating no memory leaks were detected.
+ *
+ * @param reports - An array of report objects containing memory leak details.
+ */
 function generateDetailedReport (reports) {
   if (reports.length === 0) {
     logSuccess('No memory leaks detected!')
@@ -125,6 +149,18 @@ function generateDetailedReport (reports) {
 }
 
 // Save report to file
+/**
+ * Save a report in the specified format to the given output path.
+ *
+ * The function processes the reports based on the specified format, which can be 'json', 'csv', or 'html'.
+ * It constructs the content accordingly and writes it to the output path using fs.writeFile.
+ * If an unsupported format is provided, an error is thrown. Errors during the file writing process are logged.
+ *
+ * @param reports - An array of report objects containing details such as file, line, column, severity, type, description, and suggestedFix.
+ * @param format - The format in which to save the report, can be 'json', 'csv', or 'html'.
+ * @param outputPath - The path where the report will be saved.
+ * @throws Error If the format is unsupported.
+ */
 async function saveReport (reports, format, outputPath) {
   try {
     let content
@@ -246,6 +282,20 @@ function generateHTMLReport (reports) {
 }
 
 // Apply fixes automatically
+/**
+ * Applies suggested fixes to reports based on provided options.
+ *
+ * This function filters the reports to identify those that have a suggested fix and do not require manual review.
+ * If no fixable reports are found, a warning is logged. If the dryRun option is enabled, it displays the fixes
+ * that would be applied without making any changes. Otherwise, it logs a warning indicating that the actual
+ * fix application is not yet implemented.
+ *
+ * @param {Array} reports - The list of reports to process for suggested fixes.
+ * @param {Object} [options={}] - Options to control the behavior of the function.
+ * @param {boolean} [options.dryRun=false] - If true, performs a dry run without applying fixes.
+ * @param {boolean} [options.backup=true] - If true, creates a backup before applying fixes.
+ * @param {boolean} [options.interactive=false] - If true, enables interactive mode for user input.
+ */
 async function applyFixes (reports, options = {}) {
   const { dryRun = false, backup = true, interactive = false } = options
 
