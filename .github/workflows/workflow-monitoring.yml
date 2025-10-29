@@ -302,7 +302,7 @@ jobs:
           echo "metrics-file=$METRICS_FILE" >> $GITHUB_OUTPUT
 
       - name: Upload metrics artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: workflow-metrics-${{ steps.period.outputs.start-date }}-to-${{ steps.period.outputs.end-date }}
           path: ${{ steps.collect.outputs.metrics-file }}
@@ -497,7 +497,7 @@ jobs:
           echo "report-summary=$SUMMARY" >> $GITHUB_OUTPUT
 
       - name: Upload report artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: workflow-report-${{ needs.collect-workflow-metrics.outputs.start-date }}-to-${{ needs.collect-workflow-metrics.outputs.end-date }}
           path: ${{ steps.generate.outputs.report-file }}
