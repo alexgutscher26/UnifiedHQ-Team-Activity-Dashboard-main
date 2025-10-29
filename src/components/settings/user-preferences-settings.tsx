@@ -34,6 +34,15 @@ interface UserPreferencesSettingsProps {
   onSettingsChange?: (section: string, message: string) => void;
 }
 
+/**
+ * Manages user preferences settings including loading, saving, and editing preferences.
+ *
+ * This component initializes state for user preferences and loading states, and utilizes effects to load preferences on mount.
+ * It provides functionality to save updated preferences and handle cancellation of edits, while displaying appropriate loading indicators and error messages.
+ *
+ * @param onSettingsChange - Callback function triggered when settings are changed.
+ * @returns JSX.Element representing the user preferences settings interface.
+ */
 export function UserPreferencesSettings({
   onSettingsChange,
 }: UserPreferencesSettingsProps) {
