@@ -11,7 +11,8 @@ const testFiles = [
     'memory-leak-fix-generator.test.ts',
     'event-listener-fix-generator.test.ts',
     'timer-cleanup-fix-generator.test.ts',
-    'connection-cleanup-fix-generator.test.ts'
+    'connection-cleanup-fix-generator.test.ts',
+    'performance-monitor-integration.test.js'
 ];
 
 console.log('🧪 Running Memory Leak Fix Generator Tests\n');
