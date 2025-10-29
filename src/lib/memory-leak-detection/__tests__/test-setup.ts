@@ -66,7 +66,7 @@ declare global {
 // Custom Jest matchers for memory leak testing
 expect.extend({
     toHaveMemoryLeak(received: any) {
-        const hasLeak = received && received.type && received.severity;
+        const hasLeak = received?.type && received.severity;
 
         if (hasLeak) {
             return {

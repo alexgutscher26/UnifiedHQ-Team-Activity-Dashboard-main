@@ -402,7 +402,7 @@ export class ConnectionCleanupFixGenerator {
     }
 
     const returnStatement = this.findReturnStatement(containingFunction);
-    if (returnStatement && returnStatement.expression) {
+    if (returnStatement?.expression) {
       return this.addToExistingCleanupFunction(returnStatement, cleanupCode);
     }
 

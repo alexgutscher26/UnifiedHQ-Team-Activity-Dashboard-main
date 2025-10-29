@@ -251,7 +251,7 @@ export class EventListenerFixGenerator {
 
     // Find existing return statement in useEffect
     const returnStatement = this.findReturnStatement(containingFunction);
-    if (returnStatement && returnStatement.expression) {
+    if (returnStatement?.expression) {
       return this.addToExistingReturnFunction(returnStatement, cleanupCode);
     }
 
