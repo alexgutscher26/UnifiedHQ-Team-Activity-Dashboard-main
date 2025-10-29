@@ -152,8 +152,12 @@ export function useSafeEventSource(
   url: string | null,
   options?: EventSourceInit
 ) {
-  const [eventSource, setEventSource] = React.useState<EventSource | null>(null);
-  const [connectionState, setConnectionState] = React.useState<'connecting' | 'open' | 'closed'>('closed');
+  const [eventSource, setEventSource] = React.useState<EventSource | null>(
+    null
+  );
+  const [connectionState, setConnectionState] = React.useState<
+    'connecting' | 'open' | 'closed'
+  >('closed');
   const [error, setError] = React.useState<Event | null>(null);
   const cleanupRef = React.useRef<(() => void) | null>(null);
 
@@ -173,7 +177,7 @@ export function useSafeEventSource(
       setError(null);
     };
 
-    es.onerror = (event) => {
+    es.onerror = event => {
       setError(event);
       setConnectionState('closed');
     };
@@ -194,19 +198,19 @@ export function useSafeEventSource(
     };
   }, [url, options]);
 
-  const addEventListener = React.useCallback((
-    type: string,
-    listener: (event: MessageEvent) => void
-  ) => {
-    if (!eventSource) return () => { };
+  const addEventListener = React.useCallback(
+    (type: string, listener: (event: MessageEvent) => void) => {
+      if (!eventSource) return () => {};
 
-    eventSource.addEventListener(type, listener);
-    return () => {
-      if (eventSource) {
-        eventSource.removeEventListener(type, listener);
-      }
-    };
-  }, [eventSource]);
+      eventSource.addEventListener(type, listener);
+      return () => {
+        if (eventSource) {
+          eventSource.removeEventListener(type, listener);
+        }
+      };
+    },
+    [eventSource]
+  );
 
   const close = React.useCallback(() => {
     if (cleanupRef.current) {
@@ -221,7 +225,7 @@ export function useSafeEventSource(
     connectionState,
     error,
     addEventListener,
-    close
+    close,
   };
 }
 
@@ -231,7 +235,9 @@ export function useSafeWebSocket(
   protocols?: string | string[]
 ) {
   const [webSocket, setWebSocket] = React.useState<WebSocket | null>(null);
-  const [connectionState, setConnectionState] = React.useState<'connecting' | 'open' | 'closing' | 'closed'>('closed');
+  const [connectionState, setConnectionState] = React.useState<
+    'connecting' | 'open' | 'closing' | 'closed'
+  >('closed');
   const [error, setError] = React.useState<Event | null>(null);
   const cleanupRef = React.useRef<(() => void) | null>(null);
 
@@ -255,12 +261,15 @@ export function useSafeWebSocket(
       setConnectionState('closed');
     };
 
-    ws.onerror = (event) => {
+    ws.onerror = event => {
       setError(event);
     };
 
     cleanupRef.current = () => {
-      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+      if (
+        ws.readyState === WebSocket.OPEN ||
+        ws.readyState === WebSocket.CONNECTING
+      ) {
         ws.close();
       }
     };
@@ -275,11 +284,14 @@ export function useSafeWebSocket(
     };
   }, [url, protocols]);
 
-  const send = React.useCallback((data: string | ArrayBufferLike | Blob | ArrayBufferView) => {
-    if (webSocket && webSocket.readyState === WebSocket.OPEN) {
-      webSocket.send(data);
-    }
-  }, [webSocket]);
+  const send = React.useCallback(
+    (data: string | ArrayBufferLike | Blob | ArrayBufferView) => {
+      if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+        webSocket.send(data);
+      }
+    },
+    [webSocket]
+  );
 
   const close = React.useCallback((code?: number, reason?: string) => {
     if (cleanupRef.current) {
@@ -294,7 +306,7 @@ export function useSafeWebSocket(
     connectionState,
     error,
     send,
-    close
+    close,
   };
 }
 
@@ -307,7 +319,7 @@ export function useSafeSubscription<T>(
   const unsubscribeRef = React.useRef<(() => void) | null>(null);
 
   React.useEffect(() => {
-    const unsubscribe = manager.subscribe((newValue) => {
+    const unsubscribe = manager.subscribe(newValue => {
       setValue(newValue);
     });
 
