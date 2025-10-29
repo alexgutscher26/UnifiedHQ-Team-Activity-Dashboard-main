@@ -240,12 +240,18 @@ describe('Performance Monitor Memory Leak Detection', () => {
             let active = 0;
 
             // Register components
+            /**
+             * Registers a component by name and updates the mounted and active counts.
+             */
             const registerComponent = (name: string) => {
                 componentSet.add(name);
                 mounted++;
                 active++;
             };
 
+            /**
+             * Unregisters a component by its name.
+             */
             const unregisterComponent = (name: string) => {
                 const wasRemoved = componentSet.delete(name);
                 if (wasRemoved) {
@@ -303,6 +309,9 @@ describe('Performance Monitor Memory Leak Detection', () => {
                 totalCount++;
             };
 
+            /**
+             * Decreases the count of event listeners for a specified element and event type.
+             */
             const unregisterEventListener = (elementId: string, eventType: string) => {
                 const key = `${elementId}:${eventType}`;
                 const currentCount = eventListenerMap.get(key) || 0;
@@ -345,18 +354,28 @@ describe('Performance Monitor Memory Leak Detection', () => {
             const intervalSet = new Set<number>();
             const timeoutSet = new Set<number>();
 
+            /**
+             * Adds an interval ID to the interval set.
+             */
             const registerInterval = (id: number) => {
                 intervalSet.add(id);
             };
 
+            /** Unregisters an interval by its ID. */
             const unregisterInterval = (id: number) => {
                 intervalSet.delete(id);
             };
 
+            /**
+             * Registers a timeout by adding its ID to the timeout set.
+             */
             const registerTimeout = (id: number) => {
                 timeoutSet.add(id);
             };
 
+            /**
+             * Removes a timeout from the set using its identifier.
+             */
             const unregisterTimeout = (id: number) => {
                 timeoutSet.delete(id);
             };
