@@ -26,7 +26,7 @@ class WorkflowTestRunner {
     }
 
     /**
-     * Ensure reports directory exists
+     * Ensure the reports directory exists.
      */
     ensureReportsDir() {
         if (!existsSync(this.reportsDir)) {
@@ -100,7 +100,9 @@ class WorkflowTestRunner {
     }
 
     /**
-     * Run requirements validation
+     * Run requirements validation.
+     *
+     * This function executes a script to validate workflow requirements and logs the results. It first runs the 'workflow-requirements-validator.js' script with specific arguments. If the script executes successfully, it parses the JSON output to extract validation results and logs the pass rate and criteria. The function returns true if the pass rate meets or exceeds 80%, otherwise it returns false. In case of errors during parsing or script execution, appropriate error messages are logged.
      */
     async runRequirementsValidation() {
         console.log('\n📋 Step 2: Requirements Validation');
@@ -129,7 +131,12 @@ class WorkflowTestRunner {
     }
 
     /**
-     * Run workflow configuration tests
+     * Run workflow configuration tests.
+     *
+     * This function executes the workflow configuration tests by running a script named 'workflow-test.js' with specific arguments.
+     * It processes the output, checking for success and parsing the JSON report to update the test results.
+     * If the tests are successful, it logs the results, including the installation status and counts of total and valid workflows.
+     * In case of errors during execution or parsing, appropriate error messages are logged.
      */
     async runConfigurationTests() {
         console.log('\n📋 Step 3: Workflow Configuration Tests');
@@ -159,7 +166,13 @@ class WorkflowTestRunner {
     }
 
     /**
-     * Run local workflow tests with act (if available)
+     * Run local workflow tests with act (if available).
+     *
+     * This function checks if the act tool is installed and runs tests for either a specific workflow or a set of key workflows.
+     * It collects the results of the tests, logs the outcomes, and updates the testResults object with the results of the local tests.
+     *
+     * @param workflowName - The name of the specific workflow to test. If not provided, key workflows will be tested.
+     * @returns A boolean indicating whether all local tests passed.
      */
     async runLocalTests(workflowName = null) {
         console.log('\n📋 Step 4: Local Workflow Tests (act)');
@@ -222,7 +235,11 @@ class WorkflowTestRunner {
     }
 
     /**
-     * Generate comprehensive test report
+     * Generate comprehensive test report.
+     *
+     * This function constructs a report summarizing the results of various test validations, including syntax, requirements, configuration, and local tests. It calculates the number of passed steps and determines overall success based on predefined criteria. Additionally, it generates recommendations based on the results of the tests to guide improvements.
+     *
+     * @returns An object containing the report with timestamp, summary of test results, and recommendations.
      */
     generateReport() {
         const report = {
@@ -277,7 +294,7 @@ class WorkflowTestRunner {
     }
 
     /**
-     * Save report to file
+     * Save report to a specified file.
      */
     saveReport(report, filename = 'comprehensive-workflow-test-report.json') {
         this.ensureReportsDir();
@@ -294,7 +311,13 @@ class WorkflowTestRunner {
     }
 
     /**
-     * Print summary results
+     * Print summary results of the test report.
+     *
+     * This function logs the overall success of the test, the number of steps passed, and any recommendations.
+     * It also provides detailed results for syntax validation, requirements validation, configuration tests,
+     * and local tests, indicating their respective statuses based on the test results.
+     *
+     * @param report - The report object containing summary and test results.
      */
     printSummary(report) {
         console.log('\n🎯 Test Summary');
@@ -335,7 +358,12 @@ class WorkflowTestRunner {
     }
 
     /**
-     * Run all tests
+     * Run all tests in the comprehensive workflow testing suite.
+     *
+     * This function orchestrates the execution of various validation and testing steps, including syntax validation, requirements validation, configuration tests, and local tests if not skipped. It generates a report based on the results of these tests and saves it if specified in the options. In case of any errors during the testing process, it logs the error and returns false.
+     *
+     * @param options - An object containing options for the test execution, including whether to skip local tests and whether to save the report.
+     * @returns A boolean indicating the overall success of the tests.
      */
     async runAllTests(options = {}) {
         console.log('🧪 Comprehensive Workflow Testing Suite');
