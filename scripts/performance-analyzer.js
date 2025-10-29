@@ -18,7 +18,7 @@ class PerformanceAnalyzer {
   }
 
   /**
-   * Load performance reports from JSON files in the reports directory.
+   * Loads performance reports from JSON files in the reports directory.
    */
   loadReports () {
     if (!fs.existsSync(this.reportsDir)) {
@@ -43,6 +43,8 @@ class PerformanceAnalyzer {
 
   /**
    * Analyzes performance trends from the provided reports.
+   * @param {Array} reports - The reports to analyze.
+   * @returns {Object} The calculated trends.
    */
   analyzeTrends (reports) {
     if (reports.length < 2) {
@@ -68,8 +70,8 @@ class PerformanceAnalyzer {
    *
    * This function processes an array of reports to extract values based on the provided metricPath.
    * It computes the percentage change between the first and last values, determining the trend direction
-   * as 'improving', 'degrading', or 'stable' based on the calculated change. The function returns an
-   * object containing the trend direction, absolute change, first and last values, and the array of values.
+   * as 'improving', 'degrading', or 'stable' based on the calculated change. If there are fewer than
+   * two values, it defaults to 'stable' with no change.
    *
    * @param {Array} reports - The array of report objects to analyze.
    * @param {string} metricPath - The path to the metric within the report objects.
@@ -105,6 +107,8 @@ class PerformanceAnalyzer {
 
   /**
    * Generates a performance summary from the provided reports.
+   * @param {Array} reports - The array of performance reports.
+   * @returns {Object} The performance summary.
    */
   generateSummary (reports) {
     if (reports.length === 0) {
@@ -131,7 +135,7 @@ class PerformanceAnalyzer {
   /**
    * Calculate overall performance grade.
    *
-   * This function evaluates the performance based on various metrics such as average render time, memory usage, total errors, and average scroll time. Points are deducted from a base score of 100 based on the thresholds defined for each metric. The final score is then mapped to a corresponding grade and description.
+   * This function evaluates the performance based on various metrics such as average render time, memory usage, total errors, and average scroll time. Points are deducted from a base score of 100 according to the thresholds defined for each metric. The final score is then mapped to a corresponding grade and description, providing a comprehensive assessment of performance.
    *
    * @param summary - An object containing performance metrics including averageRenderTime, averageMemoryUsage, totalErrors, and averageScrollTime.
    * @returns An object with the performance grade and description based on the calculated score.
@@ -296,6 +300,8 @@ class PerformanceAnalyzer {
 
   /**
    * Generate an analysis report from the provided reports.
+   * @param {Array} reports - The array of reports to analyze.
+   * @returns {Object} The generated analysis report.
    */
   generateAnalysisReport (reports) {
     const trends = this.analyzeTrends(reports)
@@ -320,7 +326,14 @@ class PerformanceAnalyzer {
   }
 
   /**
-   * Print analysis results to console
+   * Print analysis results to console.
+   *
+   * This function generates a detailed performance analysis report by logging various metrics to the console.
+   * It includes a summary of performance grades, average render time, memory usage, total errors, and session duration.
+   * Additionally, it displays trends, alerts, and recommendations based on the provided analysisReport object.
+   * Finally, it calculates and prints the overall performance score using the calculateOverallScore method.
+   *
+   * @param {Object} analysisReport - The report containing performance analysis data.
    */
   printAnalysis (analysisReport) {
     console.log('\n📊 Performance Analysis Report')
@@ -436,7 +449,7 @@ class PerformanceAnalyzer {
   }
 
   /**
-   * Save analysis report to a JSON file in the reports directory.
+   * Saves the analysis report to a JSON file in the reports directory.
    */
   saveAnalysisReport (analysisReport) {
     const filename = `performance-analysis-${Date.now()}.json`
