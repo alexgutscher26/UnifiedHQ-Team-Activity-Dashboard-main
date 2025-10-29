@@ -116,7 +116,11 @@ export class MemoryLeakSimulator {
   /**
    * Simulate event listener leak
    */
+<<<<<<< HEAD
   simulateEventListenerLeak(count: number = 1): string {
+=======
+  simulateEventListenerLeak(count = 1): string {
+>>>>>>> d19fa87c8865fedf5344fad0ee0b2d2559d83c35
     const leakId = `event-listener-${++this.leakCounter}`;
     const listeners: Array<() => void> = [];
 
@@ -141,7 +145,11 @@ export class MemoryLeakSimulator {
   /**
    * Simulate interval leak
    */
+<<<<<<< HEAD
   simulateIntervalLeak(intervalMs: number = 1000, count: number = 1): string {
+=======
+  simulateIntervalLeak(intervalMs = 1000, count = 1): string {
+>>>>>>> d19fa87c8865fedf5344fad0ee0b2d2559d83c35
     const leakId = `interval-${++this.leakCounter}`;
     const intervals: NodeJS.Timeout[] = [];
 
@@ -161,7 +169,11 @@ export class MemoryLeakSimulator {
   /**
    * Simulate timeout leak
    */
+<<<<<<< HEAD
   simulateTimeoutLeak(timeoutMs: number = 5000, count: number = 1): string {
+=======
+  simulateTimeoutLeak(timeoutMs = 5000, count = 1): string {
+>>>>>>> d19fa87c8865fedf5344fad0ee0b2d2559d83c35
     const leakId = `timeout-${++this.leakCounter}`;
     const timeouts: NodeJS.Timeout[] = [];
 
@@ -182,7 +194,11 @@ export class MemoryLeakSimulator {
   /**
    * Simulate subscription leak
    */
+<<<<<<< HEAD
   simulateSubscriptionLeak(count: number = 1): string {
+=======
+  simulateSubscriptionLeak(count = 1): string {
+>>>>>>> d19fa87c8865fedf5344fad0ee0b2d2559d83c35
     const leakId = `subscription-${++this.leakCounter}`;
     const subscriptions: Array<() => void> = [];
 
@@ -211,7 +227,11 @@ export class MemoryLeakSimulator {
   /**
    * Simulate memory accumulation leak
    */
+<<<<<<< HEAD
   simulateMemoryAccumulation(sizeKB: number = 1024): string {
+=======
+  simulateMemoryAccumulation(sizeKB = 1024): string {
+>>>>>>> d19fa87c8865fedf5344fad0ee0b2d2559d83c35
     const leakId = `memory-${++this.leakCounter}`;
     const data = new Array(sizeKB * 1024).fill(Math.random());
 
@@ -490,7 +510,11 @@ export class MemoryLeakValidator {
    */
   async validateRuntimeDetection(
     simulator: MemoryLeakSimulator,
+<<<<<<< HEAD
     testDuration: number = 5000
+=======
+    testDuration = 5000
+>>>>>>> d19fa87c8865fedf5344fad0ee0b2d2559d83c35
   ): Promise<{
     leaksSimulated: number;
     leaksDetected: number;
@@ -684,7 +708,11 @@ export default CleanComponent;
   static async runMultipleTimes<T>(
     fn: () => Promise<T>,
     times: number,
+<<<<<<< HEAD
     delayMs: number = 0
+=======
+    delayMs = 0
+>>>>>>> d19fa87c8865fedf5344fad0ee0b2d2559d83c35
   ): Promise<T[]> {
     const results: T[] = [];
 

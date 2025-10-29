@@ -61,7 +61,12 @@
     "workflow:test-local": "node scripts/workflow-test.js --local",
     "workflow:validate-all": "node scripts/workflow-validate.js --all",
     "workflow:optimize-all": "node scripts/workflow-optimize.js optimize --all",
-    "workflow:analyze": "node scripts/workflow-optimize.js analyze --all"
+    "workflow:analyze": "node scripts/workflow-optimize.js analyze --all",
+    "workflow:test-requirements": "node scripts/workflow-requirements-validator.js validate",
+    "workflow:test-comprehensive": "node scripts/workflow-test-runner.js test",
+    "workflow:test-setup": "node scripts/workflow-test-runner.js setup",
+    "workflow:test-syntax": "node scripts/workflow-test-runner.js syntax",
+    "workflow:validate-requirements": "node scripts/workflow-requirements-validator.js validate --save"
   },
   "dependencies": {
     "@dnd-kit/core": "latest",
