@@ -114,7 +114,7 @@ export class MemoryLeakSimulator {
     /**
      * Simulate event listener leak
      */
-    simulateEventListenerLeak(count: number = 1): string {
+    simulateEventListenerLeak(count = 1): string {
         const leakId = `event-listener-${++this.leakCounter}`;
         const listeners: Array<() => void> = [];
 
@@ -139,7 +139,7 @@ export class MemoryLeakSimulator {
     /**
      * Simulate interval leak
      */
-    simulateIntervalLeak(intervalMs: number = 1000, count: number = 1): string {
+    simulateIntervalLeak(intervalMs = 1000, count = 1): string {
         const leakId = `interval-${++this.leakCounter}`;
         const intervals: NodeJS.Timeout[] = [];
 
@@ -159,7 +159,7 @@ export class MemoryLeakSimulator {
     /**
      * Simulate timeout leak
      */
-    simulateTimeoutLeak(timeoutMs: number = 5000, count: number = 1): string {
+    simulateTimeoutLeak(timeoutMs = 5000, count = 1): string {
         const leakId = `timeout-${++this.leakCounter}`;
         const timeouts: NodeJS.Timeout[] = [];
 
@@ -180,7 +180,7 @@ export class MemoryLeakSimulator {
     /**
      * Simulate subscription leak
      */
-    simulateSubscriptionLeak(count: number = 1): string {
+    simulateSubscriptionLeak(count = 1): string {
         const leakId = `subscription-${++this.leakCounter}`;
         const subscriptions: Array<() => void> = [];
 
@@ -209,7 +209,7 @@ export class MemoryLeakSimulator {
     /**
      * Simulate memory accumulation leak
      */
-    simulateMemoryAccumulation(sizeKB: number = 1024): string {
+    simulateMemoryAccumulation(sizeKB = 1024): string {
         const leakId = `memory-${++this.leakCounter}`;
         const data = new Array(sizeKB * 1024).fill(Math.random());
 
@@ -477,7 +477,7 @@ export class MemoryLeakValidator {
      */
     async validateRuntimeDetection(
         simulator: MemoryLeakSimulator,
-        testDuration: number = 5000
+        testDuration = 5000
     ): Promise<{
         leaksSimulated: number;
         leaksDetected: number;
@@ -668,7 +668,7 @@ export default CleanComponent;
     static async runMultipleTimes<T>(
         fn: () => Promise<T>,
         times: number,
-        delayMs: number = 0
+        delayMs = 0
     ): Promise<T[]> {
         const results: T[] = [];
 
