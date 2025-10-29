@@ -19,6 +19,14 @@ let totalTests = 0
 let passedTests = 0
 let failedTests = 0
 
+/**
+ * Run a test file using a child process and capture the results.
+ *
+ * This function spawns a child process to execute the test file specified by testFile. It listens for data on both stdout and stderr to accumulate output and error messages. Upon completion, it parses the output to determine the number of tests passed and failed, updating the total and individual counts accordingly. The function resolves a promise indicating the success or failure of the test run based on the exit code of the child process.
+ *
+ * @param testFile - The name of the test file to run.
+ * @returns A promise that resolves to a boolean indicating whether the tests passed.
+ */
 async function runTest (testFile) {
   return new Promise(resolve => {
     console.log(`📝 Running ${testFile}...`)
