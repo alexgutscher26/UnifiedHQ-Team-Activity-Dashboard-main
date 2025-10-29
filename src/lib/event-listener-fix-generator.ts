@@ -90,6 +90,16 @@ export class EventListenerFixGenerator {
     }
   }
 
+  /**
+   * Analyzes a CallExpression to extract event listener pattern details.
+   *
+   * The function checks the number of arguments, extracts the target element, event name, and handler details.
+   * It also determines if the event is related to media queries and identifies the type of handler used.
+   * Finally, it returns an object containing all relevant information about the event listener pattern.
+   *
+   * @param node - The CallExpression node representing the event listener.
+   * @returns An object containing details about the event listener pattern or null if insufficient arguments are provided.
+   */
   private analyzeEventListenerPattern(
     node: ts.CallExpression
   ): EventListenerPattern | null {
