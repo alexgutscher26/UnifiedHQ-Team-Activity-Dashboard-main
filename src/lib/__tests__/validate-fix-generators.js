@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 // Simple validation script for fix generators
 import { createMemoryLeakFixGenerator } from '../memory-leak-fix-generator.js';

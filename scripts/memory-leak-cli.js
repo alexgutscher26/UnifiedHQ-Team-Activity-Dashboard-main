@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 /**
  * Memory Leak Detection CLI Tool

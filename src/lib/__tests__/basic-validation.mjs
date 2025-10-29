@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 // Basic validation to ensure fix generators can be instantiated
 console.log('🧪 Basic Fix Generator Validation\n');
