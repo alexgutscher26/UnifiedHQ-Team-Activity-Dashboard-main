@@ -383,7 +383,7 @@ function TestComponent() {
 
   describe('error handling', () => {
     it('should handle missing addEventListener call', () => {
-      const sourceCode = `function test() {}`;
+      const sourceCode = "function test() {}";
       generator = createEventListenerFixGenerator(sourceCode, fileName);
 
       const leak: LeakDetectionResult = {
@@ -432,7 +432,7 @@ function TestComponent() {
     });
 
     it('should handle invalid node positions', () => {
-      const sourceCode = `function test() {}`;
+      const sourceCode = "function test() {}";
       generator = createEventListenerFixGenerator(sourceCode, fileName);
 
       const leak: LeakDetectionResult = {

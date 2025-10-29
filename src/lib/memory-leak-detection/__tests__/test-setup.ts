@@ -75,7 +75,7 @@ expect.extend({
             };
         } else {
             return {
-                message: () => `Expected to have memory leak, but none found`,
+                message: () => "Expected to have memory leak, but none found",
                 pass: false,
             };
         }
@@ -91,12 +91,12 @@ expect.extend({
 
         if (hasCleanup) {
             return {
-                message: () => `Expected not to have cleanup, but cleanup found`,
+                message: () => "Expected not to have cleanup, but cleanup found",
                 pass: true,
             };
         } else {
             return {
-                message: () => `Expected to have cleanup, but no cleanup found`,
+                message: () => "Expected to have cleanup, but no cleanup found",
                 pass: false,
             };
         }

@@ -539,7 +539,7 @@ export class TestHelpers {
      * Create a test component with known memory leaks
      */
     static createLeakyComponent(leakTypes: LeakType[]): string {
-        const imports = `import React, { useEffect, useState } from 'react';`;
+        const imports = "import React, { useEffect, useState } from 'react';";
 
         let componentBody = `
 function LeakyComponent() {

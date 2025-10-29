@@ -506,7 +506,7 @@ function TestComponent() {
 
   describe('error handling', () => {
     it('should handle missing connection node', () => {
-      const sourceCode = `function test() {}`;
+      const sourceCode = "function test() {}";
       generator = createConnectionCleanupFixGenerator(sourceCode, fileName);
 
       const leak: LeakDetectionResult = {
@@ -553,7 +553,7 @@ function TestComponent() {
     });
 
     it('should handle invalid node positions', () => {
-      const sourceCode = `function test() {}`;
+      const sourceCode = "function test() {}";
       generator = createConnectionCleanupFixGenerator(sourceCode, fileName);
 
       const leak: LeakDetectionResult = {
