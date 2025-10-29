@@ -47,7 +47,7 @@ jobs:
       metrics-file: ${{ steps.collect.outputs.metrics-file }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -317,7 +317,7 @@ jobs:
       report-summary: ${{ steps.generate.outputs.report-summary }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download metrics
         uses: actions/download-artifact@v4
@@ -509,7 +509,7 @@ jobs:
     needs: [collect-workflow-metrics, generate-report]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download report
         uses: actions/download-artifact@v4

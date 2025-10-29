@@ -27,7 +27,7 @@ jobs:
       artifact-name: ${{ steps.artifact.outputs.name }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Extract version
         id: version
@@ -328,7 +328,7 @@ jobs:
       packages: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download production artifacts
         uses: actions/download-artifact@v4
@@ -381,7 +381,7 @@ jobs:
       url: ${{ steps.deploy.outputs.url }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.event.release.tag_name }}
 
@@ -570,7 +570,7 @@ jobs:
       packages: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download production artifacts
         uses: actions/download-artifact@v4
@@ -788,7 +788,7 @@ jobs:
       name: production-rollback
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 

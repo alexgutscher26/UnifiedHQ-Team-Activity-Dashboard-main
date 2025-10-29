@@ -30,7 +30,7 @@ jobs:
       is-automated: ${{ steps.check.outputs.is-automated }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
@@ -233,7 +233,7 @@ jobs:
       needs.wait-for-checks.outputs.all-checks-passed == 'true'
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Auto-merge PR
@@ -320,7 +320,7 @@ jobs:
       recommended-actions: ${{ steps.analyze.outputs.recommended-actions }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
@@ -812,7 +812,7 @@ jobs:
       !contains(needs.analyze-breaking-changes.outputs.breaking-changes, 'major')
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
