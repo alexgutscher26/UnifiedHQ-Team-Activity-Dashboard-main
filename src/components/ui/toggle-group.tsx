@@ -14,6 +14,9 @@ const ToggleGroupContext = React.createContext<
   variant: 'default',
 });
 
+/**
+ * Renders a ToggleGroup component with specified className, variant, size, and children.
+ */
 function ToggleGroup({
   className,
   variant,
@@ -40,6 +43,18 @@ function ToggleGroup({
   );
 }
 
+/**
+ * Renders a toggle group item with specified styles and context.
+ *
+ * This component utilizes the ToggleGroupContext to determine the variant and size of the item. It merges these values with any provided props and applies the appropriate class names using the toggleVariants function. The resulting item is styled and rendered as a ToggleGroupPrimitive.Item, allowing for flexible customization through the className and children props.
+ *
+ * @param {Object} props - The properties for the ToggleGroupItem component.
+ * @param {string} [props.className] - Additional class names to apply to the item.
+ * @param {React.ReactNode} [props.children] - The content to be rendered inside the item.
+ * @param {string} [props.variant] - The variant style of the item.
+ * @param {string} [props.size] - The size of the item.
+ * @param {...any} props - Additional props to be passed to the ToggleGroupPrimitive.Item.
+ */
 function ToggleGroupItem({
   className,
   children,
