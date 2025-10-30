@@ -96,6 +96,16 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
     }
   );
 
+  /**
+   * Retrieves an item from a list by its unique identifier.
+   *
+   * The function iterates through the provided itemList, checking each item's id against the specified id.
+   * If a match is found, the item is returned. If the item has children, the function recursively searches
+   * through the children for a matching id. If no item is found, it returns null.
+   *
+   * @param {AccessibleNavItem[]} itemList - The list of items to search through.
+   * @param {string} id - The unique identifier of the item to find.
+   */
   const findItemById = (
     itemList: AccessibleNavItem[],
     id: string
@@ -127,10 +137,9 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
   /**
    * Navigates through items based on the specified direction.
    *
-   * This function retrieves all items and determines the current active item index.
-   * It calculates the next index based on the provided direction and checks if the
-   * next item is valid and not disabled. If valid, it updates the active item and
-   * optionally announces the navigation.
+   * This function retrieves all items using getAllItems and determines the current active item index.
+   * It calculates the next index based on the provided direction and checks if the next item is valid
+   * and not disabled. If valid, it updates the active item and optionally announces the navigation.
    *
    * @param direction - The direction to navigate, where positive values move forward
    *                    and negative values move backward in the item list.
@@ -156,7 +165,7 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
    *
    * The function checks for the presence of an active item and retrieves it using findItemById.
    * If the retrieved item has children, it adds the item's ID to the set of expanded items.
-   * Furthermore, if announceNavigation is true, it announces the expansion of the item using the announce function.
+   * Additionally, if announceNavigation is true, it announces the expansion of the item using the announce function.
    */
   const expandCurrentItem = () => {
     if (activeItem) {
@@ -170,6 +179,14 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
     }
   };
 
+  /**
+   * Collapses the currently active item if it has children and is expanded.
+   *
+   * The function checks if there is an active item and retrieves it using findItemById.
+   * If the item has children and is currently expanded, it updates the expandedItems set
+   * to remove the item's ID. Additionally, if announceNavigation is true, it announces
+   * the collapse action with the item's label.
+   */
   const collapseCurrentItem = () => {
     if (activeItem) {
       const item = findItemById(items, activeItem);
@@ -324,7 +341,7 @@ export const AccessibleBreadcrumb: React.FC<AccessibleBreadcrumbProps> = ({
   const { announce } = useAriaLiveAnnouncer();
 
   /**
-   * Handles the click event for an item.
+   * Handles the click event for an item and announces navigation.
    */
   const handleItemClick = (item: { label: string; href?: string }) => {
     announce(`Navigated to ${item.label}`);
@@ -380,6 +397,19 @@ interface AccessibleTabsProps {
   announceTabChange?: boolean;
 }
 
+/**
+ * Renders a set of accessible tabs with keyboard navigation and tab change announcements.
+ *
+ * The component maintains the active tab state and provides functionality to switch tabs via click or keyboard events.
+ * It utilizes the useAriaLiveAnnouncer for accessibility and handles key events to navigate through the tabs.
+ *
+ * @param tabs - An array of tab objects, each containing an id, label, content, and an optional disabled flag.
+ * @param defaultTab - The id of the tab that should be active by default.
+ * @param className - Additional class names to apply to the component.
+ * @param onTabChange - A callback function that is called when the active tab changes.
+ * @param announceTabChange - A boolean indicating whether to announce tab changes for accessibility (default is true).
+ * @returns A React element representing the accessible tabs component.
+ */
 export const AccessibleTabs: React.FC<AccessibleTabsProps> = ({
   tabs,
   defaultTab,
@@ -392,7 +422,7 @@ export const AccessibleTabs: React.FC<AccessibleTabsProps> = ({
   const { handleKeyDown } = useKeyboardNavigation();
 
   /**
-   * Handles the click event on a tab, updating the active tab and announcing the change.
+   * Handles the click event on a tab, updating the active tab and optionally announcing the change.
    */
   const handleTabClick = (tabId: string) => {
     setActiveTab(tabId);
