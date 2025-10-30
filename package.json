@@ -70,7 +70,7 @@
   },
   "dependencies": {
     "@dnd-kit/core": "latest",
-    "@dnd-kit/modifiers": "latest",
+    "@dnd-kit/modifiers": "^9.0.0",
     "@dnd-kit/sortable": "latest",
     "@dnd-kit/utilities": "latest",
     "@dymo-api/better-auth": "^1.2.21",
