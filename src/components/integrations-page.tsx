@@ -73,7 +73,7 @@ export function IntegrationsPage() {
 
     // Listen for storage changes (cross-tab sync)
     /**
-     * Handles changes to storage events.
+     * Handles changes to storage events related to lastSyncTime.
      */
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'lastSyncTime' && e.newValue) {
@@ -102,7 +102,7 @@ export function IntegrationsPage() {
    * Checks the connection status of Slack integration.
    *
    * This function sends a request to the Slack sync API endpoint and processes the response.
-   * If the request is successful, it updates the connection status using setSlackConnected.
+   * If the request is successful, it updates the connection status using setSlackConnected with the value from the response.
    * In case of an error during the fetch operation, it logs the error to the console.
    */
   const checkSlackStatus = async () => {
@@ -119,9 +119,9 @@ export function IntegrationsPage() {
    * Fetches the Slack client ID from the server.
    *
    * This asynchronous function makes a request to the '/api/integrations/slack/client-id' endpoint.
-   * If the response is successful, it parses the JSON data and updates the Slack client ID using
-   * the setSlackClientId function. In case of an error during the fetch operation, it logs the error
-   * message to the console.
+   * It checks if the response is successful and, if so, parses the JSON data to extract the client ID,
+   * which is then updated using the setSlackClientId function. If an error occurs during the fetch operation,
+   * it logs the error message to the console.
    */
   const fetchSlackClientId = async () => {
     try {
@@ -172,7 +172,7 @@ export function IntegrationsPage() {
   };
 
   /**
-   * Initiates the GitHub connection process and handles loading state.
+   * Initiates the GitHub connection process and manages loading state.
    */
   const handleGithubConnect = async () => {
     setIsLoading(true);
