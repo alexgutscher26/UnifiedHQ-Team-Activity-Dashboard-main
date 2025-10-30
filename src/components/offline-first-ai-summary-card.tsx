@@ -117,7 +117,7 @@ export function OfflineFirstAISummaryCard({
             const errorData = await response.json().catch(() => ({}));
             throw new Error(
               errorData.error ||
-              `HTTP ${response.status}: Failed to fetch summary`
+                `HTTP ${response.status}: Failed to fetch summary`
             );
           }
 

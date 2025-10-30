@@ -114,7 +114,9 @@ export function useNetworkStatus(
   }, [enablePing, pingUrl]);
 
   // Use ref for update function to avoid recreating it
-  const updateNetworkStatusRef = useRef<((isOnline: boolean) => void) | undefined>(undefined);
+  const updateNetworkStatusRef = useRef<
+    ((isOnline: boolean) => void) | undefined
+  >(undefined);
 
   updateNetworkStatusRef.current = (isOnline: boolean) => {
     setNetworkStatus(prev => {

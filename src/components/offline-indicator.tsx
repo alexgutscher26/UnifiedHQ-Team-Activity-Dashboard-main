@@ -81,7 +81,7 @@ export function OfflineIndicator({
           'absolute top-0 left-72 right-0 justify-center z-50 flex items-center w-full',
           position === 'top' ? 'border-b' : 'border-t',
           isOffline &&
-          'bg-destructive text-destructive-foreground border-destructive/20',
+            'bg-destructive text-destructive-foreground border-destructive/20',
           isOnline && 'bg-green-500 text-white border-green-500/20'
         );
 
@@ -98,7 +98,7 @@ export function OfflineIndicator({
           baseStyles,
           'rounded-lg shadow-lg border max-w-sm',
           isOffline &&
-          'bg-destructive text-destructive-foreground border-destructive/20',
+            'bg-destructive text-destructive-foreground border-destructive/20',
           isOnline && 'bg-green-500 text-white border-green-500/20'
         );
 
