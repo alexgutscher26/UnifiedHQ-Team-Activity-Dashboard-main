@@ -2,11 +2,7 @@
  * Configuration system for memory leak detection
  */
 
-import {
-  MemoryLeakDetectionConfig,
-  LeakSeverity,
-  LeakType,
-} from './types';
+import { MemoryLeakDetectionConfig, LeakSeverity, LeakType } from './types';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 

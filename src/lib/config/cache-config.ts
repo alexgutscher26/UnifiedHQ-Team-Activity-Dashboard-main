@@ -59,7 +59,12 @@ export class CacheConfig {
       return this.config;
     }
 
-    const env = (process.env.NODE_ENV as 'development' | 'production' | 'staging' | 'test') || 'development';
+    const env =
+      (process.env.NODE_ENV as
+        | 'development'
+        | 'production'
+        | 'staging'
+        | 'test') || 'development';
 
     switch (env) {
       case 'production':
@@ -347,8 +352,7 @@ export class CacheConfig {
     };
 
     // Adjust TTL based on environment
-    const multiplier =
-      env === 'production' ? 0.5 : 0.25;
+    const multiplier = env === 'production' ? 0.5 : 0.25;
 
     return Object.fromEntries(
       Object.entries(baseTTL).map(([key, value]) => [
@@ -414,4 +418,3 @@ export class CacheConfig {
     this.config = null;
   }
 }
-

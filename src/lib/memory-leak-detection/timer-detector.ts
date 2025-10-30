@@ -530,7 +530,8 @@ export class TimerLeakDetector {
   // Generate fix suggestions for timer leaks
   generateTimerFix(report: LeakReport): string {
     // Infer timer type from report type
-    const timerType = report.type === 'uncleaned-interval' ? 'interval' : 'timeout';
+    const timerType =
+      report.type === 'uncleaned-interval' ? 'interval' : 'timeout';
     const cleanupFunction =
       timerType === 'interval' ? 'clearInterval' : 'clearTimeout';
     const setFunction = timerType === 'interval' ? 'setInterval' : 'setTimeout';

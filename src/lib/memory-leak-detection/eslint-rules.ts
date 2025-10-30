@@ -59,7 +59,11 @@ export const useEffectCleanupRule = ESLintUtils.RuleCreator(
       );
     }
 
-    function hasCleanupFunction(effectCallback: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression): boolean {
+    function hasCleanupFunction(
+      effectCallback:
+        | TSESTree.ArrowFunctionExpression
+        | TSESTree.FunctionExpression
+    ): boolean {
       if (effectCallback.body.type !== 'BlockStatement') {
         return false;
       }
@@ -71,7 +75,11 @@ export const useEffectCleanupRule = ESLintUtils.RuleCreator(
       );
     }
 
-    function findSideEffects(effectCallback: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression): Array<{
+    function findSideEffects(
+      effectCallback:
+        | TSESTree.ArrowFunctionExpression
+        | TSESTree.FunctionExpression
+    ): Array<{
       type: 'interval' | 'timeout' | 'eventListener' | 'subscription';
       node: TSESTree.Node;
     }> {

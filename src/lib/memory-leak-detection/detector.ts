@@ -496,7 +496,7 @@ export class MemoryLeakDetectorImpl implements MemoryLeakDetector {
       return {
         current,
         peak,
-        trend: 'stable',  // TODO: Would be calculated from historical data
+        trend: 'stable', // TODO: Would be calculated from historical data
       };
     }
 

@@ -119,7 +119,7 @@ export function startClientRuntimeMonitoring(options?: {
       if (
         options?.memoryThreshold &&
         runtimeReport.memoryUsage.current >
-        options.memoryThreshold * 1024 * 1024 // Convert MB to bytes
+          options.memoryThreshold * 1024 * 1024 // Convert MB to bytes
       ) {
         options?.onLeak?.(runtimeReport);
       }

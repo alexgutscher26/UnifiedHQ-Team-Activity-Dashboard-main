@@ -2,10 +2,7 @@
 
 import { offlineActionQueue } from './action-queue';
 import { conflictResolutionManager } from './conflict-resolution';
-import {
-  OfflineAction,
-  SyncResult,
-} from './types';
+import { OfflineAction, SyncResult } from './types';
 
 export interface SyncProgress {
   total: number;

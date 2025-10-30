@@ -354,7 +354,7 @@ export class MemoryComparisonSystem {
       comparison.differences.performanceImpact.cpuUsageChange >
       (baselineSnapshot.performanceMetrics.cpuUsage *
         finalThresholds.performanceDegradationThreshold) /
-      100;
+        100;
 
     const detected =
       memoryRegression || resourceRegression || performanceRegression;
@@ -479,7 +479,8 @@ export class MemoryComparisonSystem {
         }
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to import snapshots: ${errorMessage}`);
     }
   }

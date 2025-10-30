@@ -388,10 +388,10 @@ export const AriaLiveRegion: React.FC<{ announcements: string[] }> = ({
 }) => {
   return (
     <div
-      aria-live="polite"
-      aria-atomic="true"
-      className="sr-only"
-      role="status"
+      aria-live='polite'
+      aria-atomic='true'
+      className='sr-only'
+      role='status'
     >
       {announcements.map((announcement, index) => (
         <div key={index}>{announcement}</div>
@@ -407,12 +407,12 @@ export const SkipLinks: React.FC = () => {
   const { skipLinks } = useSkipLinks();
 
   return (
-    <div className="sr-only focus-within:not-sr-only">
+    <div className='sr-only focus-within:not-sr-only'>
       {skipLinks.map(link => (
         <a
           key={link.id}
           href={`#${link.id}`}
-          className="absolute top-0 left-0 z-50 bg-primary text-primary-foreground px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+          className='absolute top-0 left-0 z-50 bg-primary text-primary-foreground px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-ring'
         >
           {link.label}
         </a>
