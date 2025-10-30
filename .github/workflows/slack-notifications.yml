@@ -110,8 +110,8 @@ jobs:
                   echo "notification-emoji=❌" >> $GITHUB_OUTPUT
                   echo "notification-priority=high" >> $GITHUB_OUTPUT
                   echo "should-notify=true" >> $GITHUB_OUTPUT
-                # Assign head_branch to shell variable to prevent code injection
-                HEAD_BRANCH="${{ github.event.workflow_run.head_branch }}"
+                # HEAD_BRANCH is now passed via the env: block to mitigate code injection risk
+                :
                 elif [[ "$WORKFLOW_CONCLUSION" == "success" && "$HEAD_BRANCH" == "main" ]]; then
                   echo "notification-channel=dev-notifications" >> $GITHUB_OUTPUT
                   echo "notification-color=good" >> $GITHUB_OUTPUT
