@@ -794,6 +794,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: [publish-report]
     if: always()
+    permissions:
+      issues: write
+      actions: write
+      contents: read
     steps:
       - name: Cleanup old workflow report issues
         uses: actions/github-script@v7
