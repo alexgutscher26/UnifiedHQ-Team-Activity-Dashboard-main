@@ -37,6 +37,9 @@ export function PerformanceComparison({
     optimized: { renderTime: 0, memoryUsage: 0, itemCount: 0 },
   });
 
+  /**
+   * Generates an array of mock activity objects.
+   */
   const generateMockActivities = (count: number) => {
     return Array.from({ length: count }, (_, i) => ({
       id: `activity-${i}`,
@@ -64,6 +67,9 @@ export function PerformanceComparison({
 
   const mockActivities = generateMockActivities(1000);
 
+  /**
+   * Updates performance metrics for the specified component.
+   */
   const measurePerformance = (
     component: 'original' | 'optimized',
     metrics: any
