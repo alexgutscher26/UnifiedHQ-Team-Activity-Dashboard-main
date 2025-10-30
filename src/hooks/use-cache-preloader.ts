@@ -15,6 +15,16 @@ export interface CachePreloaderState {
   error: string | null;
 }
 
+/**
+ * Manages the cache preloading process and provides various utilities for data preloading.
+ *
+ * This function initializes the cache preloader, retrieves preload statistics, preloads critical data,
+ * clears navigation patterns, fetches navigation recommendations, tracks navigation, and triggers
+ * server-side or time-based preloading. It maintains the loading state and error handling throughout
+ * these operations, ensuring a smooth user experience.
+ *
+ * @returns An object containing the current state and methods for managing the cache preloader.
+ */
 export function useCachePreloader() {
   const [state, setState] = useState<CachePreloaderState>({
     isInitialized: false,
@@ -257,7 +267,7 @@ export function useNavigationTracking() {
 }
 
 /**
- * Hook for getting preload recommendations
+ * Hook for managing preload recommendations and loading state.
  */
 export function usePreloadRecommendations() {
   const [recommendations, setRecommendations] = useState<string[]>([]);

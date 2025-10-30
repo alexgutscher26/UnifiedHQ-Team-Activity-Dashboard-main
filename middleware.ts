@@ -4,6 +4,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withCache } from '@/middleware/cache-middleware';
 import { applyEdgeMiddleware } from '@/lib/cdn/edge-middleware';
 
+/**
+ * Middleware function to handle requests and apply caching and edge optimizations.
+ *
+ * The function first checks if the request is for internal Next.js routes and skips processing if so.
+ * For API routes, it applies caching middleware and handles any errors that may occur.
+ * Finally, it applies edge middleware for CDN optimization, enabling various features such as caching, optimization, compression, and security headers.
+ *
+ * @param request - The NextRequest object representing the incoming request.
+ * @returns A NextResponse object representing the response to the request.
+ */
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
@@ -22,6 +32,9 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith('/api/')) {
     try {
       // Create a handler that continues to the actual API route
+      /**
+       * Handles the incoming request and returns the next response.
+       */
       const handler = async (req: NextRequest) => {
         return NextResponse.next();
       };

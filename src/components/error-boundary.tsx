@@ -64,6 +64,9 @@ export class ErrorBoundary extends Component<Props, State> {
     };
   }
 
+  /**
+   * Updates state to show the fallback UI when an error occurs.
+   */
   static getDerivedStateFromError(error: Error): Partial<State> {
     // Update state so the next render will show the fallback UI
     return {
@@ -73,6 +76,9 @@ export class ErrorBoundary extends Component<Props, State> {
     };
   }
 
+  /**
+   * Handles errors in the component, logs details, and manages state updates.
+   */
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Generate unique error ID
     const errorId = `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -102,6 +108,9 @@ export class ErrorBoundary extends Component<Props, State> {
     }
   }
 
+  /**
+   * Handles updates to the component, resetting the error boundary if conditions are met.
+   */
   componentDidUpdate(prevProps: Props) {
     const { resetKeys, resetOnPropsChange } = this.props;
     const { hasError } = this.state;
@@ -113,6 +122,9 @@ export class ErrorBoundary extends Component<Props, State> {
     }
   }
 
+  /**
+   * Cleans up timeouts when the component is about to unmount.
+   */
   componentWillUnmount() {
     if (this.resetTimeoutId) {
       clearTimeout(this.resetTimeoutId);
@@ -192,6 +204,13 @@ export class ErrorBoundary extends Component<Props, State> {
     }
   };
 
+  /**
+   * Renders the component based on the error state.
+   *
+   * If there is an error in the state, it checks for a custom fallback UI provided via props.
+   * If no custom fallback is available, it renders a default ErrorFallback component with relevant error information and handlers.
+   * If there is no error, it simply renders the children components.
+   */
   render() {
     if (this.state.hasError) {
       // Custom fallback UI
@@ -242,15 +261,22 @@ interface ErrorFallbackProps {
 /**
  * Renders an error fallback UI when an unexpected error occurs.
  *
- * This component displays a user-friendly message indicating that something went wrong, along with options to retry the action, go to the dashboard, or reload the page. It also provides the ability to show technical details about the error, including the error message and component stack if available. The component manages its own state to toggle the visibility of the technical details.
+ * This component displays a user-friendly message indicating that something went wrong, along with options to retry the action, go to the dashboard, or reload the page. It manages its own state to toggle the visibility of technical details about the error, including the error message and component stack if available. The component also provides functionality to copy the error ID and full error log to the clipboard for reporting purposes.
  *
  * @param {Object} props - The properties for the ErrorFallback component.
  * @param {Error} props.error - The error object containing error details.
  * @param {Object} props.errorInfo - Additional information about the error context.
  * @param {string} props.errorId - An identifier for the error, if available.
+ * @param {number} props.retryCount - The number of retry attempts made.
+ * @param {boolean} props.isRetrying - Indicates if a retry attempt is currently in progress.
+ * @param {boolean} props.errorReported - Indicates if the error has been reported.
+ * @param {boolean} [props.showErrorId=true] - Flag to show the error ID.
+ * @param {boolean} [props.enableErrorReporting=false] - Flag to enable error reporting.
+ * @param {string} [props.className] - Additional class names for styling.
  * @param {Function} props.onRetry - Callback function to retry the action that caused the error.
  * @param {Function} props.onReload - Callback function to reload the current page.
  * @param {Function} props.onGoHome - Callback function to navigate to the home/dashboard.
+ * @param {Function} props.onReportError - Callback function to report the error.
  */
 function ErrorFallback({
   error,
@@ -271,6 +297,14 @@ function ErrorFallback({
   const [copied, setCopied] = React.useState(false);
   const [logCopied, setLogCopied] = React.useState(false);
 
+  /**
+   * Copies the error ID to the clipboard if it exists.
+   *
+   * The function checks if the errorId is defined before attempting to copy it to the clipboard using the
+   * navigator.clipboard API. If the copy operation is successful, it sets a state variable copied to true
+   * and resets it to false after 2 seconds. In case of an error during the copy process, it logs the error
+   * to the console.
+   */
   const copyErrorId = async () => {
     if (!errorId) return;
 
@@ -283,6 +317,15 @@ function ErrorFallback({
     }
   };
 
+  /**
+   * Copies the full error log to the clipboard if an error exists.
+   *
+   * The function constructs a detailed log object containing error information,
+   * including the error ID, timestamp, URL, user agent, and environment details.
+   * It formats this information into a string and writes it to the clipboard.
+   * If the copy operation is successful, it updates the log copied state and
+   * resets it after a timeout. In case of failure, it logs an error to the console.
+   */
   const copyFullLog = async () => {
     if (!error) return;
 
@@ -336,6 +379,15 @@ User Agent: ${logData.userAgent}`;
     }
   };
 
+  /**
+   * Retrieve a user-friendly error message based on the provided error object.
+   *
+   * The function checks for specific error types such as ChunkLoadError, NetworkError, and TypeError to return tailored messages.
+   * If the error does not match any known types, it defaults to a generic error message.
+   * If no error is provided, a default unexpected error message is returned.
+   *
+   * @returns A string containing a user-friendly error message.
+   */
   const getErrorMessage = () => {
     if (!error) return 'An unexpected error occurred';
 
@@ -542,6 +594,9 @@ export function withErrorBoundary<P extends object>(
   Component: React.ComponentType<P>,
   errorBoundaryProps?: Omit<Props, 'children'>
 ) {
+  /**
+   * Renders a component wrapped in an ErrorBoundary.
+   */
   const WrappedComponent = (props: P) => (
     <ErrorBoundary {...errorBoundaryProps}>
       <Component {...props} />
@@ -554,6 +609,9 @@ export function withErrorBoundary<P extends object>(
 }
 
 // Hook for functional components to trigger error boundary
+/**
+ * Handles errors by logging them and rethrowing.
+ */
 export function useErrorHandler() {
   return (error: Error, errorInfo?: ErrorInfo) => {
     logError(error, errorInfo);

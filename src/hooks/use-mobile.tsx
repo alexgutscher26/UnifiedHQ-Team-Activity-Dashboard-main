@@ -9,6 +9,7 @@ export function useIsMobile() {
 
   React.useEffect(() => {
     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
+    /** Updates the mobile state based on the window's inner width. */
     const onChange = () => {
       setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
     };
@@ -23,6 +24,9 @@ export function useIsMobile() {
 }
 
 // Enhanced mobile detection hook with additional features
+/**
+ * Custom hook that manages responsive breakpoints for mobile, tablet, desktop, and large screens.
+ */
 export function useResponsiveBreakpoints() {
   const [breakpoints, setBreakpoints] = React.useState({
     isMobile: false,
@@ -41,6 +45,9 @@ export function useResponsiveBreakpoints() {
     );
     const largeQuery = window.matchMedia('(min-width: 1280px)');
 
+    /**
+     * Updates the breakpoints based on the current media query matches.
+     */
     const updateBreakpoints = () => {
       setBreakpoints({
         isMobile: mobileQuery.matches,
@@ -80,6 +87,9 @@ export function useOrientation() {
   React.useEffect(() => {
     const orientationQuery = window.matchMedia('(orientation: landscape)');
 
+    /**
+     * Updates the orientation based on the current orientation query.
+     */
     const updateOrientation = () => {
       setOrientation(orientationQuery.matches ? 'landscape' : 'portrait');
     };

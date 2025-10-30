@@ -178,7 +178,7 @@ export function useRetry<T = any>(
 }
 
 /**
- * Hook for retry with automatic retry on mount
+ * Hook for automatic retry on mount.
  */
 export function useRetryOnMount<T = any>(
   asyncFn: () => Promise<T>,
@@ -241,7 +241,12 @@ export function useRetryOptimistic<T = any>(
 }
 
 /**
- * Hook for retry with polling
+ * Hook for retry with polling.
+ *
+ * This hook provides a mechanism to repeatedly execute an asynchronous function at specified intervals, with options to control the polling behavior. It utilizes the `useRetry` hook to handle retries and manages the polling state with `useState` and `useRef`. The polling can be started immediately based on the options provided, and it can be stopped automatically on error if configured to do so.
+ *
+ * @param asyncFn - The asynchronous function to be executed.
+ * @param options - Configuration options for polling and retry behavior.
  */
 export function useRetryPolling<T = any>(
   asyncFn: () => Promise<T>,
@@ -312,9 +317,9 @@ export function useRetryPolling<T = any>(
 /**
  * Hook for retrying an asynchronous function with exponential backoff.
  *
- * This function utilizes a retry mechanism to handle user-initiated retries of an asynchronous function,
- * implementing an exponential backoff strategy for delays between retries. It manages the backoff delay state
- * and resets it upon successful execution of the function. The retry logic is encapsulated in the `retryHook`,
+ * This function implements a retry mechanism that allows for user-initiated retries of an asynchronous function,
+ * utilizing an exponential backoff strategy for delays between retries. It manages the backoff delay state and
+ * resets it upon successful execution of the function. The retry logic is encapsulated in the `retryHook`,
  * which is derived from the `useRetry` function.
  *
  * @param asyncFn - The asynchronous function to be retried.

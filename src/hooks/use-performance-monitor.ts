@@ -522,18 +522,11 @@ export const usePerformanceMonitor = (config: PerformanceConfig = {}) => {
 };
 
 /**
- * Hook for debouncing values to prevent excessive updates
- *
- * @template T - Type of the value being debounced
- * @param {T} value - The value to debounce
- * @param {number} delay - Delay in milliseconds before updating
- * @returns {T} The debounced value
- *
- * @example
- * ```tsx
- * const [searchTerm, setSearchTerm] = useState('');
- * const debouncedSearchTerm = useDebounce(searchTerm, 300);
- * ```
+ * Hook for debouncing values to prevent excessive updates.
+ * @template T
+ * @param {T} value
+ * @param {number} delay
+ * @returns {T}
  */
 export const useDebounce = <T>(value: T, delay: number): T => {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -552,19 +545,11 @@ export const useDebounce = <T>(value: T, delay: number): T => {
 };
 
 /**
- * Hook for throttling function calls to limit execution frequency
- *
+ * Throttles a function to limit its execution frequency.
  * @template T - Type of the function being throttled
  * @param {T} callback - The function to throttle
  * @param {number} delay - Minimum delay in milliseconds between calls
  * @returns {T} The throttled function
- *
- * @example
- * ```tsx
- * const handleScroll = useThrottle((event) => {
- *   console.log('Scroll event:', event);
- * }, 100);
- * ```
  */
 export const useThrottle = <T extends (...args: any[]) => any>(
   callback: T,
@@ -584,18 +569,14 @@ export const useThrottle = <T extends (...args: any[]) => any>(
 };
 
 /**
- * Hook for intersection observer to detect when elements enter/leave viewport
- * Useful for lazy loading and performance optimization
+ * Hook for intersection observer to detect when elements enter/leave viewport.
+ * This hook sets up an IntersectionObserver to monitor the specified element's visibility
+ * within the viewport. It updates the state based on whether the element is currently
+ * intersecting, allowing for lazy loading and performance optimization. The observer
+ * can be customized with options such as threshold and rootMargin.
  *
- * @param {React.RefObject<Element>} elementRef - Reference to the element to observe
- * @param {IntersectionObserverInit} [options={}] - Intersection observer options
- * @returns {boolean} Whether the element is currently intersecting
- *
- * @example
- * ```tsx
- * const elementRef = useRef<HTMLDivElement>(null);
- * const isVisible = useIntersectionObserver(elementRef, { threshold: 0.5 });
- * ```
+ * @param {React.RefObject<Element>} elementRef - Reference to the element to observe.
+ * @param {IntersectionObserverInit} [options={}] - Intersection observer options.
  */
 export const useIntersectionObserver = (
   elementRef: React.RefObject<Element>,
@@ -640,23 +621,13 @@ export const useIntersectionObserver = (
 };
 
 /**
- * Custom hook for managing virtual scrolling to optimize large list performance
+ * Custom hook for managing virtual scrolling to optimize large list performance.
  *
- * @param {number} itemCount - Total number of items in the list
- * @param {number} itemHeight - Height of each item in pixels
- * @param {number} containerHeight - Height of the scrollable container in pixels
- * @param {number} [overscan=5] - Number of items to render outside visible area
- * @returns {Object} Virtual scroll utilities including visible range and positioning
- *
- * @example
- * ```tsx
- * const { visibleRange, totalHeight, offsetY, setScrollTop } = useVirtualScroll(
- *   1000, // 1000 items
- *   50,   // 50px per item
- *   400,  // 400px container
- *   3     // 3 items overscan
- * );
- * ```
+ * @param {number} itemCount - Total number of items in the list.
+ * @param {number} itemHeight - Height of each item in pixels.
+ * @param {number} containerHeight - Height of the scrollable container in pixels.
+ * @param {number} [overscan=5] - Number of items to render outside visible area.
+ * @returns {Object} Virtual scroll utilities including visible range and positioning.
  */
 export const useVirtualScroll = (
   itemCount: number,
@@ -764,12 +735,11 @@ export const performanceUtils = {
 };
 
 /**
- * Enhanced memory leak detection with runtime tracking
+ * Enhanced memory leak detection with runtime tracking.
  *
- * Provides comprehensive tracking of React components, event listeners, intervals,
- * and timeouts to detect potential memory leaks in real-time.
+ * This hook provides comprehensive tracking of React components, event listeners, intervals, and timeouts to detect potential memory leaks in real-time. It registers and unregisters components and listeners, checks for leaks at regular intervals, and maintains statistics on the current state of these resources. The function also includes lifecycle management to ensure proper cleanup and monitoring of active resources.
  *
- * @returns {Object} Memory leak detection utilities and statistics
+ * @returns An object containing memory leak detection utilities and statistics, including methods to register/unregister components and listeners, and current counts of each resource type.
  */
 export const useMemoryLeakDetection = () => {
   const [leakCount, setLeakCount] = useState(0);

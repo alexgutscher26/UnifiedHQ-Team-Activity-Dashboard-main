@@ -41,6 +41,16 @@ interface AISummaryCardProps {
   onError?: (error: string) => void;
 }
 
+/**
+ * Render an AI-generated summary card component.
+ *
+ * This component fetches and displays a summary of activities over a specified time range. It handles loading states, errors, and allows for retrying the fetch operation. The summary includes key highlights, action items, and additional insights, and provides functionality to download the summary as a text file. The component also utilizes toast notifications to inform the user of the summary generation status and errors.
+ *
+ * @param className - An optional string to apply custom CSS classes to the card.
+ * @param onSummaryGenerated - A callback function that is called when a summary is successfully generated.
+ * @param onError - A callback function that is called when an error occurs during the summary fetch.
+ * @returns A JSX element representing the AI summary card.
+ */
 export function AISummaryCard({
   className,
   onSummaryGenerated,
@@ -57,6 +67,17 @@ export function AISummaryCard({
     fetchSummary();
   }, [timeRange]);
 
+  /**
+   * Fetch the AI summary from the server and update the state accordingly.
+   *
+   * This function initiates a fetch request to retrieve the AI summary based on the specified time range and limit.
+   * It handles errors by setting appropriate error messages and optionally calls provided callbacks.
+   * If the summary is auto-generated, a toast notification is displayed. The loading state is managed throughout the process.
+   *
+   * @param isRetry - A boolean indicating whether this is a retry attempt.
+   * @returns void
+   * @throws Error If the fetch request fails or the response is not ok.
+   */
   const fetchSummary = async (isRetry = false) => {
     try {
       setIsLoading(true);
@@ -122,11 +143,24 @@ export function AISummaryCard({
     }
   };
 
+  /**
+   * Increments the retry count and fetches the summary.
+   */
   const retryFetch = () => {
     setRetryCount(prev => prev + 1);
     fetchSummary(true);
   };
 
+  /**
+   * Formats a time range string into a human-readable format.
+   *
+   * The function takes a time range as input and returns a corresponding
+   * string representation. It handles specific cases for '24h', '7d', and
+   * '30d', returning 'Today', 'This Week', and 'This Month' respectively.
+   * If the input does not match any of these cases, it defaults to returning 'Today'.
+   *
+   * @param range - The time range string to format.
+   */
   const formatTimeRange = (range: string) => {
     switch (range) {
       case '24h':
@@ -140,6 +174,9 @@ export function AISummaryCard({
     }
   };
 
+  /**
+   * Formats a timestamp into a localized time string.
+   */
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString('en-US', {

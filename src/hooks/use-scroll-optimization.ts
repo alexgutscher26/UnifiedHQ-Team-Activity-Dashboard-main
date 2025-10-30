@@ -19,7 +19,9 @@ export interface ScrollOptimizationConfig {
 }
 
 /**
- * Hook for throttled scroll handling
+ * Hook for throttled scroll handling.
+ * @param callback - The function to call on scroll events.
+ * @param config - Configuration options for throttling.
  */
 export const useScrollThrottle = (
   callback: (event: Event) => void,
@@ -71,7 +73,7 @@ export const useScrollThrottle = (
 };
 
 /**
- * Hook for debounced scroll handling
+ * Hook for debounced scroll handling.
  */
 export const useScrollDebounce = (
   callback: (event: Event) => void,
@@ -105,7 +107,7 @@ export const useScrollDebounce = (
 };
 
 /**
- * Hook for RequestAnimationFrame optimized scroll handling
+ * Hook for handling scroll events optimized with RequestAnimationFrame.
  */
 export const useScrollRAF = (callback: (event: Event) => void) => {
   const rafRef = useRef<number | null>(null);
@@ -140,7 +142,7 @@ export const useScrollRAF = (callback: (event: Event) => void) => {
 };
 
 /**
- * Hook for optimized scroll event handling with multiple strategies
+ * Hook for optimized scroll event handling based on provided configuration.
  */
 export const useOptimizedScroll = (
   callback: (event: Event) => void,
@@ -182,7 +184,15 @@ export const useOptimizedScroll = (
 };
 
 /**
- * Hook for scroll position tracking with optimization
+ * Hook for scroll position tracking with optimization.
+ *
+ * This hook manages the scroll position state, including the current position,
+ * the change in position (delta), and the direction of the scroll. It utilizes
+ * the `useOptimizedScroll` function to handle scroll events efficiently. The
+ * scroll position is updated based on the event target, and the last position
+ * is stored in a ref to calculate deltas and direction.
+ *
+ * @param {ScrollOptimizationConfig} [config={}] - Configuration options for scroll optimization.
  */
 export const useScrollPosition = (config: ScrollOptimizationConfig = {}) => {
   const [scrollPosition, setScrollPosition] = useState({
@@ -228,7 +238,7 @@ export const useScrollPosition = (config: ScrollOptimizationConfig = {}) => {
 };
 
 /**
- * Hook for scroll-based visibility detection
+ * Custom hook for detecting the visibility of a scrollable element.
  */
 export const useScrollVisibility = (
   elementRef: React.RefObject<HTMLElement>,
@@ -301,7 +311,7 @@ export const useScrollLazyLoad = (
 };
 
 /**
- * Hook for scroll-based performance monitoring
+ * Custom hook for monitoring scroll performance metrics.
  */
 export const useScrollPerformanceMonitor = (
   config: ScrollOptimizationConfig = {}
@@ -353,7 +363,13 @@ export const useScrollPerformanceMonitor = (
 };
 
 /**
- * Utility function to add optimized scroll listener
+ * Utility function to add an optimized scroll listener.
+ *
+ * This function attaches a scroll event listener to a specified element or window, applying various optimizations such as requestAnimationFrame, throttling, and debouncing based on the provided configuration. The optimizations help improve performance by reducing the frequency of callback executions during scroll events. The function also returns a cleanup function to remove the listener when it's no longer needed.
+ *
+ * @param {HTMLElement | Window} element - The element or window to which the scroll listener will be added.
+ * @param {(event: Event) => void} callback - The callback function to be executed on scroll events.
+ * @param {ScrollOptimizationConfig} [config={}] - Configuration options for scroll optimization.
  */
 export const addOptimizedScrollListener = (
   element: HTMLElement | Window,
@@ -373,6 +389,9 @@ export const addOptimizedScrollListener = (
   // Apply optimizations in order
   if (enableRAF) {
     let rafId: number | null = null;
+    /**
+     * Handles the requestAnimationFrame callback for optimizing performance.
+     */
     const rafCallback = (event: Event) => {
       if (rafId === null) {
         rafId = requestAnimationFrame(() => {
@@ -387,6 +406,9 @@ export const addOptimizedScrollListener = (
   if (enableThrottling) {
     let lastCall = 0;
     const throttleMs = 16; // 60fps
+    /**
+     * Throttles the execution of the optimizedCallback function based on the specified throttleMs interval.
+     */
     const throttledCallback = (event: Event) => {
       const now = Date.now();
       if (now - lastCall >= throttleMs) {
@@ -399,6 +421,9 @@ export const addOptimizedScrollListener = (
 
   if (enableDebouncing) {
     let timeoutId: NodeJS.Timeout | null = null;
+    /**
+     * Debounces a callback function to limit its execution rate.
+     */
     const debouncedCallback = (event: Event) => {
       if (timeoutId) clearTimeout(timeoutId);
       timeoutId = setTimeout(() => optimizedCallback(event), debounceMs);
@@ -420,7 +445,7 @@ export const addOptimizedScrollListener = (
 };
 
 /**
- * Utility function to detect scroll performance issues
+ * Detects scroll performance issues based on provided metrics.
  */
 export const detectScrollPerformanceIssues = (metrics: {
   averageScrollTime: number;

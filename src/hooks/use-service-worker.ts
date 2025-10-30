@@ -25,6 +25,18 @@ export interface UseServiceWorkerReturn extends ServiceWorkerState {
   error: Error | null;
 }
 
+/**
+ * Manage the lifecycle and updates of a service worker.
+ *
+ * This function handles the registration, unregistration, updating, and cache management of a service worker. It also sets up automatic registration and periodic update checks based on the service worker's state. Callbacks for various service worker events can be provided through the options parameter to handle updates and errors effectively.
+ *
+ * @param options - Configuration options for the service worker management.
+ * @param options.autoRegister - Indicates whether to automatically register the service worker (default is true).
+ * @param options.onUpdateAvailable - Callback invoked when an update is available.
+ * @param options.onUpdateReady - Callback invoked when the service worker is ready to be activated.
+ * @param options.onError - Callback invoked when an error occurs during service worker operations.
+ * @returns An object containing the current state of the service worker and methods to manage it.
+ */
 export function useServiceWorker(
   options: UseServiceWorkerOptions = {}
 ): UseServiceWorkerReturn {

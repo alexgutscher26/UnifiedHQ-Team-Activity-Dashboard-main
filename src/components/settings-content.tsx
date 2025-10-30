@@ -20,10 +20,16 @@ import { ThemeSettings } from '@/components/settings/theme-settings';
 import { DataManagementSettings } from '@/components/settings/data-management-settings';
 import { SecuritySettings } from '@/components/settings/security-settings';
 
+/**
+ * Renders the settings content with tabs for user preferences and configurations.
+ */
 export function SettingsContent() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('profile');
 
+  /**
+   * Handles changes to settings by displaying a toast notification.
+   */
   const handleSettingsChange = (section: string, message: string) => {
     toast({
       title: 'Settings Updated',
