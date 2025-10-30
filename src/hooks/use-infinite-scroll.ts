@@ -28,7 +28,7 @@ export interface InfiniteScrollConfig {
 }
 
 /**
- * Hook for managing pagination state
+ * Hook for managing pagination state and actions.
  */
 export const usePagination = (config: PaginationConfig = {}) => {
   const {
@@ -129,7 +129,16 @@ export const useInfiniteScroll = (
 };
 
 /**
- * Hook for scroll-based pagination
+ * Hook for scroll-based pagination.
+ *
+ * This hook manages the state and logic for loading more items as the user scrolls. It utilizes the
+ * `usePagination` hook to track pagination state and the `useInfiniteScroll` hook to trigger loading
+ * more items when the user reaches a certain scroll threshold. The `loadPage` function fetches more
+ * items asynchronously and updates the state accordingly, while also handling any potential errors.
+ * A reset function is provided to clear the current items and reset pagination state.
+ *
+ * @param fetchMore - A function that fetches more items based on the current page number.
+ * @param config - Optional configuration for pagination behavior.
  */
 export const useScrollPagination = (
   fetchMore: (page: number) => Promise<{ items: any[]; hasMore: boolean }>,
@@ -151,6 +160,11 @@ export const useScrollPagination = (
   );
 
   useEffect(() => {
+    /**
+     * Loads more items for the current page if pagination is in a loading state.
+     *
+     * The function checks if `pagination.isLoadingMore` is true. If so, it attempts to fetch more items using `fetchMore` with the current page. Upon a successful fetch, it updates the items state and the pagination state with the new items and loading status. In case of an error during the fetch, it logs the error and updates the pagination state to reflect that loading has stopped.
+     */
     const loadPage = async () => {
       if (pagination.isLoadingMore) {
         try {
@@ -187,7 +201,7 @@ export const useScrollPagination = (
 };
 
 /**
- * Hook for virtual scrolling with pagination
+ * Hook for managing virtual scrolling with pagination.
  */
 export const useVirtualPagination = (
   itemCount: number,
@@ -238,7 +252,7 @@ export const useVirtualPagination = (
 };
 
 /**
- * Hook for search and filtering with pagination
+ * Hook for search and filtering with pagination.
  */
 export const useSearchablePagination = <T>(
   items: T[],
@@ -273,7 +287,13 @@ export const useSearchablePagination = <T>(
 };
 
 /**
- * Hook for caching paginated data
+ * Hook for caching paginated data.
+ *
+ * This hook manages the caching of paginated data by fetching items from a provided fetch function. It checks the cache for existing pages before making a network request. If the data is not cached, it fetches the data, updates the cache, and handles any errors that may occur during the fetch process. It also provides a method to clear the cache and reset pagination.
+ *
+ * @param fetchFn - A function that takes a page number and returns a promise resolving to an object containing items and a hasMore flag.
+ * @param config - Optional configuration for pagination.
+ * @returns An object containing allItems, cache, clearCache, loadPage, and pagination controls.
  */
 export const useCachedPagination = <T>(
   fetchFn: (page: number) => Promise<{ items: T[]; hasMore: boolean }>,
@@ -302,6 +322,9 @@ export const useCachedPagination = <T>(
   );
 
   useEffect(() => {
+    /**
+     * Loads all cached pages and sets the items.
+     */
     const loadAllCachedPages = async () => {
       const pages = Array.from(
         { length: pagination.currentPage },
