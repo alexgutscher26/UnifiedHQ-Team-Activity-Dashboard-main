@@ -6,6 +6,9 @@ import { DashboardErrorBoundary } from '@/components/error-boundaries';
 import { getCurrentUser } from '@/lib/get-user';
 import { AIInsightsContent } from '@/components/ai-insights-content';
 
+/**
+ * Renders the AI insights page with user-specific content.
+ */
 export default async function AIInsightsPage() {
   const user = await getCurrentUser();
 

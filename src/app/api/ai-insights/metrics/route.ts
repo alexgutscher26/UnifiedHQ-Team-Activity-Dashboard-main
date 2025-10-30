@@ -25,8 +25,13 @@ interface ProductivityMetrics {
 }
 
 /**
- * GET /api/ai-insights/metrics
- * Fetch productivity metrics for the dashboard
+ * Fetch productivity metrics for the dashboard.
+ *
+ * This function retrieves the user's session and checks for authorization. It calculates the time range for the current and previous periods based on the provided query parameter. It then fetches the activity data for both periods concurrently and computes the relevant metrics using the calculateMetrics function. Finally, it returns the metrics along with the time range details.
+ *
+ * @param request - The NextRequest object containing the request details.
+ * @returns A JSON response containing the calculated metrics and time range information.
+ * @throws Error If there is an issue fetching the productivity metrics.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -151,6 +156,17 @@ function calculateMetrics(
   }
 
   // Calculate trends
+  /**
+   * Determines the trend of a value compared to its previous value.
+   *
+   * This function calculates the percentage change between the current and previous values.
+   * It returns 'up' if the change exceeds a 10% increase, 'down' for a 10% decrease,
+   * and 'stable' if the change is within the threshold. The function handles cases
+   * where the previous value is zero to avoid division by zero errors.
+   *
+   * @param current - The current value to compare.
+   * @param previous - The previous value to compare against.
+   */
   const getTrend = (
     current: number,
     previous: number

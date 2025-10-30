@@ -5,8 +5,13 @@ import { PrismaClient } from '@/generated/prisma';
 const prisma = new PrismaClient();
 
 /**
- * Manual AI summary generation endpoint
- * This endpoint allows users to manually trigger AI summary generation
+ * Manual AI summary generation endpoint.
+ *
+ * This endpoint allows users to manually trigger AI summary generation by retrieving the user's activities from the last 24 hours. It checks for user authentication, fetches relevant activities, and generates a mock summary based on the activity data. The summary is then saved to the database, and the generated summary is returned in the response.
+ *
+ * @param request - The incoming request object containing user session information.
+ * @returns A JSON response containing the generated summary and activity count.
+ * @throws Error If there is an issue during the summary generation process.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -130,7 +135,15 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Generate an intelligent summary based on actual activity data
+ * Generate an intelligent summary based on actual activity data.
+ *
+ * This function analyzes the provided activities and source breakdown to create a summary that includes a title based on activity levels, key highlights of the activities, action items for improvement, and insights into the activity trends. It also utilizes the calculateTimeSpread function to assess the distribution of activities over time.
+ *
+ * @param activities - An array of activity data.
+ * @param sourceBreakdown - A record mapping source names to their respective activity counts.
+ * @param repositories - The number of connected GitHub repositories.
+ * @param channels - The number of connected Slack channels.
+ * @returns An object containing the summary title, key highlights, action items, and insights.
  */
 function generateIntelligentSummary(
   activities: any[],
@@ -241,7 +254,13 @@ function generateIntelligentSummary(
 }
 
 /**
- * Calculate how activities are spread throughout the day
+ * Calculate how activities are spread throughout the day.
+ *
+ * This function analyzes an array of activities, extracting the hour from each activity's timestamp.
+ * It determines the distribution of activities based on the number of unique hours in which they occur.
+ * Depending on the count of unique hours, it categorizes the spread as either distributed, concentrated, or focused.
+ *
+ * @param {any[]} activities - An array of activity objects, each containing a timestamp.
  */
 function calculateTimeSpread(activities: any[]): string {
   if (activities.length === 0) return 'No activity';
