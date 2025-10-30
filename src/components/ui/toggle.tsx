@@ -28,6 +28,9 @@ const toggleVariants = cva(
   }
 );
 
+/**
+ * Renders a Toggle component with specified variants and size.
+ */
 function Toggle({
   className,
   variant,

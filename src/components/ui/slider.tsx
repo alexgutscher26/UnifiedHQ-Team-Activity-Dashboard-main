@@ -5,6 +5,9 @@ import * as SliderPrimitive from '@radix-ui/react-slider';
 
 import { cn } from '@/lib/utils';
 
+/**
+ * Renders a slider component with customizable properties.
+ */
 function Slider({
   className,
   defaultValue,

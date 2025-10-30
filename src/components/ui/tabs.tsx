@@ -5,6 +5,9 @@ import * as TabsPrimitive from '@radix-ui/react-tabs';
 
 import { cn } from '@/lib/utils';
 
+/**
+ * Renders a Tabs component with specified className and props.
+ */
 function Tabs({
   className,
   ...props
@@ -34,6 +37,9 @@ function TabsList({
   );
 }
 
+/**
+ * Renders a TabsPrimitive.Trigger component with custom styles and props.
+ */
 function TabsTrigger({
   className,
   ...props
@@ -50,6 +56,9 @@ function TabsTrigger({
   );
 }
 
+/**
+ * Renders the content of a tab with optional className and props.
+ */
 function TabsContent({
   className,
   ...props
