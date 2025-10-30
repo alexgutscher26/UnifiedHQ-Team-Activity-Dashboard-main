@@ -70,6 +70,15 @@ export function OfflineFirstAISummaryCard({
     loadSummary();
   }, [timeRange, networkStatus.isOnline]);
 
+  /**
+   * Load the AI summary, attempting to retrieve it from cache or fetch it from the network.
+   *
+   * The function first sets the loading state and clears any previous errors. It attempts to load the summary from the cache. If the cache is empty and the network is online, it fetches fresh data from the API. If the fetch fails and no cached data is available, it throws an error. The function also handles success and error states, including showing toasts and invoking callbacks as necessary.
+   *
+   * @param isRetry - A boolean indicating whether this is a retry attempt to load the summary.
+   * @returns void
+   * @throws Error If the network request fails and no cached data is available.
+   */
   const loadSummary = async (isRetry = false) => {
     try {
       setIsLoading(true);
@@ -188,11 +197,25 @@ export function OfflineFirstAISummaryCard({
     }
   };
 
+  /**
+   * Increments the retry count and reloads the summary.
+   */
   const retryFetch = () => {
     setRetryCount(prev => prev + 1);
     loadSummary(true);
   };
 
+  /**
+   * Formats a time range string into a human-readable format.
+   *
+   * The function takes a time range as input and returns a corresponding
+   * string representation. It handles specific cases for '24h', '7d', and
+   * '30d', returning 'Today', 'This Week', and 'This Month' respectively.
+   * If the input does not match any of these cases, it defaults to returning
+   * 'Today'.
+   *
+   * @param range - The time range string to format.
+   */
   const formatTimeRange = (range: string) => {
     switch (range) {
       case '24h':
@@ -215,6 +238,16 @@ export function OfflineFirstAISummaryCard({
     });
   };
 
+  /**
+   * Formats a cache timestamp into a human-readable string.
+   *
+   * This function calculates the difference between the current time and the provided timestamp in minutes.
+   * Depending on the difference, it returns a string indicating whether the cache was updated recently,
+   * or how many minutes or hours ago it was cached. The function handles three cases:
+   * less than a minute, less than an hour, and more than an hour.
+   *
+   * @param timestamp - The timestamp to format, represented as a number.
+   */
   const formatCacheTimestamp = (timestamp: number) => {
     const now = Date.now();
     const diffInMinutes = Math.floor((now - timestamp) / (1000 * 60));
@@ -229,6 +262,13 @@ export function OfflineFirstAISummaryCard({
     }
   };
 
+  /**
+   * Initiates the download of a daily summary as a text file.
+   *
+   * The function retrieves the first summary from cachedData. If a summary exists, it constructs a formatted text
+   * representation that includes the title, generation date, key highlights, action items, and any additional insights.
+   * It then creates a downloadable Blob object, triggers a download action, and displays a toast notification to the user.
+   */
   const downloadSummary = () => {
     const summary = cachedData?.summaries?.[0];
     if (!summary) return;

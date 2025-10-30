@@ -12,6 +12,9 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
 
+/**
+ * Renders a navigation sidebar with menu items.
+ */
 export function NavMain({
   items,
 }: {
@@ -23,6 +26,9 @@ export function NavMain({
 }) {
   const router = useRouter();
 
+  /**
+   * Handles navigation by pushing the given URL to the router or logging a message for placeholder links.
+   */
   const handleNavigation = (url: string) => {
     if (url === '#') {
       // Handle placeholder links - you can add specific logic here
