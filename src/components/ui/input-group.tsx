@@ -39,7 +39,7 @@ function InputGroup({ className, ...props }: React.ComponentProps<'div'>) {
 }
 
 const inputGroupAddonVariants = cva(
-  "text-muted-foreground flex h-auto cursor-text items-center justify-center gap-2 py-1.5 text-sm font-medium select-none [&>svg:not([class*='size-'])]:size-4 [&>kbd]:rounded-[calc(var(--radius)-5px)] group-data-[disabled=true]/input-group:opacity-50",
+  "text-muted-foreground flex h-auto items-center justify-center gap-2 py-1.5 text-sm font-medium select-none [&>svg:not([class*='size-'])]:size-4 [&>kbd]:rounded-[calc(var(--radius)-5px)] group-data-[disabled=true]/input-group:opacity-50",
   {
     variants: {
       align: {
@@ -62,31 +62,68 @@ const inputGroupAddonVariants = cva(
 /**
  * Renders an input group addon component.
  *
- * This component creates a div that serves as an addon for input groups, allowing for alignment and additional props.
- * It handles click events to focus on the nearest input element unless the click originated from a button within the group.
+ * This component creates an accessible addon for input groups, allowing for alignment and additional props.
+ * It can optionally handle click events to focus on the nearest input element unless the click originated from a button within the group.
  * The alignment can be customized through the `align` prop, and additional class names can be provided via `className`.
  *
  * @param {Object} props - The properties for the component.
  * @param {string} [props.className] - Additional class names to apply to the component.
  * @param {string} [props.align='inline-start'] - The alignment of the addon within the input group.
+ * @param {boolean} [props.clickable=false] - Whether the addon should be clickable to focus the input.
  */
 function InputGroupAddon({
   className,
   align = 'inline-start',
+  clickable = false,
   ...props
-}: React.ComponentProps<'div'> & VariantProps<typeof inputGroupAddonVariants>) {
+}: React.ComponentProps<'div'> &
+  VariantProps<typeof inputGroupAddonVariants> & {
+    clickable?: boolean;
+  }) {
+
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('button')) {
+      return;
+    }
+    e.currentTarget.parentElement?.querySelector('input')?.focus();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      if ((e.target as HTMLElement).closest('button')) {
+        return;
+      }
+      e.currentTarget.parentElement?.querySelector('input')?.focus();
+    }
+  };
+
+  if (clickable) {
+    return (
+      <div
+        role='button'
+        tabIndex={0}
+        data-slot='input-group-addon'
+        data-align={align}
+        className={cn(
+          inputGroupAddonVariants({ align }),
+          'cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-sm hover:bg-muted/50 transition-colors',
+          className
+        )}
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}
+        aria-label="Focus input field"
+        {...props}
+      />
+    );
+  }
+
   return (
     <div
       role='group'
       data-slot='input-group-addon'
       data-align={align}
-      className={cn(inputGroupAddonVariants({ align }), className)}
-      onClick={e => {
-        if ((e.target as HTMLElement).closest('button')) {
-          return;
-        }
-        e.currentTarget.parentElement?.querySelector('input')?.focus();
-      }}
+      className={cn(inputGroupAddonVariants({ align }), 'cursor-default', className)}
       {...props}
     />
   );
