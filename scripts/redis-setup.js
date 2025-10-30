@@ -24,7 +24,12 @@ class RedisSetup {
   }
 
   /**
-   * Initialize Redis client
+   * Initialize Redis client.
+   *
+   * This function sets up a Redis client using the configuration provided in this.config.
+   * It establishes connection parameters, including a reconnect strategy that limits retries.
+   * The function also handles connection events, logging errors and connection status to the console.
+   * Finally, it attempts to connect to the Redis server and returns a boolean indicating success or failure.
    */
   async initializeClient() {
     try {
@@ -66,7 +71,13 @@ class RedisSetup {
   }
 
   /**
-   * Test Redis connection and basic operations
+   * Test Redis connection and basic operations.
+   *
+   * This function tests the connectivity to a Redis server by sending a ping command and verifying the response.
+   * It also performs basic operations such as setting, getting, and deleting a key, as well as checking the TTL functionality.
+   * If any operation fails, an error is thrown, and the function returns false; otherwise, it returns true.
+   *
+   * @returns {Promise<boolean>} A promise that resolves to true if all tests are successful, otherwise false.
    */
   async testConnection() {
     console.log('🧪 Testing Redis connection...');
@@ -114,7 +125,9 @@ class RedisSetup {
   }
 
   /**
-   * Setup initial cache structure and keys
+   * Sets up the initial cache structure and configuration keys.
+   *
+   * This function creates namespace keys for various data types and sets up configuration data, including versioning, time-to-live (TTL) settings, and feature flags. It iterates over the configuration data and stores each key-value pair in the cache with a specified expiration time. If any errors occur during the setup process, they are logged, and the function returns false.
    */
   async setupCacheStructure() {
     console.log('🏗️  Setting up cache structure...');
@@ -166,7 +179,13 @@ class RedisSetup {
   }
 
   /**
-   * Validate Redis configuration
+   * Validate Redis configuration.
+   *
+   * This function checks the Redis server's information, including version, mode, memory usage, and connected clients.
+   * It calculates the memory usage percentage and warns if it exceeds 80%. Additionally, it logs the last RDB save time if available.
+   * The function returns true if validation is successful and false if an error occurs during the process.
+   *
+   * @returns {Promise<boolean>} A promise that resolves to true if the validation is successful, or false if it fails.
    */
   async validateConfiguration() {
     console.log('🔍 Validating Redis configuration...');
@@ -242,7 +261,15 @@ class RedisSetup {
   }
 
   /**
-   * Generate deployment report
+   * Generate deployment report.
+   *
+   * This function creates a deployment report containing the current timestamp,
+   * environment, a sanitized Redis URL, the results of the deployment, and
+   * the overall status based on the success of the results. It ensures that
+   * the reports directory exists before saving the report as a JSON file and
+   * logs the path where the report is saved.
+   *
+   * @param {Array} results - The results of the deployment, each containing a success status.
    */
   generateReport(results) {
     const report = {
