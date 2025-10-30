@@ -16,6 +16,11 @@ export default function OfflinePage() {
   };
 
   // Check connection periodically
+  /**
+   * Checks the network connection status and attempts to verify connectivity.
+   *
+   * This function first checks if a connection check is already in progress. If not, it sets the checking state to true and attempts to fetch a small resource from the server to verify connectivity. If the fetch is successful and the response is OK, it redirects the user to the home page. If the fetch fails or the user is offline, it logs the error. Finally, it resets the checking state and schedules the next connection check after 5 seconds.
+   */
   const checkConnection = async () => {
     if (isCheckingConnection) return;
 
