@@ -78,6 +78,9 @@ const fieldVariants = cva(
   }
 );
 
+/**
+ * Renders a field component with specified orientation and additional props.
+ */
 function Field({
   className,
   orientation = 'vertical',
@@ -94,6 +97,9 @@ function Field({
   );
 }
 
+/**
+ * Renders a div element with specific classes and props for field content.
+ */
 function FieldContent({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -107,6 +113,9 @@ function FieldContent({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * Renders a field label component with customizable class names and props.
+ */
 function FieldLabel({
   className,
   ...props
@@ -138,6 +147,9 @@ function FieldTitle({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * Renders a paragraph element with specific styling and props.
+ */
 function FieldDescription({ className, ...props }: React.ComponentProps<'p'>) {
   return (
     <p
@@ -153,6 +165,9 @@ function FieldDescription({ className, ...props }: React.ComponentProps<'p'>) {
   );
 }
 
+/**
+ * Renders a field separator component with optional children.
+ */
 function FieldSeparator({
   children,
   className,
@@ -183,6 +198,18 @@ function FieldSeparator({
   );
 }
 
+/**
+ * Renders a field error component displaying error messages.
+ *
+ * The function checks for provided children first; if none are present, it evaluates the errors array.
+ * If there is a single error with a message, it displays that message. For multiple errors, it renders
+ * them as a list. If no content is available, it returns null.
+ *
+ * @param className - Additional class names to apply to the component.
+ * @param children - Optional children to render instead of error messages.
+ * @param errors - An optional array of error objects, each containing an optional message.
+ * @returns A JSX element representing the field error or null if no content is available.
+ */
 function FieldError({
   className,
   children,
