@@ -3,6 +3,9 @@
  */
 export const dynamic = 'force-dynamic';
 
+/**
+ * Renders a 404 Not Found page.
+ */
 export default function NotFound() {
   return (
     <div
