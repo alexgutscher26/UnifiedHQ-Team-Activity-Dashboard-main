@@ -18,6 +18,9 @@ interface ThemeSelectorModalProps {
   onClose: () => void;
 }
 
+/**
+ * Renders a modal for selecting a theme.
+ */
 export function ThemeSelectorModal({ open, onClose }: ThemeSelectorModalProps) {
   const { currentTheme, setTheme, availableThemes } = useCustomTheme();
 
