@@ -11,6 +11,9 @@ interface FormFieldProps {
   className?: string;
 }
 
+/**
+ * Renders a form field with optional children and className.
+ */
 export function FormField({ children, className }: FormFieldProps) {
   return <div className={cn('space-y-2', className)}>{children}</div>;
 }
@@ -72,6 +75,9 @@ interface FormDescriptionProps {
   className?: string;
 }
 
+/**
+ * Renders a paragraph element with specified children and className.
+ */
 export function FormDescription({ children, className }: FormDescriptionProps) {
   return (
     <p className={cn('text-sm text-muted-foreground', className)}>{children}</p>
@@ -137,7 +143,7 @@ export function ValidatedInput({
   const hasError = touched && error;
 
   /**
-   * Handles the blur event for an input element, validating if necessary.
+   * Handles the blur event for an input element and triggers validation if needed.
    */
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     if (validation) {
@@ -183,7 +189,7 @@ interface ValidatedTextareaProps
 /**
  * Renders a validated textarea component with error handling.
  *
- * This component utilizes the useFieldValidation hook to manage validation state and error messages. It generates a unique field ID if none is provided, and handles blur events to trigger validation. The textarea's appearance is conditionally styled based on validation results, and it displays any associated error messages.
+ * This component utilizes the useFieldValidation hook to manage validation state and error messages. It generates a unique field ID if none is provided, handles blur events to trigger validation, and conditionally styles the textarea based on validation results. Additionally, it displays any associated error messages, including external errors if provided.
  *
  * @param label - The label for the textarea.
  * @param description - Additional description for the textarea.
@@ -315,7 +321,7 @@ export function ValidatedSelect({
   const hasError = touched && error;
 
   /**
-   * Handles the blur event for a select element, validating if necessary.
+   * Handles the blur event for a select element and triggers validation if needed.
    */
   const handleBlur = (e: React.FocusEvent<HTMLSelectElement>) => {
     if (validation) {
@@ -368,6 +374,9 @@ interface FormGroupProps {
   className?: string;
 }
 
+/**
+ * Renders a div with specified children and className.
+ */
 export function FormGroup({ children, className }: FormGroupProps) {
   return <div className={cn('space-y-4', className)}>{children}</div>;
 }
