@@ -341,7 +341,7 @@ export class OfflineActionQueue {
       // Clean up
       await this.dequeue(testActionId);
 
-      return !!retrieved;
+      return Boolean(retrieved);
     } catch (error) {
       console.error('[Action Queue] Persistence test failed:', error);
       return false;

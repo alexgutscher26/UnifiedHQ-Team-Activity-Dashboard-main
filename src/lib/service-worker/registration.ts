@@ -282,10 +282,10 @@ class ServiceWorkerManager {
   private updateState(): void {
     if (!this.registration) return;
 
-    this.state.isInstalling = !!this.registration.installing;
-    this.state.isWaiting = !!this.registration.waiting;
-    this.state.isActive = !!this.registration.active;
-    this.state.hasUpdate = !!this.registration.waiting;
+    this.state.isInstalling = Boolean(this.registration.installing);
+    this.state.isWaiting = Boolean(this.registration.waiting);
+    this.state.isActive = Boolean(this.registration.active);
+    this.state.hasUpdate = Boolean(this.registration.waiting);
   }
 }
 

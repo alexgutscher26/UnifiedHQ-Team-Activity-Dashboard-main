@@ -195,7 +195,7 @@ export class TimerLeakDetector {
 
     // Check if in useEffect
     const useEffectMatch = beforeCode.match(/useEffect\s*\([^}]*$/);
-    const isInUseEffect = !!useEffectMatch;
+    const isInUseEffect = Boolean(useEffectMatch);
 
     // Check if in event handler
     const isInEventHandler =

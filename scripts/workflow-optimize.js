@@ -541,7 +541,7 @@ class WorkflowOptimizer {
     }
 
     // Check concurrency
-    analysis.metrics.hasConcurrency = !!workflow.content.concurrency
+    analysis.metrics.hasConcurrency = Boolean(workflow.content.concurrency)
 
     // Identify issues
     if (!analysis.metrics.hasCache && analysis.metrics.jobCount > 1) {
