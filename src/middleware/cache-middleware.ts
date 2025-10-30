@@ -185,7 +185,14 @@ function generateCacheKey(req: NextRequest, config: CacheConfig): string {
 }
 
 /**
- * Get cache configuration for request
+ * Get cache configuration for request.
+ *
+ * This function retrieves the appropriate cache configuration based on the request's URL pathname and the 'accept' header.
+ * It first checks for any route-specific configurations defined in ROUTE_CACHE_CONFIGS. If none are found, it then looks for
+ * content-type specific configurations in DEFAULT_CACHE_CONFIGS. If no specific configurations are matched, a default
+ * cache configuration is returned.
+ *
+ * @param req - The NextRequest object containing the request details.
  */
 function getCacheConfig(req: NextRequest): CacheConfig {
   const url = new URL(req.url);
