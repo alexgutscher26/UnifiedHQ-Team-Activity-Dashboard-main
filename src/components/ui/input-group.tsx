@@ -80,7 +80,6 @@ function InputGroupAddon({
   VariantProps<typeof inputGroupAddonVariants> & {
     clickable?: boolean;
   }) {
-
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('button')) {
       return;
@@ -121,7 +120,7 @@ function InputGroupAddon({
         )}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
-        aria-label="Focus input field"
+        aria-label='Focus input field'
         {...props}
       />
     );
@@ -132,7 +131,11 @@ function InputGroupAddon({
       role='group'
       data-slot='input-group-addon'
       data-align={align}
-      className={cn(inputGroupAddonVariants({ align }), 'cursor-default', className)}
+      className={cn(
+        inputGroupAddonVariants({ align }),
+        'cursor-default',
+        className
+      )}
       {...props}
     />
   );
