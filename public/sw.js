@@ -274,6 +274,16 @@ async function cacheFirstStrategy (request, config) {
 }
 
 // Stale While Revalidate Strategy - Return cache, update in background
+/**
+ * Implements the stale-while-revalidate caching strategy.
+ *
+ * This function first attempts to retrieve a cached response for the given request. If a cached response is found, it is returned immediately.
+ * Meanwhile, a network request is initiated in the background to fetch a fresh response, which, if successful, is stored in the cache for future use.
+ * If no cached response is available, the function waits for the network response before returning it.
+ *
+ * @param {Request} request - The request object to fetch the resource.
+ * @param {Object} config - Configuration object containing cache settings.
+ */
 async function staleWhileRevalidateStrategy (request, config) {
   const cache = await caches.open(config.name)
   const cachedResponse = await cache.match(request)
