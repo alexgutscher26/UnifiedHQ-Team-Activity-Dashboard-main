@@ -93,6 +93,8 @@ jobs:
             core.setOutput('is-automated', isAutomated.toString());
   wait-for-checks:
     name: Wait for Required Checks
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     needs: check-eligibility
     if: needs.check-eligibility.outputs.eligible == 'true'
