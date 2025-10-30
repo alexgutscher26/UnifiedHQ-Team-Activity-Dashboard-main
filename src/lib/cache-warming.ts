@@ -279,7 +279,15 @@ export class CacheWarming {
   }
 
   /**
-   * Background cache refresh for expiring entries
+   * Background cache refresh for expiring entries.
+   *
+   * This function checks all keys in the Redis cache namespace and refreshes the cache for keys
+   * that have a time-to-live (TTL) less than the specified threshold. It logs the process and
+   * extends the TTL for qualifying keys using a placeholder value. The function handles errors
+   * gracefully, logging any issues encountered during the refresh process.
+   *
+   * @param {number} [thresholdSeconds=300] - The threshold in seconds for determining which
+   * cache entries to refresh based on their TTL.
    */
   static async refreshExpiringCache(thresholdSeconds = 300): Promise<void> {
     try {
