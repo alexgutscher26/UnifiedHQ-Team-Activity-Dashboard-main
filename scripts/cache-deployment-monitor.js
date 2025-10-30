@@ -32,7 +32,9 @@ class CacheDeploymentMonitor {
   }
 
   /**
-   * Start monitoring cache deployment
+   * Start monitoring cache deployment.
+   *
+   * This function initiates the monitoring process for cache deployment by logging the monitoring details, including the endpoint and check interval. It enters a loop that performs health checks up to a maximum number of checks defined in the configuration. After each check, it analyzes the results, displays the current status, and waits for the specified interval before the next check. Once monitoring is complete, it generates and logs a final report.
    */
   async startMonitoring () {
     console.log('🚀 Starting cache deployment monitoring...')
@@ -81,7 +83,12 @@ class CacheDeploymentMonitor {
   }
 
   /**
-   * Perform a single health check
+   * Perform a single health check.
+   *
+   * This function initiates a health check by sending a GET request to the specified health endpoint.
+   * It measures the response time and returns an object containing the timestamp, success status,
+   * response time, HTTP status code, response data, and any error message if the request fails.
+   * The function handles both successful and failed requests, ensuring that relevant information is captured.
    */
   async performHealthCheck () {
     const startTime = Date.now()
@@ -122,7 +129,11 @@ class CacheDeploymentMonitor {
   }
 
   /**
-   * Analyze check results and generate alerts
+   * Analyze check results and generate alerts.
+   *
+   * This function evaluates the checkResult object for various conditions, including request success, response time, overall health status, and individual service health. Based on these evaluations, it generates alerts with appropriate severity levels and messages, which are then logged and stored in the alerts collection.
+   *
+   * @param checkResult - An object containing the results of the health check, including success status, response time, and health data.
    */
   analyzeResults (checkResult) {
     const alerts = []
@@ -191,7 +202,15 @@ class CacheDeploymentMonitor {
   }
 
   /**
-   * Display current status
+   * Display current status.
+   *
+   * This function logs the current status based on the provided checkResult object.
+   * It evaluates the success of the check and determines the overall status, response time,
+   * and status icon to display. If the check is successful, it also logs a summary of
+   * service health. In case of failure, it logs the error message.
+   *
+   * @param {Object} checkResult - The result of the health check containing success status, data, and response time.
+   * @param {number} checkCount - The count of checks performed.
    */
   displayStatus (checkResult, checkCount) {
     if (checkResult.success) {
@@ -217,7 +236,7 @@ class CacheDeploymentMonitor {
   }
 
   /**
-   * Calculate error rate from recent checks
+   * Calculate the error rate from recent checks.
    */
   calculateErrorRate (recentChecks = 5) {
     const recent = this.checks.slice(-recentChecks)
@@ -228,7 +247,7 @@ class CacheDeploymentMonitor {
   }
 
   /**
-   * Calculate average response time
+   * Calculates the average response time from the most recent checks.
    */
   calculateAverageResponseTime (recentChecks = 5) {
     const recent = this.checks.slice(-recentChecks)
@@ -242,7 +261,12 @@ class CacheDeploymentMonitor {
   }
 
   /**
-   * Generate monitoring report
+   * Generate monitoring report.
+   *
+   * This function compiles a comprehensive monitoring report by calculating the total number of checks,
+   * successful and failed checks, success rate, average response time, and recent error rate. It also
+   * categorizes alerts by severity and includes the last 10 alerts. The report is then saved to a file
+   * and a summary is displayed. The overall status is determined using the `determineOverallStatus` method.
    */
   generateReport () {
     const totalChecks = this.checks.length
@@ -291,7 +315,11 @@ class CacheDeploymentMonitor {
   }
 
   /**
-   * Determine overall monitoring status
+   * Determine overall monitoring status.
+   *
+   * This function calculates the recent error rate and average response time over the last 5 entries.
+   * It also counts the number of high severity alerts. Based on these metrics, it returns a status
+   * of 'critical', 'warning', or 'healthy' depending on the defined thresholds and conditions.
    */
   determineOverallStatus () {
     const recentErrorRate = this.calculateErrorRate(5)
@@ -313,7 +341,7 @@ class CacheDeploymentMonitor {
   }
 
   /**
-   * Save report to file
+   * Saves the report to a JSON file in the reports directory.
    */
   saveReport (report) {
     const reportsDir = path.join(process.cwd(), 'reports')
@@ -334,7 +362,11 @@ class CacheDeploymentMonitor {
   }
 
   /**
-   * Display monitoring summary
+   * Display monitoring summary.
+   *
+   * This function logs a detailed summary of the monitoring report, including the duration, total checks, success rate, average response time, and recent error rate. It also displays the total number of alerts categorized by severity. The overall status is indicated with an appropriate icon based on the report's health status, and if the status is not healthy, it lists recent issues with their severity.
+   *
+   * @param {Object} report - The monitoring report containing summary and alerts information.
    */
   displaySummary (report) {
     console.log('\n📊 MONITORING SUMMARY')
@@ -369,7 +401,7 @@ class CacheDeploymentMonitor {
   }
 
   /**
-   * Sleep utility
+   * Returns a promise that resolves after a specified number of milliseconds.
    */
   sleep (ms) {
     return new Promise(resolve => setTimeout(resolve, ms))
