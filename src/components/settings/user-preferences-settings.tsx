@@ -37,8 +37,9 @@ interface UserPreferencesSettingsProps {
 /**
  * Manages user preferences settings including loading, saving, and editing preferences.
  *
- * This component initializes state for user preferences and loading states, and utilizes effects to load preferences on mount.
- * It provides functionality to save updated preferences and handle cancellation of edits, while displaying appropriate loading indicators and error messages.
+ * This component initializes state for user preferences and loading states, utilizing effects to load preferences on mount.
+ * It provides functionality to save updated preferences, handle cancellation of edits, and displays appropriate loading indicators and error messages.
+ * The component also includes UI elements for editing GitHub-related settings and dashboard preferences.
  *
  * @param onSettingsChange - Callback function triggered when settings are changed.
  * @returns JSX.Element representing the user preferences settings interface.
@@ -61,6 +62,13 @@ export function UserPreferencesSettings({
     loadPreferences();
   }, []);
 
+  /**
+   * Loads user preferences and updates the application state.
+   *
+   * This function sets the loading state to true, retrieves user preferences using the loadUserPreferences function,
+   * and updates the preferences and edit form state accordingly. If an error occurs during the loading process,
+   * it logs the error and displays a toast notification to inform the user. Finally, it resets the loading state.
+   */
   const loadPreferences = async () => {
     try {
       setIsLoading(true);
@@ -83,6 +91,11 @@ export function UserPreferencesSettings({
     }
   };
 
+  /**
+   * Handles the saving of user preferences.
+   *
+   * This function sets a saving state, attempts to save user preferences using the saveUserPreferences function, and handles the success or failure of that operation. On success, it loads the updated preferences, updates the editing state, and triggers a settings change notification. In case of an error, it logs the error and displays a toast notification indicating the failure. The saving state is reset in the finally block.
+   */
   const handleSave = async () => {
     try {
       setIsSaving(true);
@@ -115,6 +128,13 @@ export function UserPreferencesSettings({
     }
   };
 
+  /**
+   * Handles the cancellation of an editing session.
+   *
+   * This function checks if preferences are available. If so, it updates the edit form state with the
+   * corresponding values from preferences, providing default values if they are not set. Finally, it
+   * sets the editing state to false, indicating that the editing session has been canceled.
+   */
   const handleCancel = () => {
     if (preferences) {
       setEditForm({

@@ -49,6 +49,15 @@ interface ConnectedSession {
   current: boolean;
 }
 
+/**
+ * Manage security settings for user accounts, including password management, two-factor authentication, and session management.
+ *
+ * This component allows users to update their security preferences, change passwords, and manage active sessions. It utilizes local storage to persist settings and provides feedback through toast notifications. The component handles various states such as changing passwords and revoking sessions, ensuring a responsive user experience.
+ *
+ * @param {Object} props - The properties for the SecuritySettings component.
+ * @param {Function} props.onSettingsChange - Callback function to handle changes in security settings.
+ * @returns {JSX.Element} The rendered SecuritySettings component.
+ */
 export function SecuritySettings({ onSettingsChange }: SecuritySettingsProps) {
   const { toast } = useToast();
   const [settings, setSettings] = useState<SecuritySettings>({
@@ -113,6 +122,13 @@ export function SecuritySettings({ onSettingsChange }: SecuritySettingsProps) {
     }
   };
 
+  /**
+   * Handles the password change process.
+   *
+   * This function validates the new password and its confirmation, ensuring they match and meet the minimum length requirement.
+   * It simulates an API call to change the password and updates the form state upon success.
+   * In case of errors, it displays appropriate toast notifications and logs the error to the console.
+   */
   const handlePasswordChange = async () => {
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       toast({
@@ -161,6 +177,9 @@ export function SecuritySettings({ onSettingsChange }: SecuritySettingsProps) {
     }
   };
 
+  /**
+   * Revokes a session by its ID and updates the UI accordingly.
+   */
   const handleRevokeSession = async (sessionId: string) => {
     try {
       setSessions(prev => prev.filter(session => session.id !== sessionId));
@@ -179,6 +198,9 @@ export function SecuritySettings({ onSettingsChange }: SecuritySettingsProps) {
     }
   };
 
+  /**
+   * Revokes all user sessions and displays a notification.
+   */
   const handleRevokeAllSessions = async () => {
     try {
       setSessions(prev => prev.filter(session => session.current));
