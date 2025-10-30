@@ -72,11 +72,42 @@ const ROUTE_CACHE_CONFIGS: Record<string, CacheConfig> = {
     tags: ['slack', 'api'],
     varyBy: ['authorization'],
   },
+  '/api/slack/activity': {
+    strategy: 'network-first',
+    ttl: TTLManager.getTTL('SLACK_MESSAGES'),
+    maxAge: 300, // 5 minutes
+    staleWhileRevalidate: 900, // 15 minutes
+    tags: ['slack', 'activity', 'api'],
+    varyBy: ['authorization', 'limit', 'refresh'],
+  },
+  '/api/slack/channels': {
+    strategy: 'stale-while-revalidate',
+    ttl: TTLManager.getTTL('SLACK_CHANNELS'),
+    maxAge: 1800, // 30 minutes
+    staleWhileRevalidate: 3600, // 1 hour
+    tags: ['slack', 'channels', 'api'],
+    varyBy: ['authorization'],
+  },
+  '/api/slack/stats': {
+    strategy: 'cache-first',
+    ttl: TTLManager.getTTL('SLACK_MESSAGES') * 2, // 10 minutes
+    maxAge: 600, // 10 minutes
+    staleWhileRevalidate: 1800, // 30 minutes
+    tags: ['slack', 'stats', 'api'],
+    varyBy: ['authorization'],
+  },
   '/api/ai-summary': {
     strategy: 'cache-first',
     ttl: TTLManager.getTTL('AI_SUMMARY'),
     maxAge: 1800,
     tags: ['ai', 'summary', 'api'],
+    varyBy: ['authorization'],
+  },
+  '/api/openrouter': {
+    strategy: 'cache-first',
+    ttl: TTLManager.getTTL('AI_SUMMARY'),
+    maxAge: 1800,
+    tags: ['ai', 'openrouter', 'api'],
     varyBy: ['authorization'],
   },
   '/api/user': {
@@ -110,7 +141,10 @@ function generateCacheKey(req: NextRequest, config: CacheConfig): string {
       if (value) {
         // Hash sensitive headers like authorization
         if (header.toLowerCase() === 'authorization') {
-          const hash = Buffer.from(value).toString('base64').slice(0, 8);
+          // Use TextEncoder/btoa for Edge Runtime compatibility
+          const encoder = new TextEncoder();
+          const data = encoder.encode(value);
+          const hash = btoa(String.fromCharCode(...data)).slice(0, 8);
           keyParts.push(`${header}:${hash}`);
         } else {
           keyParts.push(`${header}:${value}`);
@@ -244,13 +278,28 @@ export async function withCache(
   const cacheKey = generateCacheKey(req, config);
 
   try {
-    // Try to get cached response
-    const cachedData = await RedisCache.get<{
+    // Try to get cached response - handle Edge Runtime gracefully
+    let cachedData: {
       body: string;
       headers: Record<string, string>;
       status: number;
       timestamp: number;
-    }>(cacheKey);
+    } | null = null;
+
+    try {
+      cachedData = await RedisCache.get<{
+        body: string;
+        headers: Record<string, string>;
+        status: number;
+        timestamp: number;
+      }>(cacheKey);
+    } catch (redisError) {
+      console.warn(
+        'Redis not available in Edge Runtime, skipping cache lookup:',
+        redisError
+      );
+      cachedData = null;
+    }
 
     if (cachedData) {
       // Check if we should serve stale content
@@ -281,14 +330,14 @@ export async function withCache(
         response.headers.set('X-Cache-Age', Math.floor(age / 1000).toString());
 
         // Revalidate in background (fire and forget)
-        setImmediate(async () => {
+        setTimeout(async () => {
           try {
             const freshResponse = await handler(req);
             await cacheResponse(cacheKey, freshResponse, config);
           } catch (error) {
             console.error('Background revalidation failed:', error);
           }
-        });
+        }, 0);
 
         return setCacheHeaders(response, config);
       }
@@ -342,7 +391,14 @@ async function cacheResponse(
       timestamp: Date.now(),
     };
 
-    await RedisCache.set(cacheKey, cacheData, config.ttl);
+    try {
+      await RedisCache.set(cacheKey, cacheData, config.ttl);
+    } catch (redisError) {
+      console.warn(
+        'Redis not available in Edge Runtime, skipping cache set:',
+        redisError
+      );
+    }
   } catch (error) {
     console.error('Failed to cache response:', error);
   }
@@ -398,6 +454,7 @@ export class CacheWarmer {
       { url: `${baseUrl}/api/user/profile` },
       { url: `${baseUrl}/api/github/repos` },
       { url: `${baseUrl}/api/slack/channels` },
+      { url: `${baseUrl}/api/slack/stats` },
     ];
 
     await this.warmEndpoints(endpoints);
@@ -426,16 +483,24 @@ export class CacheInvalidator {
    * Invalidate cache by tags
    */
   static async invalidateByTags(tags: string[]): Promise<void> {
-    const promises = tags.map(tag => RedisCache.invalidateByTag(tag));
-    await Promise.allSettled(promises);
+    try {
+      const promises = tags.map(tag => RedisCache.invalidateByTag(tag));
+      await Promise.allSettled(promises);
+    } catch (error) {
+      console.warn('Redis not available for cache invalidation:', error);
+    }
   }
 
   /**
    * Invalidate user-specific cache
    */
   static async invalidateUserCache(userId: string): Promise<void> {
-    const pattern = CacheKeyGenerator.user(userId, '*');
-    await RedisCache.deleteByPattern(pattern);
+    try {
+      const pattern = CacheKeyGenerator.user(userId, '*');
+      await RedisCache.deleteByPattern(pattern);
+    } catch (error) {
+      console.warn('Redis not available for user cache invalidation:', error);
+    }
   }
 
   /**
@@ -465,6 +530,14 @@ export class CacheInvalidator {
     const pattern = identifier
       ? CacheKeyGenerator.aiSummary(identifier, '*')
       : CacheKeyGenerator.aiSummary('*', '*');
+    await RedisCache.deleteByPattern(pattern);
+  }
+
+  /**
+   * Invalidate OpenRouter API cache
+   */
+  static async invalidateOpenRouterCache(): Promise<void> {
+    const pattern = CacheKeyGenerator.generate('openrouter', '*');
     await RedisCache.deleteByPattern(pattern);
   }
 }

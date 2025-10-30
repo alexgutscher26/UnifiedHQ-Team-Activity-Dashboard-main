@@ -5,11 +5,13 @@ import {
   isSlackConnected,
   getSelectedChannelCount,
 } from '@/lib/integrations/slack-cached';
+import { withCache } from '@/middleware/cache-middleware';
+import { RedisCache, CacheKeyGenerator, TTLManager } from '@/lib/redis';
 
 const prisma = new PrismaClient();
 
 /**
- * Fetch Slack activity statistics for the authenticated user.
+ * Fetch Slack activity statistics for the authenticated user with Redis caching.
  *
  * This function retrieves the user's Slack activities from the last 24 hours, calculates the number of messages, threads, and reactions, and formats the last message time. It also compiles a summary of the user's activity status and channel information.
  *
@@ -17,7 +19,7 @@ const prisma = new PrismaClient();
  * @returns A JSON response containing the activity count, status, details, last update time, breakdown of activities, and channel statistics.
  * @throws Error If there is an issue fetching Slack statistics.
  */
-export async function GET(request: NextRequest) {
+async function getSlackStats(request: NextRequest): Promise<NextResponse> {
   try {
     const session = await auth.api.getSession({
       headers: request.headers,
@@ -28,6 +30,16 @@ export async function GET(request: NextRequest) {
     }
 
     const userId = session.user.id;
+
+    // Generate cache key for user's Slack stats
+    const cacheKey = CacheKeyGenerator.slack(userId, 'stats', 'daily');
+
+    // Try to get from Redis cache first
+    const cachedStats = await RedisCache.get(cacheKey);
+    if (cachedStats) {
+      console.log(`[Slack Stats] Cache hit for user ${userId}`);
+      return NextResponse.json(cachedStats);
+    }
 
     // Check if Slack is connected
     const connected = await isSlackConnected(userId);
@@ -151,7 +163,7 @@ export async function GET(request: NextRequest) {
     // TODO: Get total channels available (this would need to be implemented)
     const totalChannels = selectedChannelCount; // For now, use selected channels as total
 
-    return NextResponse.json({
+    const statsData = {
       count: totalActivity,
       status: totalActivity > 0 ? 'Active' : 'Inactive',
       details: detailsText,
@@ -167,7 +179,17 @@ export async function GET(request: NextRequest) {
         total: totalChannels,
         active: channelCount,
       },
-    });
+    };
+
+    // Cache the stats data in Redis
+    await RedisCache.set(
+      cacheKey,
+      statsData,
+      TTLManager.getTTL('SLACK_MESSAGES')
+    );
+    console.log(`[Slack Stats] Cached stats for user ${userId}`);
+
+    return NextResponse.json(statsData);
   } catch (error) {
     console.error('Error fetching Slack stats:', error);
     return NextResponse.json(
@@ -177,4 +199,11 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * GET handler with caching middleware
+ */
+export async function GET(request: NextRequest) {
+  return withCache(request, getSlackStats);
 }

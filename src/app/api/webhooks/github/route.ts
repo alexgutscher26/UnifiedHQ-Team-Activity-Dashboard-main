@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CacheInvalidationService } from '@/lib/cache-invalidation-service';
+import { RedisCache, CacheKeyGenerator } from '@/lib/redis';
 import crypto from 'crypto';
 
 /**
@@ -79,6 +80,67 @@ async function getUserIdFromGitHubUsername(
   return `user_${githubUsername}`;
 }
 
+/**
+ * Invalidate Redis cache entries for GitHub webhook events
+ */
+async function invalidateGitHubRedisCache(
+  userId: string,
+  repository: string,
+  eventType: string
+): Promise<number> {
+  let invalidatedCount = 0;
+
+  try {
+    // Invalidate repository-specific cache entries
+    const repoPattern = `unifiedhq:github:${userId}:*:${repository}:*`;
+    invalidatedCount += await RedisCache.deleteByPattern(repoPattern);
+
+    // Invalidate user's activity cache
+    const activityKey = CacheKeyGenerator.github(userId, 'activities');
+    const activityDeleted = await RedisCache.del(activityKey);
+    invalidatedCount += activityDeleted ? 1 : 0;
+
+    // Invalidate user's repository list cache
+    const reposKey = CacheKeyGenerator.github(userId, 'repositories');
+    const reposDeleted = await RedisCache.del(reposKey);
+    invalidatedCount += reposDeleted ? 1 : 0;
+
+    // Invalidate stats cache
+    const statsKey = CacheKeyGenerator.github(userId, 'stats', '24h');
+    const statsDeleted = await RedisCache.del(statsKey);
+    invalidatedCount += statsDeleted ? 1 : 0;
+
+    // Event-specific cache invalidation
+    switch (eventType) {
+      case 'push':
+        // Invalidate commits cache
+        const commitsPattern = `unifiedhq:github:${userId}:commits:*`;
+        invalidatedCount += await RedisCache.deleteByPattern(commitsPattern);
+        break;
+
+      case 'pull_request':
+        // Invalidate pull requests cache
+        const prsPattern = `unifiedhq:github:${userId}:pulls:*`;
+        invalidatedCount += await RedisCache.deleteByPattern(prsPattern);
+        break;
+
+      case 'issues':
+        // Invalidate issues cache
+        const issuesPattern = `unifiedhq:github:${userId}:issues:*`;
+        invalidatedCount += await RedisCache.deleteByPattern(issuesPattern);
+        break;
+    }
+
+    console.log(
+      `[GitHub Webhook] Invalidated ${invalidatedCount} Redis cache entries for ${eventType} event`
+    );
+  } catch (error) {
+    console.error('[GitHub Webhook] Failed to invalidate Redis cache:', error);
+  }
+
+  return invalidatedCount;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text();
@@ -154,6 +216,13 @@ export async function POST(request: NextRequest) {
           userId,
           { repository: repository.name }
         );
+
+        // Invalidate Redis cache for this push event
+        invalidatedCount += await invalidateGitHubRedisCache(
+          userId,
+          repository.name,
+          'push'
+        );
         break;
 
       case 'pull_request':
@@ -177,6 +246,13 @@ export async function POST(request: NextRequest) {
           userId,
           { repository: repository.name }
         );
+
+        // Invalidate Redis cache for this pull request event
+        invalidatedCount += await invalidateGitHubRedisCache(
+          userId,
+          repository.name,
+          'pull_request'
+        );
         break;
 
       case 'issues':
@@ -199,6 +275,13 @@ export async function POST(request: NextRequest) {
           'github',
           userId,
           { repository: repository.name }
+        );
+
+        // Invalidate Redis cache for this issues event
+        invalidatedCount += await invalidateGitHubRedisCache(
+          userId,
+          repository.name,
+          'issues'
         );
         break;
 

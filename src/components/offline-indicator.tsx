@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { WifiOff, Wifi, AlertTriangle, CheckCircle } from 'lucide-react';
-import { useNetworkStatus } from '@/hooks/use-network-status';
+import { useNetworkStatusContext } from '@/contexts/network-status-context';
 import { cn } from '@/lib/utils';
 
 interface OfflineIndicatorProps {
@@ -22,10 +22,7 @@ export function OfflineIndicator({
   position = 'top',
   variant = 'banner',
 }: OfflineIndicatorProps) {
-  const networkStatus = useNetworkStatus({
-    enablePing: true,
-    pingInterval: 30000,
-  });
+  const networkStatus = useNetworkStatusContext();
 
   const [isVisible, setIsVisible] = useState(false);
   const [justCameOnline, setJustCameOnline] = useState(false);
@@ -81,10 +78,10 @@ export function OfflineIndicator({
       case 'banner':
         return cn(
           baseStyles,
-          'w-full justify-center',
+          'absolute top-0 left-72 right-0 justify-center z-50 flex items-center w-full',
           position === 'top' ? 'border-b' : 'border-t',
           isOffline &&
-            'bg-destructive text-destructive-foreground border-destructive/20',
+          'bg-destructive text-destructive-foreground border-destructive/20',
           isOnline && 'bg-green-500 text-white border-green-500/20'
         );
 
@@ -101,7 +98,7 @@ export function OfflineIndicator({
           baseStyles,
           'rounded-lg shadow-lg border max-w-sm',
           isOffline &&
-            'bg-destructive text-destructive-foreground border-destructive/20',
+          'bg-destructive text-destructive-foreground border-destructive/20',
           isOnline && 'bg-green-500 text-white border-green-500/20'
         );
 
@@ -155,6 +152,7 @@ export function OfflineIndicator({
       role='status'
       aria-live='polite'
       aria-label={getMessage()}
+      aria-atomic='true'
     >
       {getIcon()}
       <span>

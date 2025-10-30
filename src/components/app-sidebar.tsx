@@ -86,10 +86,10 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
               asChild
               className='data-[slot=sidebar-menu-button]:!p-1.5 cursor-pointer'
             >
-              <a href='#' className='cursor-pointer'>
+              <div className='cursor-pointer'>
                 <IconSparkles className='!size-5' />
                 <span className='text-base font-semibold'>UnifiedHQ</span>
-              </a>
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

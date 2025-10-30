@@ -5,7 +5,8 @@ import {
   saveGithubActivities,
   isGithubConnected,
   getSelectedRepositoryCount,
-} from '@/lib/integrations/github';
+} from '@/lib/integrations/github-cached';
+import { CacheInvalidationService } from '@/lib/cache-invalidation-service';
 
 // Helper function to broadcast updates to connected users
 function broadcastToUser(userId: string, data: any) {
@@ -60,9 +61,26 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Fetch and save GitHub activity
+    // Check if force refresh is requested
+    const { searchParams } = new URL(request.url);
+    const forceRefresh = searchParams.get('force') === 'true';
+
+    // If force refresh, invalidate existing cache
+    if (forceRefresh) {
+      await CacheInvalidationService.invalidateGitHubData(userId);
+    }
+
+    // Fetch and save GitHub activity (uses cached version unless force refresh)
     const activities = await fetchGithubActivity(userId);
     await saveGithubActivities(userId, activities);
+
+    // Warm cache for user's repositories in the background if not force refresh
+    if (!forceRefresh) {
+      const { GitHubCacheWarming } = await import(
+        '@/lib/integrations/github-cached'
+      );
+      GitHubCacheWarming.warmUserRepositories(userId);
+    }
 
     // Broadcast update to connected clients
     try {
@@ -71,6 +89,7 @@ export async function POST(request: NextRequest) {
         count: activities.length,
         selectedRepositories: selectedRepoCount,
         message: `Synced ${activities.length} GitHub activities from ${selectedRepoCount} selected repositories`,
+        cached: !forceRefresh,
       });
     } catch (error) {
       console.error('Failed to broadcast sync update:', error);
@@ -82,6 +101,8 @@ export async function POST(request: NextRequest) {
       count: activities.length,
       selectedRepositories: selectedRepoCount,
       activities: activities.slice(0, 10), // Return first 10 activities for immediate display
+      cached: !forceRefresh,
+      timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
     console.error('GitHub sync error:', error);

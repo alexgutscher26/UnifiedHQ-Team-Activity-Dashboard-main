@@ -1,7 +1,14 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useNetworkStatus } from '@/hooks/use-network-status';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+} from 'react';
+import { useNetworkStatusContext } from '@/contexts/network-status-context';
 import { useServiceWorkerContext } from '@/components/service-worker-provider';
 import { toast } from 'sonner';
 
@@ -46,10 +53,20 @@ export function OfflineProvider({
   const [syncInProgress, setSyncInProgress] = useState(false);
   const [lastSyncAttempt, setLastSyncAttempt] = useState<Date | null>(null);
 
-  const networkStatus = useNetworkStatus({
-    enablePing: true,
-    pingInterval: 30000,
-    onOffline: () => {
+  const networkStatus = useNetworkStatusContext();
+
+  // Handle network status changes with useEffect instead of callbacks
+  const prevOnlineStatus = useRef(networkStatus.isOnline);
+
+  useEffect(() => {
+    // Only react to actual changes
+    if (prevOnlineStatus.current === networkStatus.isOnline) {
+      return;
+    }
+
+    prevOnlineStatus.current = networkStatus.isOnline;
+
+    if (networkStatus.isOffline) {
       console.log('[Offline Context] Going offline');
       setHasBeenOffline(true);
       setOfflineSince(new Date());
@@ -61,8 +78,7 @@ export function OfflineProvider({
           duration: 5000,
         });
       }
-    },
-    onOnline: () => {
+    } else if (networkStatus.isOnline) {
       console.log('[Offline Context] Coming back online');
       setOfflineSince(null);
 
@@ -75,10 +91,10 @@ export function OfflineProvider({
 
       // Auto-sync when coming back online
       if (enableAutoSync && queuedActions > 0) {
-        retrySync();
+        retrySyncRef.current?.();
       }
-    },
-  });
+    }
+  }, [networkStatus.isOnline, networkStatus.isOffline, enableNotifications, hasBeenOffline, enableAutoSync, queuedActions]);
 
   const serviceWorker = useServiceWorkerContext();
 
@@ -94,7 +110,7 @@ export function OfflineProvider({
     loadQueuedActionsCount();
   }, []);
 
-  const loadCachedPages = async () => {
+  const loadCachedPages = useCallback(async () => {
     try {
       // This would typically query the service worker for cached URLs
       // For now, we'll simulate with common pages
@@ -103,9 +119,9 @@ export function OfflineProvider({
     } catch (error) {
       console.error('[Offline Context] Failed to load cached pages:', error);
     }
-  };
+  }, []);
 
-  const loadQueuedActionsCount = async () => {
+  const loadQueuedActionsCount = useCallback(async () => {
     try {
       // This would typically query IndexedDB for queued actions
       // For now, we'll simulate
@@ -115,9 +131,11 @@ export function OfflineProvider({
     } catch (error) {
       console.error('[Offline Context] Failed to load queued actions:', error);
     }
-  };
+  }, []);
 
-  const retrySync = async () => {
+  const retrySyncRef = useRef<() => Promise<void>>();
+
+  retrySyncRef.current = async () => {
     if (syncInProgress || networkStatus.isOffline) {
       return;
     }
@@ -157,7 +175,11 @@ export function OfflineProvider({
     }
   };
 
-  const clearOfflineData = async () => {
+  const retrySync = useCallback(async () => {
+    return retrySyncRef.current?.();
+  }, []);
+
+  const clearOfflineData = useCallback(async () => {
     try {
       // Clear service worker caches
       await serviceWorker.clearCache();
@@ -187,7 +209,7 @@ export function OfflineProvider({
         });
       }
     }
-  };
+  }, [serviceWorker, enableNotifications]);
 
   // Auto-retry sync when coming back online
   useEffect(() => {
@@ -198,12 +220,17 @@ export function OfflineProvider({
       enableAutoSync
     ) {
       const timer = setTimeout(() => {
-        retrySync();
+        retrySyncRef.current?.();
       }, 2000); // Wait 2 seconds after coming online
 
       return () => clearTimeout(timer);
     }
-  }, [networkStatus.isOnline, hasBeenOffline, queuedActions, enableAutoSync]);
+  }, [
+    networkStatus.isOnline,
+    hasBeenOffline,
+    queuedActions,
+    enableAutoSync,
+  ]);
 
   const contextValue: OfflineContextType = {
     isOffline: networkStatus.isOffline,

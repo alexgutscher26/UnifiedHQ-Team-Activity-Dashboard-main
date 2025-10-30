@@ -9,6 +9,9 @@ const CACHE_NAMES = {
     offline: `unifiedhq-offline-v1`
 };
 
+// Make cache names available globally for imported scripts
+self.CACHE_NAMES = CACHE_NAMES;
+
 // Cache configurations
 const CACHE_CONFIGS = {
     [CACHE_NAMES.static]: {
@@ -42,10 +45,28 @@ const CACHE_CONFIGS = {
     }
 };
 
+// Make cache configs available globally for imported scripts
+self.CACHE_CONFIGS = CACHE_CONFIGS;
+
 const STATIC_ASSETS = [
     '/',
     '/offline'
 ];
+
+// Create a fallback cachePreloader object for now to avoid import issues
+self.cachePreloader = {
+    trackNavigation: () => { },
+    preloadCriticalData: () => Promise.resolve(),
+    getCacheStats: () => Promise.resolve({}),
+    clearPatterns: () => Promise.resolve()
+};
+
+// TODO: Re-enable cache preloader once import issues are resolved
+// try {
+//     importScripts('/cache-preloader-sw.js');
+// } catch (error) {
+//     console.warn('[SW] Cache preloader not available:', error);
+// }
 
 // Install Event - Cache static assets
 self.addEventListener('install', (event) => {
@@ -113,6 +134,11 @@ self.addEventListener('fetch', (event) => {
     // Skip non-GET requests and chrome-extension requests
     if (request.method !== 'GET' || url.protocol === 'chrome-extension:') {
         return;
+    }
+
+    // Track navigation for cache preloading
+    if (request.mode === 'navigate' || url.pathname.startsWith('/api/')) {
+        cachePreloader.trackNavigation(url.pathname);
     }
 
     event.respondWith(handleFetch(request));
@@ -342,6 +368,43 @@ self.addEventListener('message', (event) => {
             });
             break;
 
+        case 'PRELOAD_CRITICAL_DATA':
+            // Trigger critical data preloading
+            cachePreloader.preloadCriticalData().then(() => {
+                event.ports[0].postMessage({ success: true });
+            }).catch(error => {
+                event.ports[0].postMessage({ success: false, error: error.message });
+            });
+            break;
+
+        case 'GET_PRELOAD_STATS':
+            // Get cache preloader statistics
+            cachePreloader.getCacheStats().then(stats => {
+                event.ports[0].postMessage({ success: true, stats });
+            }).catch(error => {
+                event.ports[0].postMessage({ success: false, error: error.message });
+            });
+            break;
+
+        case 'CLEAR_NAVIGATION_PATTERNS':
+            // Clear navigation patterns
+            cachePreloader.clearPatterns().then(() => {
+                event.ports[0].postMessage({ success: true });
+            }).catch(error => {
+                event.ports[0].postMessage({ success: false, error: error.message });
+            });
+            break;
+
+        case 'TRACK_NAVIGATION':
+            // Manual navigation tracking
+            if (payload && payload.path) {
+                cachePreloader.trackNavigation(payload.path);
+                event.ports[0].postMessage({ success: true });
+            } else {
+                event.ports[0].postMessage({ success: false, error: 'Path required' });
+            }
+            break;
+
         default:
             console.log('[SW] Unknown message type:', type);
     }
@@ -390,8 +453,8 @@ async function getCacheStats() {
 
     return stats;
 }
-// Cache m
-anagement utilities
+
+// Cache management utilities
 
 // Put response in cache with timestamp and cleanup
 async function putInCache(cache, request, response, config) {

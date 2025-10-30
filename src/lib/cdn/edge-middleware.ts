@@ -220,7 +220,10 @@ export class EdgeMiddleware {
    */
   private generateETag(pathname: string): string {
     const timestamp = Date.now();
-    const hash = Buffer.from(pathname).toString('base64').slice(0, 8);
+    // Use TextEncoder and btoa for Edge Runtime compatibility
+    const encoder = new TextEncoder();
+    const data = encoder.encode(pathname);
+    const hash = btoa(String.fromCharCode(...data)).slice(0, 8);
     return `"${timestamp}-${hash}"`;
   }
 

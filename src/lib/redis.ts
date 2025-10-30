@@ -357,6 +357,25 @@ export class RedisCache {
   }
 
   /**
+   * Get keys by pattern
+   */
+  static async getKeysByPattern(pattern: string): Promise<string[]> {
+    try {
+      if (!this.isRedisAvailable()) {
+        console.warn(
+          'Redis not available, returning empty array for keys pattern'
+        );
+        return [];
+      }
+
+      return await redis.keys(pattern);
+    } catch (error) {
+      console.error('Redis keys by pattern error:', error);
+      return [];
+    }
+  }
+
+  /**
    * Invalidate cache by tags (using key patterns)
    */
   static async invalidateByTag(tag: string): Promise<number> {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 export interface NetworkStatus {
   isOnline: boolean;
@@ -25,55 +25,74 @@ export interface UseNetworkStatusReturn extends NetworkStatus {
   isChecking: boolean;
 }
 
+// Get connection information if available
+const getConnectionInfo = (): Partial<NetworkStatus> => {
+  if (typeof navigator === 'undefined') return {};
+
+  const connection =
+    (navigator as any).connection ||
+    (navigator as any).mozConnection ||
+    (navigator as any).webkitConnection;
+
+  if (!connection) return {};
+
+  return {
+    effectiveType: connection.effectiveType,
+    downlink: connection.downlink,
+    rtt: connection.rtt,
+    saveData: connection.saveData,
+  };
+};
+
 export function useNetworkStatus(
   options: UseNetworkStatusOptions = {}
 ): UseNetworkStatusReturn {
   const {
     onOnline,
     onOffline,
-    pingUrl = '/api/health',
-    pingInterval = 30000, // 30 seconds
-    enablePing = true,
+    pingUrl = '/favicon.ico',
+    enablePing = false, // Disable ping by default to avoid issues
   } = options;
 
-  const [networkStatus, setNetworkStatus] = useState<NetworkStatus>(() => ({
-    isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
-    isOffline: typeof navigator !== 'undefined' ? !navigator.onLine : false,
-  }));
+  // Initialize state with current navigator status and connection info
+  const [networkStatus, setNetworkStatus] = useState<NetworkStatus>(() => {
+    const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+    const connectionInfo = getConnectionInfo();
+
+    return {
+      isOnline,
+      isOffline: !isOnline,
+      ...connectionInfo,
+    };
+  });
 
   const [lastChecked, setLastChecked] = useState<number | null>(null);
   const [isChecking, setIsChecking] = useState(false);
 
-  // Get connection information if available
-  const getConnectionInfo = useCallback((): Partial<NetworkStatus> => {
-    if (typeof navigator === 'undefined') return {};
+  // Store callback refs to avoid stale closures
+  const onOnlineRef = useRef(onOnline);
+  const onOfflineRef = useRef(onOffline);
 
-    const connection =
-      (navigator as any).connection ||
-      (navigator as any).mozConnection ||
-      (navigator as any).webkitConnection;
+  // Update refs when callbacks change
+  useEffect(() => {
+    onOnlineRef.current = onOnline;
+  }, [onOnline]);
 
-    if (!connection) return {};
+  useEffect(() => {
+    onOfflineRef.current = onOffline;
+  }, [onOffline]);
 
-    return {
-      effectiveType: connection.effectiveType,
-      downlink: connection.downlink,
-      rtt: connection.rtt,
-      saveData: connection.saveData,
-    };
-  }, []);
-
-  // Check actual connectivity by making a request
+  // Stable check connection function
   const checkConnection = useCallback(async (): Promise<boolean> => {
     if (!enablePing) {
-      return navigator.onLine;
+      return typeof navigator !== 'undefined' ? navigator.onLine : true;
     }
 
     setIsChecking(true);
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
 
       const response = await fetch(pingUrl, {
         method: 'HEAD',
@@ -86,63 +105,55 @@ export function useNetworkStatus(
 
       return response.ok;
     } catch (error) {
-      console.log('[Network Status] Ping failed:', error);
       setLastChecked(Date.now());
-      return false;
+      // Always trust navigator.onLine to avoid false offline states
+      return typeof navigator !== 'undefined' ? navigator.onLine : true;
     } finally {
       setIsChecking(false);
     }
   }, [enablePing, pingUrl]);
 
-  // Update network status
-  const updateNetworkStatus = useCallback(
-    (isOnline: boolean) => {
+  // Use ref for update function to avoid recreating it
+  const updateNetworkStatusRef = useRef<((isOnline: boolean) => void) | undefined>(undefined);
+
+  updateNetworkStatusRef.current = (isOnline: boolean) => {
+    setNetworkStatus(prev => {
+      // Only update if the status actually changed
+      if (prev.isOnline === isOnline) {
+        return prev;
+      }
+
+      // Call callbacks if status changed
+      if (isOnline) {
+        onOnlineRef.current?.();
+      } else {
+        onOfflineRef.current?.();
+      }
+
+      // Get fresh connection info
       const connectionInfo = getConnectionInfo();
 
-      setNetworkStatus(prev => {
-        const newStatus = {
-          ...prev,
-          ...connectionInfo,
-          isOnline,
-          isOffline: !isOnline,
-        };
+      return {
+        ...prev,
+        ...connectionInfo,
+        isOnline,
+        isOffline: !isOnline,
+      };
+    });
+  };
 
-        // Call callbacks if status changed
-        if (prev.isOnline !== isOnline) {
-          if (isOnline) {
-            onOnline?.();
-          } else {
-            onOffline?.();
-          }
-        }
-
-        return newStatus;
-      });
-    },
-    [getConnectionInfo, onOnline, onOffline]
-  );
-
-  // Handle online/offline events
+  // Handle online/offline events - set up once
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const handleOnline = () => {
       console.log('[Network Status] Browser reports online');
-      updateNetworkStatus(true);
-
-      // Verify with ping if enabled
-      if (enablePing) {
-        checkConnection().then(isActuallyOnline => {
-          if (!isActuallyOnline) {
-            updateNetworkStatus(false);
-          }
-        });
-      }
+      updateNetworkStatusRef.current?.(true);
     };
 
     const handleOffline = () => {
       console.log('[Network Status] Browser reports offline');
-      updateNetworkStatus(false);
+      updateNetworkStatusRef.current?.(false);
     };
 
     const handleConnectionChange = () => {
@@ -165,9 +176,6 @@ export function useNetworkStatus(
       connection.addEventListener('change', handleConnectionChange);
     }
 
-    // Initial status check
-    updateNetworkStatus(navigator.onLine);
-
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
@@ -176,48 +184,7 @@ export function useNetworkStatus(
         connection.removeEventListener('change', handleConnectionChange);
       }
     };
-  }, [updateNetworkStatus, checkConnection, enablePing, getConnectionInfo]);
-
-  // Periodic connectivity checks
-  useEffect(() => {
-    if (!enablePing || pingInterval <= 0) return;
-
-    const interval = setInterval(() => {
-      if (networkStatus.isOnline && !isChecking) {
-        checkConnection().then(isOnline => {
-          if (!isOnline && networkStatus.isOnline) {
-            updateNetworkStatus(false);
-          }
-        });
-      }
-    }, pingInterval);
-
-    return () => clearInterval(interval);
-  }, [
-    enablePing,
-    pingInterval,
-    networkStatus.isOnline,
-    isChecking,
-    checkConnection,
-    updateNetworkStatus,
-  ]);
-
-  // Check connection when coming back online
-  useEffect(() => {
-    if (networkStatus.isOnline && enablePing && !isChecking) {
-      checkConnection().then(isActuallyOnline => {
-        if (!isActuallyOnline) {
-          updateNetworkStatus(false);
-        }
-      });
-    }
-  }, [
-    networkStatus.isOnline,
-    enablePing,
-    isChecking,
-    checkConnection,
-    updateNetworkStatus,
-  ]);
+  }, []); // Empty dependency array - set up once
 
   return {
     ...networkStatus,

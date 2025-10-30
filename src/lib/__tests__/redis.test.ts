@@ -83,4 +83,16 @@ describe('RedisCache', () => {
     const ttlResult = await RedisCache.ttl(testKey);
     expect(typeof ttlResult).toBe('number');
   });
+
+  test('should handle pattern-based operations gracefully', async () => {
+    const pattern = 'unifiedhq:ai:*';
+
+    // Pattern delete should return number when Redis is unavailable
+    const deleteCount = await RedisCache.deleteByPattern(pattern);
+    expect(typeof deleteCount).toBe('number');
+
+    // Pattern keys should return empty array when Redis is unavailable
+    const keys = await RedisCache.getKeysByPattern(pattern);
+    expect(Array.isArray(keys)).toBe(true);
+  });
 });

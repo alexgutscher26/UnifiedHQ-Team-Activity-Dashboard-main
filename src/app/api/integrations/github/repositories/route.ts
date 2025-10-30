@@ -121,7 +121,17 @@ export async function GET(request: NextRequest) {
     };
 
     // Cache the response for 30 minutes (repositories don't change frequently)
-    await RedisCache.set(cacheKey, responseData, TTLManager.getTTL('GITHUB_REPOS'));
+    await RedisCache.set(
+      cacheKey,
+      responseData,
+      TTLManager.getTTL('GITHUB_REPOS')
+    );
+
+    // Schedule cache warming for frequently accessed repositories in the background
+    const { GitHubCacheWarming } = await import(
+      '@/lib/integrations/github-cached'
+    );
+    GitHubCacheWarming.scheduleRepositoryWarming(user.id, 'background-warming');
 
     return NextResponse.json(responseData);
   } catch (error: any) {
@@ -262,7 +272,10 @@ export async function DELETE(request: NextRequest) {
 
     // Invalidate GitHub activity cache for this repository
     if (selectedRepo) {
-      await CacheInvalidationService.invalidateGitHubData(user.id, selectedRepo.repoName);
+      await CacheInvalidationService.invalidateGitHubData(
+        user.id,
+        selectedRepo.repoName
+      );
 
       // Broadcast repository change
       broadcastRepositoryChange(user.id, 'removed', selectedRepo.repoName);

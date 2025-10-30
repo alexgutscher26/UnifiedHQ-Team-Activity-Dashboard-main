@@ -371,10 +371,21 @@ export function ActivityFeed() {
         const data = await response.json();
         setActivities(data.activities || []);
       } else {
-        console.error('Failed to fetch activities');
+        // Handle different error status codes
+        if (response.status === 401) {
+          console.warn('User not authenticated - activities unavailable');
+          setActivities([]); // Set empty array for unauthenticated users
+        } else if (response.status === 500) {
+          console.error('Server error fetching activities');
+          setActivities([]);
+        } else {
+          console.error(`Failed to fetch activities: ${response.status} ${response.statusText}`);
+          setActivities([]);
+        }
       }
     } catch (error) {
       console.error('Error fetching activities:', error);
+      setActivities([]); // Ensure activities is always an array
     } finally {
       setIsLoading(false);
     }

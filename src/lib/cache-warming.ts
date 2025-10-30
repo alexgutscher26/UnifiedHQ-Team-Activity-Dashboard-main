@@ -310,4 +310,86 @@ export class CacheWarming {
       console.error('Background cache refresh failed:', error);
     }
   }
+
+  /**
+   * Intelligent cache preloading based on user patterns
+   */
+  static async intelligentPreload(
+    userId: string,
+    navigationPatterns?: Array<{ path: string; frequency: number }>
+  ): Promise<void> {
+    try {
+      console.log(`Starting intelligent cache preloading for user: ${userId}`);
+
+      // Warm cache based on navigation patterns
+      if (navigationPatterns && navigationPatterns.length > 0) {
+        // Sort by frequency and preload top patterns
+        const topPatterns = navigationPatterns
+          .sort((a, b) => b.frequency - a.frequency)
+          .slice(0, 10); // Limit to top 10 patterns
+
+        for (const pattern of topPatterns) {
+          // Determine what data to preload based on the path
+          if (pattern.path.includes('/dashboard')) {
+            await this.warmUserSession(userId);
+          } else if (pattern.path.includes('/github')) {
+            await this.warmGitHubCache(userId);
+          } else if (pattern.path.includes('/slack')) {
+            await this.warmSlackCache(userId);
+          } else if (
+            pattern.path.includes('/ai') ||
+            pattern.path.includes('/summary')
+          ) {
+            await this.warmAISummaryCache(userId);
+          }
+
+          // Small delay between preloads
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+
+      // Always warm critical data
+      await this.warmUserSession(userId);
+
+      console.log(`Intelligent cache preloading completed for user: ${userId}`);
+    } catch (error) {
+      console.error(
+        `Intelligent cache preloading failed for user ${userId}:`,
+        error
+      );
+    }
+  }
+
+  /**
+   * Preload based on time patterns
+   */
+  static async timeBasedPreload(
+    userId: string,
+    timeBasedPaths: string[]
+  ): Promise<void> {
+    try {
+      console.log(`Starting time-based cache preloading for user: ${userId}`);
+
+      for (const path of timeBasedPaths) {
+        // Determine appropriate cache warming based on path
+        if (path.includes('/api/github')) {
+          await this.warmGitHubCache(userId);
+        } else if (path.includes('/api/slack')) {
+          await this.warmSlackCache(userId);
+        } else if (path.includes('/api/ai')) {
+          await this.warmAISummaryCache(userId);
+        }
+
+        // Small delay between operations
+        await new Promise(resolve => setTimeout(resolve, 150));
+      }
+
+      console.log(`Time-based cache preloading completed for user: ${userId}`);
+    } catch (error) {
+      console.error(
+        `Time-based cache preloading failed for user ${userId}:`,
+        error
+      );
+    }
+  }
 }

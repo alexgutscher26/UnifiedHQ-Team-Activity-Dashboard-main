@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CacheInvalidationService } from '@/lib/cache-invalidation-service';
+import { SlackCacheManager } from '@/lib/integrations/slack-cached';
 import crypto from 'crypto';
 
 /**
@@ -63,26 +64,88 @@ function verifySlackSignature(
 }
 
 /**
- * Get user ID from Slack user ID (placeholder implementation)
- * In a real implementation, this would query the database to find the user
+ * Get user ID from Slack user ID by looking up connections in database
  */
 async function getUserIdFromSlackUserId(
-  slackUserId: string
+  slackUserId: string,
+  teamId?: string
 ): Promise<string | null> {
-  // TODO: Implement actual user lookup from database
-  // For now, return a placeholder user ID
-  console.log(`Looking up user ID for Slack user: ${slackUserId}`);
-  return `user_${slackUserId}`;
+  try {
+    const { PrismaClient } = await import('@/generated/prisma');
+    const prisma = new PrismaClient();
+
+    // Look up user by Slack user ID in connection metadata
+    const connection = await prisma.connection.findFirst({
+      where: {
+        type: 'slack',
+        OR: [
+          {
+            metadata: {
+              path: ['user', 'id'],
+              equals: slackUserId,
+            },
+          },
+          {
+            metadata: {
+              path: ['authed_user', 'id'],
+              equals: slackUserId,
+            },
+          },
+        ],
+        ...(teamId && {
+          metadata: {
+            path: ['team', 'id'],
+            equals: teamId,
+          },
+        }),
+      },
+    });
+
+    if (connection) {
+      console.log(
+        `Found user ${connection.userId} for Slack user: ${slackUserId}`
+      );
+      return connection.userId;
+    }
+
+    console.log(`No user found for Slack user: ${slackUserId}`);
+    return null;
+  } catch (error) {
+    console.error(
+      `Error looking up user for Slack user ${slackUserId}:`,
+      error
+    );
+    return null;
+  }
 }
 
 /**
- * Get all affected users in a channel (placeholder implementation)
- * In a real implementation, this would query the database for channel members
+ * Get all affected users in a channel by looking up selected channels
  */
 async function getChannelMembers(channelId: string): Promise<string[]> {
-  // TODO: Implement actual channel member lookup
-  console.log(`Getting members for Slack channel: ${channelId}`);
-  return [`user_member1`, `user_member2`]; // Placeholder
+  try {
+    const { PrismaClient } = await import('@/generated/prisma');
+    const prisma = new PrismaClient();
+
+    // Find all users who have selected this channel
+    const selectedChannels = await prisma.selectedChannel.findMany({
+      where: {
+        channelId: channelId,
+      },
+      select: {
+        userId: true,
+      },
+    });
+
+    const userIds = selectedChannels.map(sc => sc.userId);
+    console.log(
+      `Found ${userIds.length} users for Slack channel: ${channelId}`
+    );
+    return userIds;
+  } catch (error) {
+    console.error(`Error getting channel members for ${channelId}:`, error);
+    return [];
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -133,19 +196,30 @@ export async function POST(request: NextRequest) {
 
           if (event.user && event.channel) {
             // Get user ID from Slack user ID
-            const userId = await getUserIdFromSlackUserId(event.user);
+            const userId = await getUserIdFromSlackUserId(
+              event.user,
+              payload.team_id
+            );
 
             if (userId) {
-              // Invalidate message cache for the channel
-              invalidatedCount +=
-                await CacheInvalidationService.realtimeInvalidation(
-                  'message',
-                  userId,
-                  event.channel
-                );
+              // Invalidate message cache for the specific channel
+              await SlackCacheManager.invalidateChannelMessages(
+                userId,
+                event.channel
+              );
+              invalidatedCount += 1;
 
               // Get all channel members and invalidate their cache
               const channelMembers = await getChannelMembers(event.channel);
+
+              // Invalidate cache for all users who have this channel selected
+              for (const memberId of channelMembers) {
+                await SlackCacheManager.invalidateChannelMessages(
+                  memberId,
+                  event.channel
+                );
+                invalidatedCount += 1;
+              }
 
               // Smart invalidation for Slack changes
               invalidatedCount +=
@@ -172,6 +246,12 @@ export async function POST(request: NextRequest) {
             // Get all affected users and invalidate their Slack cache
             const channelMembers = await getChannelMembers(event.channel);
 
+            // Invalidate channels list for all affected users
+            for (const userId of channelMembers) {
+              await SlackCacheManager.invalidateChannels(userId);
+              invalidatedCount += 1;
+            }
+
             const batchInvalidations = channelMembers.map(userId => ({
               type: 'slack' as const,
               userId,
@@ -192,20 +272,28 @@ export async function POST(request: NextRequest) {
           );
 
           if (event.user && event.channel) {
-            const userId = await getUserIdFromSlackUserId(event.user);
+            const userId = await getUserIdFromSlackUserId(
+              event.user,
+              payload.team_id
+            );
 
             if (userId) {
               // Invalidate channel-specific cache for the user
-              invalidatedCount +=
-                await CacheInvalidationService.realtimeInvalidation(
-                  'channel',
-                  userId,
-                  event.channel
-                );
+              await SlackCacheManager.invalidateChannelMessages(
+                userId,
+                event.channel
+              );
+              await SlackCacheManager.invalidateChannels(userId);
+              invalidatedCount += 2;
 
-              // Also invalidate channels list cache
-              invalidatedCount +=
-                await CacheInvalidationService.invalidateSlackData(userId);
+              // Invalidate channel cache for all other members too
+              const channelMembers = await getChannelMembers(event.channel);
+              for (const memberId of channelMembers) {
+                if (memberId !== userId) {
+                  await SlackCacheManager.invalidateChannels(memberId);
+                  invalidatedCount += 1;
+                }
+              }
             }
           }
           break;
@@ -214,10 +302,17 @@ export async function POST(request: NextRequest) {
           console.log(`Processing user change event for user: ${event.user}`);
 
           if (event.user) {
-            const userId = await getUserIdFromSlackUserId(event.user);
+            const userId = await getUserIdFromSlackUserId(
+              event.user,
+              payload.team_id
+            );
 
             if (userId) {
-              // Invalidate all Slack data for the user
+              // Invalidate user-specific Slack data
+              await SlackCacheManager.invalidateUsers(userId);
+              invalidatedCount += 1;
+
+              // Invalidate all Slack data for the user since user info affects all cached data
               invalidatedCount +=
                 await CacheInvalidationService.invalidateSlackData(userId);
             }
@@ -229,7 +324,10 @@ export async function POST(request: NextRequest) {
 
           // For unhandled events, do a general invalidation if we have user context
           if (event.user) {
-            const userId = await getUserIdFromSlackUserId(event.user);
+            const userId = await getUserIdFromSlackUserId(
+              event.user,
+              payload.team_id
+            );
             if (userId) {
               invalidatedCount +=
                 await CacheInvalidationService.invalidateSlackData(userId);
