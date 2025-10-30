@@ -36,6 +36,17 @@ interface ThemeSettings {
   compactMode: boolean;
 }
 
+/**
+ * Manages theme settings for the application, allowing users to customize their appearance preferences.
+ *
+ * This component initializes with default theme settings and loads any saved settings from local storage.
+ * It provides functionality to save updated settings, apply the selected theme, and preview themes.
+ * The component also handles loading states and displays a user interface for selecting color schemes, themes, and display options.
+ *
+ * @param {ThemeSettingsProps} props - The properties for the ThemeSettings component.
+ * @param {function} props.onSettingsChange - Callback function to be called when settings are changed.
+ * @returns {JSX.Element} The rendered ThemeSettings component.
+ */
 export function ThemeSettings({ onSettingsChange }: ThemeSettingsProps) {
   const { toast } = useToast();
   const [settings, setSettings] = useState<ThemeSettings>({
@@ -51,6 +62,9 @@ export function ThemeSettings({ onSettingsChange }: ThemeSettingsProps) {
     loadSettings();
   }, []);
 
+  /**
+   * Loads theme settings from localStorage and updates the state.
+   */
   const loadSettings = () => {
     try {
       const savedSettings = localStorage.getItem('theme-settings');
@@ -65,6 +79,9 @@ export function ThemeSettings({ onSettingsChange }: ThemeSettingsProps) {
     }
   };
 
+  /**
+   * Saves the new theme settings and updates local storage.
+   */
   const saveSettings = (newSettings: Partial<ThemeSettings>) => {
     const updatedSettings = { ...settings, ...newSettings };
     setSettings(updatedSettings);
@@ -87,6 +104,17 @@ export function ThemeSettings({ onSettingsChange }: ThemeSettingsProps) {
     }
   };
 
+  /**
+   * Applies the specified theme settings to the document.
+   *
+   * This function modifies the document's root element based on the provided themeSettings.
+   * It adjusts the color scheme, theme colors, font size, and compact mode according to the
+   * values in themeSettings. The function first checks the color scheme and applies the
+   * appropriate class to the root element. It then sets CSS variables for theme colors and
+   * font size based on the selected options.
+   *
+   * @param {ThemeSettings} themeSettings - The settings that define the theme to be applied.
+   */
   const applyTheme = (themeSettings: ThemeSettings) => {
     // Apply color scheme
     const root = document.documentElement;
@@ -150,6 +178,9 @@ export function ThemeSettings({ onSettingsChange }: ThemeSettingsProps) {
     });
   };
 
+  /**
+   * Resets the preview by applying the current theme settings.
+   */
   const resetPreview = () => {
     const currentSettings = settings;
     applyTheme(currentSettings);

@@ -82,6 +82,16 @@ export function NotificationSettings({
     loadSettings();
   }, []);
 
+  /**
+   * Load notification settings from local storage and update the application state.
+   *
+   * The function retrieves general notification settings and AI summary notification settings from local storage.
+   * If the settings are found, they are parsed and merged into the current settings state.
+   * In case of an error during the loading process, it logs the error to the console.
+   * Finally, it sets the loading state to false regardless of success or failure.
+   *
+   * @returns void
+   */
   const loadSettings = () => {
     try {
       // Load general notification settings
@@ -113,6 +123,9 @@ export function NotificationSettings({
     }
   };
 
+  /**
+   * Saves the updated notification settings to local storage and handles errors.
+   */
   const saveSettings = (newSettings: Partial<NotificationSettings>) => {
     const updatedSettings = { ...settings, ...newSettings };
     setSettings(updatedSettings);
@@ -162,6 +175,9 @@ export function NotificationSettings({
     }
   };
 
+  /**
+   * Displays a toast notification with a summary message.
+   */
   const testNotification = () => {
     toast({
       title: 'AI Summary Notification',
