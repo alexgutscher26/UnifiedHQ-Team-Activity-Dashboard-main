@@ -78,9 +78,9 @@ const LEAK_TYPE_ICONS: Record<LeakType, React.ReactNode> = {
  * Memory Leak Dashboard component for monitoring and analyzing memory leaks in applications.
  *
  * This component manages the state for project and runtime reports, handles scanning for memory leaks,
- * and provides functionality for runtime monitoring. It also supports auto-refreshing of scan results
- * and allows users to filter and export reports. The component utilizes various hooks to manage state
- * and side effects, ensuring a responsive user interface.
+ * and provides functionality for runtime monitoring. It supports auto-refreshing of scan results and allows
+ * users to filter and export reports. The component utilizes various hooks to manage state and side effects,
+ * ensuring a responsive user interface.
  *
  * @param {Object} props - The properties for the MemoryLeakDashboard component.
  * @param {string} [props.className=''] - Additional class names for styling the component.
