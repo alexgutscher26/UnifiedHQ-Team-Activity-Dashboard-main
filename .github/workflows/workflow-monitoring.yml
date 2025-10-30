@@ -40,6 +40,8 @@ jobs:
   collect-workflow-metrics:
     name: Collect Workflow Metrics
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       report-period: ${{ steps.period.outputs.report-period }}
       start-date: ${{ steps.period.outputs.start-date }}
