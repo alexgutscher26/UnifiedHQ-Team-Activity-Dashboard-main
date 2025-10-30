@@ -108,7 +108,7 @@ export async function DELETE(request: NextRequest) {
         clearedCount = await GitHubCacheManager.clearRedisCache(userId);
 
         return NextResponse.json({
-          message: "Cleared GitHub cache for user",
+          message: 'Cleared GitHub cache for user',
           userId,
           clearedEntries: clearedCount,
           timestamp: new Date().toISOString(),

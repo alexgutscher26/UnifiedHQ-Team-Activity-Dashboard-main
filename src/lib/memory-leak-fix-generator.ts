@@ -527,7 +527,7 @@ export class MemoryLeakFixGenerator {
         file: this.fileName,
         originalCode: this.getNodeText(subscribeNode),
         fixedCode: fixedCode,
-        description: "Added unsubscribe cleanup for subscription",
+        description: 'Added unsubscribe cleanup for subscription',
         confidence: 0.85,
         requiresManualReview: !variableName, // Requires review if we had to create variable
       },

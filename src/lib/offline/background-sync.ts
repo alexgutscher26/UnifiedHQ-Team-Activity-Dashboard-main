@@ -197,7 +197,7 @@ export class BackgroundSyncHandler {
           }
         } catch (error) {
           console.warn(
-            "[Background Sync] Could not fetch server data for conflict detection:",
+            '[Background Sync] Could not fetch server data for conflict detection:',
             error
           );
         }
@@ -270,7 +270,7 @@ export class BackgroundSyncHandler {
       );
       return true;
     } catch (error) {
-      console.error("[Background Sync] Failed to sync action:", error);
+      console.error('[Background Sync] Failed to sync action:', error);
       throw error;
     }
   }

@@ -400,7 +400,7 @@ export class CacheInvalidationMiddleware {
 
         totalInvalidated += invalidatedCount;
       } catch (error) {
-        console.error("Manual invalidation rule failed:", error);
+        console.error('Manual invalidation rule failed:', error);
       }
     }
 
