@@ -66,7 +66,18 @@
     "workflow:test-comprehensive": "node scripts/workflow-test-runner.js test",
     "workflow:test-setup": "node scripts/workflow-test-runner.js setup",
     "workflow:test-syntax": "node scripts/workflow-test-runner.js syntax",
-    "workflow:validate-requirements": "node scripts/workflow-requirements-validator.js validate --save"
+    "workflow:validate-requirements": "node scripts/workflow-requirements-validator.js validate --save",
+    "cache:setup": "node scripts/redis-setup.js",
+    "cache:deploy": "node scripts/deploy-cache-infrastructure.js",
+    "cache:deploy-dev": "node scripts/deploy-cache-infrastructure.js --environment development",
+    "cache:deploy-staging": "node scripts/deploy-cache-infrastructure.js --environment staging",
+    "cache:deploy-prod": "node scripts/deploy-cache-infrastructure.js --environment production",
+    "cache:monitor": "node scripts/cache-deployment-monitor.js",
+    "cache:health": "curl -s http://localhost:3000/api/health/cache | jq .",
+    "cache:health-main": "curl -s http://localhost:3000/api/health | jq .",
+    "cache:test": "node scripts/test-cache-deployment.js",
+    "cache:test-verbose": "node scripts/test-cache-deployment.js --verbose",
+    "cache:test-coverage": "node scripts/test-cache-deployment.js --coverage"
   },
   "dependencies": {
     "@dnd-kit/core": "latest",
@@ -124,7 +135,6 @@
     "fs": "^0.0.1-security",
     "geist": "latest",
     "input-otp": "^1.4.2",
-    "js-yaml": "^4.1.0",
     "lucide-react": "^0.548.0",
     "next": "^15.5.4",
     "next-themes": "^0.4.6",

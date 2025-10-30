@@ -11,6 +11,10 @@ import { CustomThemeProvider } from '@/contexts/theme-context';
 import { ToastContainer } from '@/components/toast';
 import { RateLimitOverlay } from '@/components/rate-limit';
 import { LoadingSkeleton } from '@/components/ui/loading';
+import { ServiceWorkerProvider } from '@/components/service-worker-provider';
+import { NetworkStatusProvider } from '@/contexts/network-status-context';
+import { OfflineProvider } from '@/contexts/offline-context';
+import { OfflineBanner } from '@/components/offline-indicator';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -55,13 +59,20 @@ export default function RootLayout({
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
           <CustomThemeProvider>
-            <GlobalErrorBoundary>
-              <Suspense fallback={<LoadingScreen />}>{children}</Suspense>
-            </GlobalErrorBoundary>
-            <ToastContainer />
-            <RateLimitOverlay />
-            <Analytics />
-            <MemoryMonitor />
+            <ServiceWorkerProvider>
+              <NetworkStatusProvider>
+                <OfflineProvider>
+                  <OfflineBanner showWhenOnline={true} />
+                  <GlobalErrorBoundary>
+                    <Suspense fallback={<LoadingScreen />}>{children}</Suspense>
+                  </GlobalErrorBoundary>
+                  <ToastContainer />
+                  <RateLimitOverlay />
+                  <Analytics />
+                  <MemoryMonitor />
+                </OfflineProvider>
+              </NetworkStatusProvider>
+            </ServiceWorkerProvider>
           </CustomThemeProvider>
         </ThemeProvider>
       </body>
