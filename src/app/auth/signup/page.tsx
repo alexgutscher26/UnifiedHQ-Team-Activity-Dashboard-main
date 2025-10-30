@@ -25,16 +25,11 @@ export default function SignUpPage() {
   const [success, setSuccess] = useState('');
   const router = useRouter();
 
-  const {
-    data,
-    updateField,
-    validateForm,
-    getFieldError,
-    isFormValid,
-  } = useFormValidation(
-    { name: '', email: '', password: '', confirmPassword: '' },
-    validationSchemas.signUp
-  );
+  const { data, updateField, validateForm, getFieldError, isFormValid } =
+    useFormValidation(
+      { name: '', email: '', password: '', confirmPassword: '' },
+      validationSchemas.signUp
+    );
 
   /**
    * Handles the email sign-up process for a user.

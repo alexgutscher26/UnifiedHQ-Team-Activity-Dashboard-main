@@ -9,7 +9,6 @@ import path from 'path';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 
-
 class ReviewTools {
   constructor() {
     this.projectRoot = process.cwd();

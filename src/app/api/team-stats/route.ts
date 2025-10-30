@@ -60,7 +60,6 @@ async function getTeamStats(request: NextRequest): Promise<NextResponse> {
   };
 
   try {
-
     const { searchParams } = new URL(request.url);
     const timeRange = searchParams.get('timeRange') || '30d';
 
@@ -70,9 +69,14 @@ async function getTeamStats(request: NextRequest): Promise<NextResponse> {
     let githubActivities: any[] = [];
     try {
       githubActivities = await fetchGithubActivity(user.id);
-      console.log(`[Team Stats] Found ${githubActivities.length} GitHub activities`);
+      console.log(
+        `[Team Stats] Found ${githubActivities.length} GitHub activities`
+      );
     } catch (githubError) {
-      console.warn('[Team Stats] GitHub fetch failed, returning empty stats:', githubError);
+      console.warn(
+        '[Team Stats] GitHub fetch failed, returning empty stats:',
+        githubError
+      );
 
       // Return empty stats instead of throwing error
       const emptyStats: TeamStats = {
@@ -105,7 +109,8 @@ async function getTeamStats(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({
         data: emptyStats,
         success: true,
-        message: 'Unable to fetch GitHub activity. Please check your GitHub connection.',
+        message:
+          'Unable to fetch GitHub activity. Please check your GitHub connection.',
         timestamp: new Date().toISOString(),
       });
     }
@@ -159,7 +164,8 @@ async function getTeamStats(request: NextRequest): Promise<NextResponse> {
             return NextResponse.json({
               data: emptyStats,
               success: true,
-              message: 'No repositories selected. Please select repositories to track in the integrations page.',
+              message:
+                'No repositories selected. Please select repositories to track in the integrations page.',
               timestamp: new Date().toISOString(),
             });
           }
@@ -230,9 +236,8 @@ async function getTeamStats(request: NextRequest): Promise<NextResponse> {
       );
       return {
         name: repo,
-        commits: repoActivities.filter(
-          a => a.metadata?.eventType === 'commit'
-        ).length,
+        commits: repoActivities.filter(a => a.metadata?.eventType === 'commit')
+          .length,
         pullRequests: repoActivities.filter(
           a => a.metadata?.eventType === 'pull_request'
         ).length,
@@ -319,10 +324,12 @@ async function getTeamStats(request: NextRequest): Promise<NextResponse> {
       repositoryStats: [],
     };
 
-    let message = 'Unable to fetch GitHub activity. Please check your GitHub connection.';
+    let message =
+      'Unable to fetch GitHub activity. Please check your GitHub connection.';
     if (error instanceof Error) {
       if (error.message.includes('GitHub not connected')) {
-        message = 'GitHub account not connected. Please connect your GitHub account in the integrations page.';
+        message =
+          'GitHub account not connected. Please connect your GitHub account in the integrations page.';
       } else if (
         error.message.includes('token expired') ||
         error.message.includes('invalid')

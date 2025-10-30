@@ -509,7 +509,7 @@ export function MemoryLeakDashboard({
                           state.runtimeReport.memoryUsage.trend === 'growing'
                             ? 'destructive'
                             : state.runtimeReport.memoryUsage.trend ===
-                              'declining'
+                                'declining'
                               ? 'default'
                               : 'secondary'
                         }

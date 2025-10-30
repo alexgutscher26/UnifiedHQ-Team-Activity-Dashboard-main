@@ -47,7 +47,6 @@ async function getTeamActivity(request: NextRequest): Promise<NextResponse> {
   };
 
   try {
-
     const { searchParams } = new URL(request.url);
     const timeRange = searchParams.get('timeRange') || '30d';
 
@@ -57,14 +56,20 @@ async function getTeamActivity(request: NextRequest): Promise<NextResponse> {
     let githubActivities: any[] = [];
     try {
       githubActivities = await fetchGithubActivity(user.id);
-      console.log(`[Team Activity] Found ${githubActivities.length} GitHub activities`);
+      console.log(
+        `[Team Activity] Found ${githubActivities.length} GitHub activities`
+      );
     } catch (githubError) {
-      console.warn('[Team Activity] GitHub fetch failed, returning empty data:', githubError);
+      console.warn(
+        '[Team Activity] GitHub fetch failed, returning empty data:',
+        githubError
+      );
       // Return empty data instead of throwing error
       return NextResponse.json({
         data: [],
         success: true,
-        message: 'Unable to fetch GitHub activity. Please check your GitHub connection.',
+        message:
+          'Unable to fetch GitHub activity. Please check your GitHub connection.',
         timestamp: new Date().toISOString(),
       });
     }
@@ -91,7 +96,8 @@ async function getTeamActivity(request: NextRequest): Promise<NextResponse> {
             return NextResponse.json({
               data: [],
               success: true,
-              message: 'No repositories selected. Please select repositories to track in the integrations page.',
+              message:
+                'No repositories selected. Please select repositories to track in the integrations page.',
               timestamp: new Date().toISOString(),
             });
           }
@@ -207,12 +213,12 @@ async function getTeamActivity(request: NextRequest): Promise<NextResponse> {
       '[Team Activity] Sample activity:',
       filteredActivities[0]
         ? {
-          id: filteredActivities[0].id,
-          type: filteredActivities[0].type,
-          title: filteredActivities[0].title,
-          repository: filteredActivities[0].repository,
-          timestamp: filteredActivities[0].timestamp,
-        }
+            id: filteredActivities[0].id,
+            type: filteredActivities[0].type,
+            title: filteredActivities[0].title,
+            repository: filteredActivities[0].repository,
+            timestamp: filteredActivities[0].timestamp,
+          }
         : 'No activities'
     );
 
