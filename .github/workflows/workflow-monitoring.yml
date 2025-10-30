@@ -505,6 +505,9 @@ jobs:
 
   publish-report:
     name: Publish Report
+    permissions:
+      contents: read
+      issues: write
     runs-on: ubuntu-latest
     needs: [collect-workflow-metrics, generate-report]
     steps:
