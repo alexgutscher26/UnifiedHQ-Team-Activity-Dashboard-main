@@ -22,12 +22,18 @@ function ResizablePanelGroup({
   );
 }
 
+/**
+ * A resizable panel component that wraps ResizablePrimitive.Panel.
+ */
 function ResizablePanel({
   ...props
 }: React.ComponentProps<typeof ResizablePrimitive.Panel>) {
   return <ResizablePrimitive.Panel data-slot='resizable-panel' {...props} />;
 }
 
+/**
+ * Renders a resizable handle component with optional handle display.
+ */
 function ResizableHandle({
   withHandle,
   className,

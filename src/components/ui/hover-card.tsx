@@ -5,12 +5,18 @@ import * as HoverCardPrimitive from '@radix-ui/react-hover-card';
 
 import { cn } from '@/lib/utils';
 
+/**
+ * Renders a HoverCard component with the given props.
+ */
 function HoverCard({
   ...props
 }: React.ComponentProps<typeof HoverCardPrimitive.Root>) {
   return <HoverCardPrimitive.Root data-slot='hover-card' {...props} />;
 }
 
+/**
+ * Renders a HoverCard trigger component.
+ */
 function HoverCardTrigger({
   ...props
 }: React.ComponentProps<typeof HoverCardPrimitive.Trigger>) {
