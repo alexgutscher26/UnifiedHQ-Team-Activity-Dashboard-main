@@ -618,6 +618,8 @@ jobs:
 
   performance-analysis:
     name: Performance Analysis
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     needs: collect-workflow-metrics
     if: github.event.inputs.include_performance != 'false'
