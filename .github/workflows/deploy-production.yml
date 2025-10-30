@@ -128,6 +128,7 @@ jobs:
           bun run build
 
   approval:
+    permissions: {}
     name: Manual Approval
     runs-on: ubuntu-latest
     needs: [validate, pre-deployment-checks]
