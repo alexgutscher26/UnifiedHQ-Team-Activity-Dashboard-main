@@ -22,6 +22,17 @@ interface ConflictResolutionDialogProps {
   onCancel: () => void;
 }
 
+/**
+ * Renders a dialog for resolving data conflicts.
+ *
+ * This component displays options for resolving conflicts between client and server data. It allows the user to choose a resolution strategy, such as using client changes, server version, or merging both. The selected strategy determines the resolved data that is passed to the onResolve callback. The dialog also provides visual feedback on the conflict type and displays the relevant data for each option.
+ *
+ * @param conflict - The data conflict object containing client and server data, conflict type, and action ID.
+ * @param isOpen - A boolean indicating whether the dialog is open or closed.
+ * @param onResolve - A callback function to be called with the resolution strategy and resolved data.
+ * @param onCancel - A callback function to be called when the dialog is canceled.
+ * @returns A JSX element representing the conflict resolution dialog.
+ */
 export function ConflictResolutionDialog({
   conflict,
   isOpen,
@@ -34,6 +45,19 @@ export function ConflictResolutionDialog({
 
   if (!conflict) return null;
 
+  /**
+   * Handle the resolution of a conflict based on the selected strategy.
+   *
+   * The function determines the resolved data by evaluating the selectedStrategy.
+   * It uses different strategies such as 'client-wins', 'server-wins', and 'merge'
+   * to decide which data to resolve. Finally, it calls the onResolve function with
+   * the selected strategy and the resolved data.
+   *
+   * @param selectedStrategy - The strategy to use for resolving the conflict.
+   * @param conflict - The conflict object containing clientData and serverData.
+   * @param mergedData - Optional merged data to use in the 'merge' strategy.
+   * @param onResolve - Callback function to handle the resolved data.
+   */
   const handleResolve = () => {
     let resolvedData: any;
 
@@ -60,6 +84,15 @@ export function ConflictResolutionDialog({
     });
   };
 
+  /**
+   * Retrieves a human-readable label for a given conflict type.
+   *
+   * The function takes a conflict type from the DataConflict type and returns a corresponding label.
+   * It handles specific cases for 'concurrent-modification', 'deleted-on-server', and 'version-mismatch',
+   * returning 'Unknown Conflict' for any other type.
+   *
+   * @param type - The conflict type to retrieve the label for.
+   */
   const getConflictTypeLabel = (type: DataConflict['conflictType']) => {
     switch (type) {
       case 'concurrent-modification':
@@ -73,6 +106,16 @@ export function ConflictResolutionDialog({
     }
   };
 
+  /**
+   * Retrieves the corresponding color classes for a given data conflict type.
+   *
+   * The function takes a conflict type and returns a string representing the
+   * appropriate background and text color classes based on the type of conflict.
+   * It handles specific cases for 'concurrent-modification', 'deleted-on-server',
+   * and 'version-mismatch', defaulting to a gray color for any unrecognized types.
+   *
+   * @param type - The type of data conflict to determine the color for.
+   */
   const getConflictTypeColor = (type: DataConflict['conflictType']) => {
     switch (type) {
       case 'concurrent-modification':
