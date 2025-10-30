@@ -297,7 +297,7 @@ export class CacheInvalidationService {
       console.log(`Total entries invalidated by tags: ${totalInvalidated}`);
       return totalInvalidated;
     } catch (error) {
-      console.error(`Failed to invalidate cache by tags:`, error);
+      console.error("Failed to invalidate cache by tags:", error);
       return 0;
     }
   }

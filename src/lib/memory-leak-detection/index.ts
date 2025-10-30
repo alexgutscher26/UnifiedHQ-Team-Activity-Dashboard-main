@@ -125,7 +125,7 @@ export async function devScan(filePath?: string) {
     return reports;
   } else {
     const projectReport = await detector.scanProject();
-    console.log(`\nMemory Leak Scan Results:`);
+    console.log("\nMemory Leak Scan Results:");
     console.log(`Total leaks found: ${projectReport.totalLeaks}`);
     console.log(`Critical: ${projectReport.summary.criticalCount}`);
     console.log(`High: ${projectReport.summary.highCount}`);

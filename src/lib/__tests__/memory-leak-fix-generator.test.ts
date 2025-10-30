@@ -433,7 +433,7 @@ function TestComponent() {
 
   describe('error handling', () => {
     it('should handle unsupported leak types', () => {
-      const sourceCode = `function test() {}`;
+      const sourceCode = "function test() {}";
       generator = createMemoryLeakFixGenerator(sourceCode, fileName);
 
       const leak: LeakDetectionResult = {
@@ -454,7 +454,7 @@ function TestComponent() {
     });
 
     it('should handle invalid node positions', () => {
-      const sourceCode = `function test() {}`;
+      const sourceCode = "function test() {}";
       generator = createMemoryLeakFixGenerator(sourceCode, fileName);
 
       const leak: LeakDetectionResult = {
@@ -474,7 +474,7 @@ function TestComponent() {
     });
 
     it('should handle malformed source code', () => {
-      const sourceCode = `function test( { invalid syntax`;
+      const sourceCode = "function test( { invalid syntax";
       generator = createMemoryLeakFixGenerator(sourceCode, fileName);
 
       const leak: LeakDetectionResult = {
