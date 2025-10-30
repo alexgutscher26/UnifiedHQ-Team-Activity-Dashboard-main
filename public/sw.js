@@ -131,8 +131,14 @@ self.addEventListener('fetch', (event) => {
   const { request } = event
   const url = new URL(request.url)
 
-  // Skip non-GET requests and chrome-extension requests
-  if (request.method !== 'GET' || url.protocol === 'chrome-extension:') {
+  // Skip non-GET requests, chrome-extension requests, and SSE endpoints
+  if (
+    request.method !== 'GET' ||
+    url.protocol === 'chrome-extension:' ||
+    url.pathname.includes('/api/activities/live') ||
+    url.pathname.includes('/api/offline/sync/events') ||
+    request.headers.get('accept') === 'text/event-stream'
+  ) {
     return
   }
 
@@ -216,7 +222,7 @@ async function handleCachedRequest(request, config) {
  */
 async function networkFirstStrategy(request, config) {
   const cache = await caches.open(config.name)
-  const timeoutMs = (config.networkTimeoutSeconds || 5) * 1000
+  const timeoutMs = (config.networkTimeoutSeconds || 10) * 1000
 
   try {
     const networkResponse = await Promise.race([

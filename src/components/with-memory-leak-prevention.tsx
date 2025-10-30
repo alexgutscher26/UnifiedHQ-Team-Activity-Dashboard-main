@@ -252,7 +252,7 @@ export function useSafeEventSource(
 
   const addEventListener = React.useCallback(
     (type: string, listener: (event: MessageEvent) => void) => {
-      if (!eventSource) return () => {};
+      if (!eventSource) return () => { };
 
       eventSource.addEventListener(type, listener);
       return () => {
@@ -375,14 +375,14 @@ export function useSafeWebSocket(
  * Manages a safe subscription to a value from a manager.
  */
 export function useSafeSubscription<T>(
-  manager: { subscribe: (listener: (value: T) => void) => () => void },
+  subscribeAction: (listener: (value: T) => void) => () => void,
   initialValue?: T
 ) {
   const [value, setValue] = React.useState<T | undefined>(initialValue);
   const unsubscribeRef = React.useRef<(() => void) | null>(null);
 
   React.useEffect(() => {
-    const unsubscribe = manager.subscribe(newValue => {
+    const unsubscribe = subscribeAction(newValue => {
       setValue(newValue);
     });
 
@@ -394,7 +394,7 @@ export function useSafeSubscription<T>(
         unsubscribeRef.current = null;
       }
     };
-  }, [manager]);
+  }, [subscribeAction]);
 
   return value;
 }

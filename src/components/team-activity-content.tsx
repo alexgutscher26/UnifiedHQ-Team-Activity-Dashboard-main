@@ -727,6 +727,7 @@ export function TeamActivityContent({ className }: TeamActivityContentProps) {
                             <a
                               href='/integrations'
                               className='text-blue-400 hover:text-blue-300'
+                              aria-label='Go to Integrations page to connect and configure services'
                             >
                               Go to Integrations
                             </a>
@@ -786,6 +787,7 @@ export function TeamActivityContent({ className }: TeamActivityContentProps) {
                                     target='_blank'
                                     rel='noopener noreferrer'
                                     className='hover:underline text-blue-600 hover:text-blue-800'
+                                    aria-label={`${activity.title} (opens in new tab)`}
                                   >
                                     {activity.title}
                                   </a>

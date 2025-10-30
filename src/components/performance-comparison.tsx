@@ -14,71 +14,21 @@ import { ActivityFeed } from './activity-feed';
 import { OptimizedActivityFeed } from './optimized-activity-feed';
 import { IconActivity, IconBolt, IconChartBar } from '@tabler/icons-react';
 
-interface PerformanceComparisonProps {
-  activities: any[];
-}
-
 /**
  * Renders a performance comparison between the original and optimized activity feeds.
  *
- * This component manages the state for selected tabs and performance metrics, generates mock activities,
- * measures performance for both feed types, and calculates performance improvements. It displays the
+ * This component manages the state for selected tabs and performance metrics, and displays the
  * performance metrics and optimization features, allowing users to switch between the original and
  * optimized feeds for comparison.
- *
- * @param {PerformanceComparisonProps} props - The properties for the PerformanceComparison component.
  */
-export function PerformanceComparison({
-  activities,
-}: PerformanceComparisonProps) {
+export function PerformanceComparison() {
   const [selectedTab, setSelectedTab] = useState('original');
-  const [performanceMetrics, setPerformanceMetrics] = useState({
+  const [performanceMetrics] = useState({
     original: { renderTime: 0, memoryUsage: 0, itemCount: 0 },
     optimized: { renderTime: 0, memoryUsage: 0, itemCount: 0 },
   });
 
-  /**
-   * Generates an array of mock activity objects.
-   */
-  const generateMockActivities = (count: number) => {
-    return Array.from({ length: count }, (_, i) => ({
-      id: `activity-${i}`,
-      source: ['github', 'slack'][i % 3],
-      title: `Activity ${i + 1}`,
-      description: `This is a description for activity ${i + 1}`,
-      timestamp: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
-      metadata: {
-        eventType: ['commit', 'pull_request', 'issue'][i % 3],
-        actor: {
-          login: `user${i}`,
-          avatar_url: `https://avatars.githubusercontent.com/u/${i}`,
-          html_url: `https://github.com/user${i}`,
-        },
-        payload: {
-          commit: {
-            sha: `abc${i}`,
-            message: `Commit message ${i}`,
-            url: `https://github.com/repo/commit/abc${i}`,
-          },
-        },
-      },
-    }));
-  };
 
-  const mockActivities = generateMockActivities(1000);
-
-  /**
-   * Updates performance metrics for the specified component.
-   */
-  const measurePerformance = (
-    component: 'original' | 'optimized',
-    metrics: any
-  ) => {
-    setPerformanceMetrics(prev => ({
-      ...prev,
-      [component]: metrics,
-    }));
-  };
 
   const getPerformanceImprovement = () => {
     const original = performanceMetrics.original;

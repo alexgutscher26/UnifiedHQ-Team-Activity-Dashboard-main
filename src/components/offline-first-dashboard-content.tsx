@@ -81,7 +81,7 @@ function OfflineFirstSectionCards({
   }
 
   // When online, use the regular SectionCards component
-  return <SectionCards className={className} />;
+  return <SectionCards />;
 }
 
 /**

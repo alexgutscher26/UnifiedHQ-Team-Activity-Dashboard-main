@@ -9,7 +9,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import {
-  IconClock,
   IconDatabase,
   IconWifi,
   IconAlertTriangle,

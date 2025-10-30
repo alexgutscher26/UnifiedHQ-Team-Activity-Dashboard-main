@@ -53,6 +53,12 @@ class ServiceWorkerManager {
     }
 
     try {
+      // Check if service worker is disabled via environment variable
+      if (process.env.NEXT_PUBLIC_DISABLE_SW === 'true') {
+        console.log('[SW Manager] Service worker disabled via environment variable');
+        return;
+      }
+
       console.log('[SW Manager] Registering service worker...');
 
       this.registration = await navigator.serviceWorker.register('/sw.js', {

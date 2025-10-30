@@ -11,18 +11,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import {
   MemoryStick,
   AlertTriangle,
   CheckCircle,
-  XCircle,
   RefreshCw,
   Download,
-  Settings,
   TrendingUp,
   Clock,
   Bug,
@@ -32,14 +28,8 @@ import {
   createClientMemoryLeakDetector,
   startClientRuntimeMonitoring,
   clientMemoryUtils,
-  type LeakReport,
-  type RuntimeLeakReport,
-  type ProjectLeakReport,
-  type LeakSeverity,
-  type LeakType,
 } from '@/lib/memory-leak-detection/client';
 import type {
-  LeakReport,
   RuntimeLeakReport,
   ProjectLeakReport,
   LeakSeverity,
@@ -519,7 +509,7 @@ export function MemoryLeakDashboard({
                           state.runtimeReport.memoryUsage.trend === 'growing'
                             ? 'destructive'
                             : state.runtimeReport.memoryUsage.trend ===
-                                'declining'
+                              'declining'
                               ? 'default'
                               : 'secondary'
                         }

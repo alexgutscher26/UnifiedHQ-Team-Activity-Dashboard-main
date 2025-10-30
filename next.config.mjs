@@ -9,12 +9,14 @@ const withBundleAnalyzer = bundleAnalyzer({
 const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
+
   },
   typescript: {
     ignoreBuildErrors: true,
   },
-  experimental: {
-    serverComponentsExternalPackages: ['@prisma/client'],
+  serverExternalPackages: ['@prisma/client'],
+  turbopack: {
+    root: process.cwd(),
   },
   images: {
     formats: ['image/webp', 'image/avif'],

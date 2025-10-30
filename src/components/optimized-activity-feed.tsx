@@ -356,35 +356,6 @@ export function OptimizedActivityFeed() {
     );
   }, [activities]);
 
-  useEffect(() => {
-    fetchActivities();
-    connectToLiveUpdates();
-
-    // Set up auto-refresh every 60 seconds
-    const interval = setInterval(() => {
-      console.log('🔄 Auto-refreshing activities...');
-      fetchActivities();
-    }, 60000);
-
-    setRefreshInterval(interval);
-
-    return () => {
-      // Clean up EventSource connection
-      setEventSource(currentEventSource => {
-        if (currentEventSource) {
-          currentEventSource.close();
-        }
-        return null;
-      });
-
-      // Clean up refresh interval
-      if (interval) {
-        clearInterval(interval);
-      }
-      setRefreshInterval(null);
-    };
-  }, [fetchActivities, connectToLiveUpdates]);
-
   const connectToLiveUpdates = useCallback(() => {
     try {
       // Clean up existing EventSource before creating new one
@@ -513,6 +484,35 @@ export function OptimizedActivityFeed() {
       setIsLiveConnected(false);
     }
   }, [toast]);
+
+  useEffect(() => {
+    fetchActivities();
+    connectToLiveUpdates();
+
+    // Set up auto-refresh every 60 seconds
+    const interval = setInterval(() => {
+      console.log('🔄 Auto-refreshing activities...');
+      fetchActivities();
+    }, 60000);
+
+    setRefreshInterval(interval);
+
+    return () => {
+      // Clean up EventSource connection
+      setEventSource(currentEventSource => {
+        if (currentEventSource) {
+          currentEventSource.close();
+        }
+        return null;
+      });
+
+      // Clean up refresh interval
+      if (interval) {
+        clearInterval(interval);
+      }
+      setRefreshInterval(null);
+    };
+  }, [fetchActivities, connectToLiveUpdates]);
 
   const fetchActivities = useCallback(
     async (page = 1, append = false) => {

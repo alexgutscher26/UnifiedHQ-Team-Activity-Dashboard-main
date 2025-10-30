@@ -32,22 +32,37 @@ async function getSlackStats(request: NextRequest): Promise<NextResponse> {
     const userId = session.user.id;
 
     // Generate cache key for user's Slack stats
-    const cacheKey = CacheKeyGenerator.slack(userId, 'stats', 'daily');
+    let cacheKey: string;
+    let cachedStats: any = null;
 
-    // Try to get from Redis cache first
-    const cachedStats = await RedisCache.get(cacheKey);
-    if (cachedStats) {
-      console.log(`[Slack Stats] Cache hit for user ${userId}`);
-      return NextResponse.json(cachedStats);
+    try {
+      cacheKey = CacheKeyGenerator.slack(userId, 'stats', 'daily');
+      // Try to get from Redis cache first
+      cachedStats = await RedisCache.get(cacheKey);
+      if (cachedStats) {
+        console.log(`[Slack Stats] Cache hit for user ${userId}`);
+        return NextResponse.json(cachedStats);
+      }
+    } catch (cacheError) {
+      console.warn('[Slack Stats] Cache error, proceeding without cache:', cacheError);
     }
 
     // Check if Slack is connected
-    const connected = await isSlackConnected(userId);
-    if (!connected) {
+    let connected = false;
+    let selectedChannelCount = 0;
+
+    try {
+      connected = await isSlackConnected(userId);
+      if (connected) {
+        selectedChannelCount = await getSelectedChannelCount(userId);
+      }
+    } catch (connectionError) {
+      console.warn('[Slack Stats] Connection check error:', connectionError);
+      // Return default not connected state
       return NextResponse.json({
         count: 0,
-        status: 'Not Connected',
-        details: 'Slack not connected',
+        status: 'Connection Error',
+        details: 'Unable to check Slack connection',
         lastUpdate: 'Never',
         breakdown: {
           messages: 0,
@@ -61,24 +76,69 @@ async function getSlackStats(request: NextRequest): Promise<NextResponse> {
       });
     }
 
-    // Get selected channel count
-    const selectedChannelCount = await getSelectedChannelCount(userId);
+    if (!connected) {
+      const notConnectedStats = {
+        count: 0,
+        status: 'Not Connected',
+        details: 'Slack not connected',
+        lastUpdate: 'Never',
+        breakdown: {
+          messages: 0,
+          threads: 0,
+          reactions: 0,
+        },
+        channels: {
+          selected: 0,
+          total: 0,
+        },
+      };
+
+      // Try to cache the result
+      try {
+        await RedisCache.set(cacheKey!, notConnectedStats, TTLManager.getTTL('SLACK_MESSAGES'));
+      } catch (cacheError) {
+        console.warn('[Slack Stats] Failed to cache not connected state:', cacheError);
+      }
+
+      return NextResponse.json(notConnectedStats);
+    }
 
     // Get activities from the last 24 hours
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    let activities: any[] = [];
 
-    const activities = await prisma.activity.findMany({
-      where: {
-        userId,
-        source: 'slack',
-        timestamp: {
-          gte: twentyFourHoursAgo,
+    try {
+      activities = await prisma.activity.findMany({
+        where: {
+          userId,
+          source: 'slack',
+          timestamp: {
+            gte: twentyFourHoursAgo,
+          },
         },
-      },
-      orderBy: {
-        timestamp: 'desc',
-      },
-    });
+        orderBy: {
+          timestamp: 'desc',
+        },
+      });
+    } catch (dbError) {
+      console.error('[Slack Stats] Database error:', dbError);
+      // Return empty stats if database fails
+      return NextResponse.json({
+        count: 0,
+        status: 'Database Error',
+        details: 'Unable to fetch activity data',
+        lastUpdate: 'Never',
+        breakdown: {
+          messages: 0,
+          threads: 0,
+          reactions: 0,
+        },
+        channels: {
+          selected: selectedChannelCount,
+          total: selectedChannelCount,
+        },
+      });
+    }
 
     // Calculate breakdown
     let messageCount = 0;
@@ -182,12 +242,17 @@ async function getSlackStats(request: NextRequest): Promise<NextResponse> {
     };
 
     // Cache the stats data in Redis
-    await RedisCache.set(
-      cacheKey,
-      statsData,
-      TTLManager.getTTL('SLACK_MESSAGES')
-    );
-    console.log(`[Slack Stats] Cached stats for user ${userId}`);
+    try {
+      await RedisCache.set(
+        cacheKey!,
+        statsData,
+        TTLManager.getTTL('SLACK_MESSAGES')
+      );
+      console.log(`[Slack Stats] Cached stats for user ${userId}`);
+    } catch (cacheError) {
+      console.warn('[Slack Stats] Failed to cache stats:', cacheError);
+      // Continue without caching
+    }
 
     return NextResponse.json(statsData);
   } catch (error) {

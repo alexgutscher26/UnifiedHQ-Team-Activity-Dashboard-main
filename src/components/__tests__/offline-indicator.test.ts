@@ -2,7 +2,7 @@ import { describe, it, beforeEach, afterEach, mock } from 'node:test';
 import assert from 'node:assert';
 
 // Mock the network status hook
-const mockNetworkStatus = {
+const mockNetworkStatus: any = {
   isOnline: true,
   isOffline: false,
   effectiveType: '4g',
@@ -30,7 +30,7 @@ const mockUseState = (initialValue: any) => {
 const mockUseEffect = mock.fn();
 
 // Mock the useNetworkStatus hook
-const mockUseNetworkStatus = mock.fn(() => mockNetworkStatus);
+const mockUseNetworkStatus = mock.fn((options?: any) => mockNetworkStatus);
 
 describe('OfflineIndicator', () => {
   let OfflineIndicator: any;
