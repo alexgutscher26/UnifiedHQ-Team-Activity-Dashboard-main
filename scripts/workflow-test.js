@@ -164,7 +164,12 @@ class WorkflowTester {
   }
 
   /**
-   * Validate workflow syntax and structure
+   * Validate workflow syntax and structure.
+   *
+   * This function checks the specified workflow for required fields, validates jobs, and identifies potential issues and warnings. It ensures that the workflow has a name, trigger events, and defined jobs, while also checking each job for necessary properties and common security risks. Additionally, it assesses performance optimizations related to caching and concurrency control.
+   *
+   * @param workflowName - The name of the workflow to validate.
+   * @returns A boolean indicating whether the workflow validation passed or failed.
    */
   validateWorkflow (workflowName) {
     const workflow = this.workflows[workflowName]
