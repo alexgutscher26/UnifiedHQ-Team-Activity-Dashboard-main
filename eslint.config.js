@@ -1,8 +1,8 @@
-import { FlatCompat } from '@eslint/eslintrc';
-import js from '@eslint/js';
-import prettierPlugin from 'eslint-plugin-prettier';
-import prettierConfig from 'eslint-config-prettier';
-import memoryLeakPreventionPlugin from './src/lib/eslint-rules/index.js';
+import { FlatCompat } from '@eslint/eslintrc'
+import js from '@eslint/js'
+import prettierPlugin from 'eslint-plugin-prettier'
+import prettierConfig from 'eslint-config-prettier'
+import memoryLeakPreventionPlugin from './src/lib/eslint-rules/index.js'
 
 const compat = new FlatCompat({
   baseDirectory: import.meta.dirname,
@@ -24,7 +24,7 @@ export default [
   {
     plugins: {
       prettier: prettierPlugin,
-      'memory-leak-prevention': memoryLeakPreventionPlugin,
+      'memory-leak-prevention': memoryLeakPreventionPlugin
     },
     rules: {
       'prettier/prettier': 'error',
@@ -37,8 +37,8 @@ export default [
       'memory-leak-prevention/require-useeffect-cleanup': 'error',
       'memory-leak-prevention/require-event-listener-cleanup': 'error',
       'memory-leak-prevention/require-timer-cleanup': 'error',
-      'memory-leak-prevention/require-subscription-cleanup': 'error',
-    },
+      'memory-leak-prevention/require-subscription-cleanup': 'error'
+    }
   },
 
   // Ignore patterns
