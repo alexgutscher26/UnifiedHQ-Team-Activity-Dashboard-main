@@ -2,6 +2,8 @@
 
 <div align="center">
   <img src="public/placeholder-logo.svg" alt="UnifiedHQ Logo" width="120" height="120">
+  ![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/alexgutscher26/UnifiedHQ-Team-Activity-Dashboard-main?utm_source=oss&utm_medium=github&utm_campaign=alexgutscher26%2FUnifiedHQ-Team-Activity-Dashboard-main&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)
+  [![CodeFactor](https://www.codefactor.io/repository/github/alexgutscher26/unifiedhq-team-activity-dashboard-main/badge)](https://www.codefactor.io/repository/github/alexgutscher26/unifiedhq-team-activity-dashboard-main)
   
   **One dashboard to see everything your team did today**
   
