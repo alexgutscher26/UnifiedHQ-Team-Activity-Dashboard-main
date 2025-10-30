@@ -1,4 +1,6 @@
 name: Auto-merge Dependencies
+permissions:
+  contents: read
 'on':
   pull_request:
     types:
