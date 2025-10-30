@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -51,8 +51,8 @@ jobs:
         run: |
           echo "DATABASE_URL=postgresql://test:test@localhost:5432/test" >> .env
           echo "REDIS_URL=redis://localhost:6379" >> .env
-          echo "NEXTAUTH_SECRET=test-secret" >> .env
-          echo "NEXTAUTH_URL=http://localhost:3000" >> .env
+          echo "BETTER_AUTH_SECRET=test-secret" >> .env
+          echo "BETTER_AUTH_URL=http://localhost:3000" >> .env
 
       - name: Generate Prisma client
         run: bunx prisma generate
@@ -76,7 +76,7 @@ jobs:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
 
       - name: Upload Lighthouse results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: lighthouse-results
@@ -89,7 +89,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -125,8 +125,8 @@ jobs:
         run: |
           echo "DATABASE_URL=postgresql://test:test@localhost:5432/test" >> .env
           echo "REDIS_URL=redis://localhost:6379" >> .env
-          echo "NEXTAUTH_SECRET=test-secret" >> .env
-          echo "NEXTAUTH_URL=http://localhost:3000" >> .env
+          echo "BETTER_AUTH_SECRET=test-secret" >> .env
+          echo "BETTER_AUTH_URL=http://localhost:3000" >> .env
 
       - name: Generate Prisma client
         run: bunx prisma generate
@@ -163,7 +163,7 @@ jobs:
           find .next/static -name "*.js" -size +500k -exec ls -lh {} \; | awk '{print "- " $9 ": " $5}' >> bundle-analysis.md || echo "No large chunks found" >> bundle-analysis.md
 
       - name: Upload bundle analysis
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: bundle-analysis
           path: |
@@ -200,7 +200,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -237,7 +237,7 @@ jobs:
           bun run memory-leak:report >> memory-report.md || echo "Memory leak report generation failed" >> memory-report.md
 
       - name: Upload memory analysis
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: memory-analysis
@@ -277,16 +277,16 @@ jobs:
     needs: [lighthouse-audit, bundle-analysis]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download current Lighthouse results
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: lighthouse-results
           path: ./current-results
 
       - name: Download current bundle analysis
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: bundle-analysis
           path: ./current-bundle
@@ -318,8 +318,8 @@ jobs:
         run: |
           echo "DATABASE_URL=postgresql://test:test@localhost:5432/test" >> .env
           echo "REDIS_URL=redis://localhost:6379" >> .env
-          echo "NEXTAUTH_SECRET=test-secret" >> .env
-          echo "NEXTAUTH_URL=http://localhost:3000" >> .env
+          echo "BETTER_AUTH_SECRET=test-secret" >> .env
+          echo "BETTER_AUTH_URL=http://localhost:3000" >> .env
 
       - name: Generate Prisma client (baseline)
         run: bunx prisma generate

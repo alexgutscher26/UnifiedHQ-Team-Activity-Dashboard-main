@@ -42,7 +42,7 @@ jobs:
 
     steps:
       - name: 'Checkout Repository'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
@@ -116,7 +116,7 @@ jobs:
           fi
 
       - name: 'Upload Scan Results'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: dependency-scan-results
           path: |
@@ -137,7 +137,7 @@ jobs:
 
     steps:
       - name: 'Checkout Repository'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
@@ -161,7 +161,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: 'Download Scan Results'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: dependency-scan-results
 
@@ -276,7 +276,7 @@ jobs:
 
     steps:
       - name: 'Checkout Repository'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0

@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Cache Next.js build
         uses: actions/cache@v4
         with:
@@ -47,8 +47,8 @@ jobs:
         run: |
           echo "DATABASE_URL=postgresql://test:test@localhost:5432/test" >> .env
           echo "REDIS_URL=redis://localhost:6379" >> .env
-          echo "NEXTAUTH_SECRET=test-secret" >> .env
-          echo "NEXTAUTH_URL=http://localhost:3000" >> .env
+          echo "BETTER_AUTH_SECRET=test-secret" >> .env
+          echo "BETTER_AUTH_URL=http://localhost:3000" >> .env
           bunx prisma generate
           bun run build
       - name: Status check passed

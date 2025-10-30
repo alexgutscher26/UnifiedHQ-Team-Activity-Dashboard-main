@@ -28,7 +28,7 @@ jobs:
         language: ['javascript']
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -75,8 +75,8 @@ jobs:
         run: |
           echo "DATABASE_URL=postgresql://test:test@localhost:5432/test" >> .env
           echo "REDIS_URL=redis://localhost:6379" >> .env
-          echo "NEXTAUTH_SECRET=test-secret" >> .env
-          echo "NEXTAUTH_URL=http://localhost:3000" >> .env
+          echo "BETTER_AUTH_SECRET=test-secret" >> .env
+          echo "BETTER_AUTH_URL=http://localhost:3000" >> .env
           bun run build
 
       - name: Perform CodeQL Analysis
@@ -105,7 +105,7 @@ jobs:
       security-events: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -154,7 +154,7 @@ jobs:
 
       - name: Upload OWASP report artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: dependency-check-report
           path: reports/
@@ -197,7 +197,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -256,7 +256,7 @@ jobs:
 
       - name: Upload security scan artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: security-scan-results
           path: |

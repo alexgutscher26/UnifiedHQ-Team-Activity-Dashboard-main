@@ -33,7 +33,7 @@ jobs:
       previous-release: ${{ steps.validate.outputs.previous-release }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -81,7 +81,7 @@ jobs:
     needs: validate
     steps:
       - name: Checkout release
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ needs.validate.outputs.release-tag }}
 
@@ -118,8 +118,8 @@ jobs:
         run: |
           echo "DATABASE_URL=postgresql://test:test@localhost:5432/test" >> .env
           echo "REDIS_URL=redis://localhost:6379" >> .env
-          echo "NEXTAUTH_SECRET=test-secret" >> .env
-          echo "NEXTAUTH_URL=https://app.unifiedhq.com" >> .env
+          echo "BETTER_AUTH_SECRET=test-secret" >> .env
+          echo "BETTER_AUTH_URL=https://app.unifiedhq.com" >> .env
           bunx prisma generate
           bun run build
 
@@ -144,7 +144,7 @@ jobs:
     if: always() && (needs.approval.result == 'success' || github.event.inputs.skip_approval == 'true')
     steps:
       - name: Checkout release
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ needs.validate.outputs.release-tag }}
 
@@ -170,8 +170,8 @@ jobs:
         run: |
           echo "DATABASE_URL=${{ secrets.PRODUCTION_DATABASE_URL }}" >> .env
           echo "REDIS_URL=${{ secrets.PRODUCTION_REDIS_URL }}" >> .env
-          echo "NEXTAUTH_SECRET=${{ secrets.PRODUCTION_NEXTAUTH_SECRET }}" >> .env
-          echo "NEXTAUTH_URL=${{ secrets.PRODUCTION_NEXTAUTH_URL }}" >> .env
+          echo "BETTER_AUTH_SECRET=${{ secrets.PRODUCTION_BETTER_AUTH_SECRET }}" >> .env
+          echo "BETTER_AUTH_URL=${{ secrets.PRODUCTION_BETTER_AUTH_URL }}" >> .env
           echo "GITHUB_CLIENT_ID=${{ secrets.PRODUCTION_GITHUB_CLIENT_ID }}" >> .env
           echo "GITHUB_CLIENT_SECRET=${{ secrets.PRODUCTION_GITHUB_CLIENT_SECRET }}" >> .env
           echo "SLACK_CLIENT_ID=${{ secrets.PRODUCTION_SLACK_CLIENT_ID }}" >> .env
@@ -187,7 +187,7 @@ jobs:
         run: bun run build
 
       - name: Upload production build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: production-build-${{ needs.validate.outputs.release-tag }}
           path: |
@@ -211,12 +211,12 @@ jobs:
       deployment-id: ${{ steps.deploy.outputs.deployment-id }}
     steps:
       - name: Checkout release
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ needs.validate.outputs.release-tag }}
 
       - name: Download production build
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: production-build-${{ needs.validate.outputs.release-tag }}
 

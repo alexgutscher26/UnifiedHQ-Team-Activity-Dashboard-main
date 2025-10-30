@@ -47,7 +47,7 @@ jobs:
       metrics-file: ${{ steps.collect.outputs.metrics-file }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -302,7 +302,7 @@ jobs:
           echo "metrics-file=$METRICS_FILE" >> $GITHUB_OUTPUT
 
       - name: Upload metrics artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: workflow-metrics-${{ steps.period.outputs.start-date }}-to-${{ steps.period.outputs.end-date }}
           path: ${{ steps.collect.outputs.metrics-file }}
@@ -317,10 +317,10 @@ jobs:
       report-summary: ${{ steps.generate.outputs.report-summary }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download metrics
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: workflow-metrics-${{ needs.collect-workflow-metrics.outputs.start-date }}-to-${{ needs.collect-workflow-metrics.outputs.end-date }}
 
@@ -497,7 +497,7 @@ jobs:
           echo "report-summary=$SUMMARY" >> $GITHUB_OUTPUT
 
       - name: Upload report artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: workflow-report-${{ needs.collect-workflow-metrics.outputs.start-date }}-to-${{ needs.collect-workflow-metrics.outputs.end-date }}
           path: ${{ steps.generate.outputs.report-file }}
@@ -509,10 +509,10 @@ jobs:
     needs: [collect-workflow-metrics, generate-report]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download report
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: workflow-report-${{ needs.collect-workflow-metrics.outputs.start-date }}-to-${{ needs.collect-workflow-metrics.outputs.end-date }}
 
@@ -623,7 +623,7 @@ jobs:
     if: github.event.inputs.include_performance != 'false'
     steps:
       - name: Download metrics
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: workflow-metrics-${{ needs.collect-workflow-metrics.outputs.start-date }}-to-${{ needs.collect-workflow-metrics.outputs.end-date }}
 

@@ -392,6 +392,14 @@ export class ConnectionCleanupFixGenerator {
     return `${varName}();`;
   }
 
+  /**
+   * Adds cleanup code to an existing cleanup function within a given node.
+   *
+   * This method first locates the containing function of the provided node. If a containing function is found, it then searches for a return statement within that function. If a return statement with an expression exists, it proceeds to add the specified cleanup code to the existing cleanup function. If no containing function or return statement is found, it throws an error.
+   *
+   * @param node - The TypeScript node to analyze for the containing function.
+   * @param cleanupCode - The cleanup code to be added to the existing cleanup function.
+   */
   private addToExistingCleanup(
     node: ts.Node,
     cleanupCode: string
