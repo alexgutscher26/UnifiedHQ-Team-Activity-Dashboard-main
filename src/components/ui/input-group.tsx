@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
+/**
+ * Renders a styled input group component.
+ */
 function InputGroup({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -56,6 +59,17 @@ const inputGroupAddonVariants = cva(
   }
 );
 
+/**
+ * Renders an input group addon component.
+ *
+ * This component creates a div that serves as an addon for input groups, allowing for alignment and additional props.
+ * It handles click events to focus on the nearest input element unless the click originated from a button within the group.
+ * The alignment can be customized through the `align` prop, and additional class names can be provided via `className`.
+ *
+ * @param {Object} props - The properties for the component.
+ * @param {string} [props.className] - Additional class names to apply to the component.
+ * @param {string} [props.align='inline-start'] - The alignment of the addon within the input group.
+ */
 function InputGroupAddon({
   className,
   align = 'inline-start',
@@ -96,6 +110,9 @@ const inputGroupButtonVariants = cva(
   }
 );
 
+/**
+ * Renders a button within an input group with customizable properties.
+ */
 function InputGroupButton({
   className,
   type = 'button',
@@ -115,6 +132,9 @@ function InputGroupButton({
   );
 }
 
+/**
+ * Renders a span element with specified className and props.
+ */
 function InputGroupText({ className, ...props }: React.ComponentProps<'span'>) {
   return (
     <span
@@ -127,6 +147,9 @@ function InputGroupText({ className, ...props }: React.ComponentProps<'span'>) {
   );
 }
 
+/**
+ * Renders an input component with specific styles and props.
+ */
 function InputGroupInput({
   className,
   ...props

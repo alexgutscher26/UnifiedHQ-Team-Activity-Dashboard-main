@@ -5,6 +5,9 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 
+/**
+ * Renders a div element as an item group with specified className and props.
+ */
 function ItemGroup({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -16,6 +19,9 @@ function ItemGroup({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * Renders a horizontal item separator with optional className and props.
+ */
 function ItemSeparator({
   className,
   ...props
@@ -51,6 +57,9 @@ const itemVariants = cva(
   }
 );
 
+/**
+ * Renders an item component with customizable properties.
+ */
 function Item({
   className,
   variant = 'default',
@@ -88,6 +97,9 @@ const itemMediaVariants = cva(
   }
 );
 
+/**
+ * Renders a div element for item media with specified class and variant.
+ */
 function ItemMedia({
   className,
   variant = 'default',
@@ -116,6 +128,9 @@ function ItemContent({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * Renders a div element for the item title with specified className and props.
+ */
 function ItemTitle({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -143,6 +158,9 @@ function ItemDescription({ className, ...props }: React.ComponentProps<'p'>) {
   );
 }
 
+/**
+ * Renders a div element for item actions with optional className and props.
+ */
 function ItemActions({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -153,6 +171,9 @@ function ItemActions({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * Renders a header for an item with customizable class and props.
+ */
 function ItemHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -166,6 +187,9 @@ function ItemHeader({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * Renders a footer for an item with customizable class and props.
+ */
 function ItemFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
