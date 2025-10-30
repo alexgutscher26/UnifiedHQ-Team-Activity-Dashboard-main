@@ -282,7 +282,7 @@ export function SummaryHistory({
   /**
    * Handles the export of a summary in various formats.
    *
-   * This function takes a SummaryHistoryItem and a format type, then constructs the appropriate content based on the specified format (json, csv, or txt). It creates a Blob from the content, generates a download link, and triggers the download. Finally, it displays a toast notification indicating the export was successful.
+   * This function takes a SummaryHistoryItem and a format type, constructs the appropriate content based on the specified format (json, csv, or txt), and creates a Blob from the content. It generates a download link, triggers the download, and displays a toast notification indicating the export was successful.
    *
    * @param summary - The summary data to be exported.
    * @param format - The format in which to export the summary (default is 'json').
@@ -385,8 +385,7 @@ export function SummaryHistory({
   /**
    * Fetch the summary history from the API.
    *
-   * This function initiates a loading state, makes an API call to retrieve summary history based on pagination and time range, and handles potential errors.
-   * It updates the summaries and pagination state based on the response, and manages error handling, including displaying a toast notification for non-authentication errors.
+   * This function initiates a loading state and makes an API call to retrieve summary history based on pagination and time range. It handles potential errors by updating the error state and displaying a toast notification for non-authentication errors. The summaries and pagination state are updated based on the response received from the API.
    *
    * @returns {Promise<void>} A promise that resolves when the fetch operation is complete.
    * @throws Error If the response is not ok or if there is an error during the fetch operation.
@@ -454,6 +453,9 @@ export function SummaryHistory({
     }
   };
 
+  /**
+   * Updates the current page in pagination.
+   */
   const handlePageChange = (newPage: number) => {
     setPagination(prev => ({ ...prev, page: newPage }));
   };
@@ -462,9 +464,9 @@ export function SummaryHistory({
    * Handles the export of summaries in various formats.
    *
    * This function filters the summaries based on the showBookmarksOnly flag and the filteredSummaries array.
-   * It then constructs the content in the specified format (json, csv, or txt) and triggers a download of the
-   * generated file. If no summaries are available for export, it displays a toast notification.
-   * The function also manages the creation and cleanup of the download link.
+   * It constructs the content in the specified format (json, csv, or txt) and triggers a download of the
+   * generated file. If no summaries are available for export, it displays a toast notification. The function
+   * also manages the creation and cleanup of the download link.
    *
    * @param format - The format in which to export the summaries. Can be 'json', 'csv', or 'txt'.
    */
