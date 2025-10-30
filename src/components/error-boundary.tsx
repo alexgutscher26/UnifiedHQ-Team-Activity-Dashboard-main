@@ -65,7 +65,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   /**
-   * Updates state to show the fallback UI when an error occurs.
+   * Updates state to indicate an error has occurred.
    */
   static getDerivedStateFromError(error: Error): Partial<State> {
     // Update state so the next render will show the fallback UI
@@ -109,7 +109,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   /**
-   * Handles updates to the component, resetting the error boundary if conditions are met.
+   * Handles component updates and resets the error boundary if conditions are met.
    */
   componentDidUpdate(prevProps: Props) {
     const { resetKeys, resetOnPropsChange } = this.props;
@@ -207,8 +207,8 @@ export class ErrorBoundary extends Component<Props, State> {
   /**
    * Renders the component based on the error state.
    *
-   * If there is an error in the state, it checks for a custom fallback UI provided via props.
-   * If no custom fallback is available, it renders a default ErrorFallback component with relevant error information and handlers.
+   * If there is an error in the state, it first checks for a custom fallback UI provided via props.
+   * If a custom fallback is not available, it renders a default ErrorFallback component, passing relevant error information and handlers.
    * If there is no error, it simply renders the children components.
    */
   render() {
@@ -300,10 +300,9 @@ function ErrorFallback({
   /**
    * Copies the error ID to the clipboard if it exists.
    *
-   * The function checks if the errorId is defined before attempting to copy it to the clipboard using the
-   * navigator.clipboard API. If the copy operation is successful, it sets a state variable copied to true
-   * and resets it to false after 2 seconds. In case of an error during the copy process, it logs the error
-   * to the console.
+   * The function first checks if the errorId is defined. If it is, it attempts to copy the errorId to the clipboard
+   * using the navigator.clipboard API. Upon a successful copy operation, it sets a state variable copied to true
+   * and resets it to false after 2 seconds. If an error occurs during the copy process, it logs the error to the console.
    */
   const copyErrorId = async () => {
     if (!errorId) return;
@@ -320,11 +319,11 @@ function ErrorFallback({
   /**
    * Copies the full error log to the clipboard if an error exists.
    *
-   * The function constructs a detailed log object containing error information,
-   * including the error ID, timestamp, URL, user agent, and environment details.
-   * It formats this information into a string and writes it to the clipboard.
-   * If the copy operation is successful, it updates the log copied state and
-   * resets it after a timeout. In case of failure, it logs an error to the console.
+   * The function checks for the presence of an error and constructs a detailed log object
+   * containing various error-related information, including the error ID, timestamp, URL,
+   * user agent, and environment details. It formats this information into a string and
+   * attempts to write it to the clipboard. If successful, it updates the log copied state
+   * and resets it after a timeout. In case of failure, it logs an error to the console.
    */
   const copyFullLog = async () => {
     if (!error) return;
@@ -383,8 +382,7 @@ User Agent: ${logData.userAgent}`;
    * Retrieve a user-friendly error message based on the provided error object.
    *
    * The function checks for specific error types such as ChunkLoadError, NetworkError, and TypeError to return tailored messages.
-   * If the error does not match any known types, it defaults to a generic error message.
-   * If no error is provided, a default unexpected error message is returned.
+   * If the error does not match any known types, it defaults to returning the error message or a generic unexpected error message if no error is provided.
    *
    * @returns A string containing a user-friendly error message.
    */
@@ -610,7 +608,7 @@ export function withErrorBoundary<P extends object>(
 
 // Hook for functional components to trigger error boundary
 /**
- * Handles errors by logging them and rethrowing.
+ * Logs an error and rethrows it.
  */
 export function useErrorHandler() {
   return (error: Error, errorInfo?: ErrorInfo) => {
