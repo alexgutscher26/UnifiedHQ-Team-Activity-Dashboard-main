@@ -12,6 +12,9 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
 
+/**
+ * Renders a secondary navigation component with menu items.
+ */
 export function NavSecondary({
   items,
   ...props
@@ -24,6 +27,9 @@ export function NavSecondary({
 } & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
   const router = useRouter();
 
+  /**
+   * Handles navigation by pushing the given URL to the router or logging for placeholder links.
+   */
   const handleNavigation = (url: string) => {
     if (url === '#') {
       // Handle placeholder links - you can add specific logic here

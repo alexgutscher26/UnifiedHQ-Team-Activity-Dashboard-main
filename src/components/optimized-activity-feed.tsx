@@ -236,6 +236,9 @@ const useDebounce = (value: string, delay: number) => {
 };
 
 // Performance monitoring hook
+/**
+ * Custom hook to monitor performance metrics.
+ */
 const usePerformanceMonitor = () => {
   const [metrics, setMetrics] = useState({
     renderTime: 0,
@@ -258,9 +261,9 @@ const usePerformanceMonitor = () => {
  * Renders an optimized activity feed with live updates and filtering capabilities.
  *
  * This component manages the state of activities, loading status, and filters for searching and pagination.
- * It connects to a live updates endpoint using EventSource, handles auto-refreshing of activities,
- * and provides performance monitoring. The component also includes debounced search functionality and
- * pagination for displaying activities efficiently.
+ * It connects to a live updates endpoint using EventSource, handles auto-refreshing of activities every 60 seconds,
+ * and provides performance monitoring. The component also includes debounced search functionality and pagination
+ * for displaying activities efficiently.
  *
  * @returns {JSX.Element} The rendered activity feed component.
  */
