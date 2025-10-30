@@ -62,7 +62,7 @@ export default function RootLayout({
             <ServiceWorkerProvider>
               <NetworkStatusProvider>
                 <OfflineProvider>
-                  <OfflineBanner showWhenOnline={true} />
+                  <OfflineBanner showWhenOnline />
                   <GlobalErrorBoundary>
                     <Suspense fallback={<LoadingScreen />}>{children}</Suspense>
                   </GlobalErrorBoundary>
