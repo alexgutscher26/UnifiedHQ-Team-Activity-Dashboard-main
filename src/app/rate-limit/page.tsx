@@ -14,6 +14,9 @@ import { Progress } from '@/components/ui/progress';
 import { RateLimitBanner } from '@/components/rate-limit';
 import { useRateLimit } from '@/components/rate-limit';
 
+/**
+ * Renders a page informing the user that the rate limit has been exceeded.
+ */
 export default function RateLimitPage() {
   const rateLimitState = useRateLimit();
 

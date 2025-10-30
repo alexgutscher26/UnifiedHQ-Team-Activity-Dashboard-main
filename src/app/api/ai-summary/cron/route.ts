@@ -271,11 +271,11 @@ export async function POST(request: NextRequest) {
 /**
  * Handles the GET request to check the health status of the AI service.
  *
- * This function validates the connection to the AI service using the
- * AISummaryService. It returns a JSON response indicating whether the
- * service is connected or disconnected, along with a timestamp. In case
- * of an error during the connection validation, it returns an unhealthy
- * status with the error message.
+ * This function attempts to validate the connection to the AI service using
+ * the AISummaryService. It returns a JSON response indicating the health status
+ * of the service, including whether it is connected or disconnected, along with
+ * a timestamp. If an error occurs during validation, it returns an unhealthy
+ * status with the corresponding error message.
  *
  * @param request - The NextRequest object representing the incoming request.
  */
