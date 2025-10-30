@@ -291,6 +291,9 @@ jobs:
   post-deployment:
     name: Post-deployment Tasks
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
     needs: [validate, deploy]
     if: success()
     steps:
