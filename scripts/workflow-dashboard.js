@@ -1,4 +1,3 @@
-
 /**
  * Workflow Dashboard Generator
  * Creates HTML dashboard for workflow monitoring data

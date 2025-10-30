@@ -1,4 +1,3 @@
-
 /**
  * Workflow Monitor CLI
  * Command-line interface for workflow monitoring and reporting

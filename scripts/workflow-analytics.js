@@ -1,4 +1,3 @@
-
 /**
  * Workflow Analytics Script
  * Analyzes GitHub workflow performance data and generates insights

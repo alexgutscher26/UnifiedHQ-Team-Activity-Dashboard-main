@@ -1,4 +1,3 @@
-
 /**
  * GitHub Workflow Testing Utility
  *
