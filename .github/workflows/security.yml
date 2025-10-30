@@ -195,6 +195,9 @@ jobs:
   secret-scanning:
     name: Secret Detection and SAST
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
