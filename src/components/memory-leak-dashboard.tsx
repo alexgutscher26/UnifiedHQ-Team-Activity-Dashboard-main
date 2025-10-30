@@ -84,6 +84,19 @@ const LEAK_TYPE_ICONS: Record<LeakType, React.ReactNode> = {
   'circular-reference': <RefreshCw className='h-4 w-4' />,
 };
 
+/**
+ * Memory Leak Dashboard component for monitoring and analyzing memory leaks in applications.
+ *
+ * This component manages the state for project and runtime reports, handles scanning for memory leaks,
+ * and provides functionality for runtime monitoring. It also supports auto-refreshing of scan results
+ * and allows users to filter and export reports. The component utilizes various hooks to manage state
+ * and side effects, ensuring a responsive user interface.
+ *
+ * @param {Object} props - The properties for the MemoryLeakDashboard component.
+ * @param {string} [props.className=''] - Additional class names for styling the component.
+ * @param {boolean} [props.autoRefresh=true] - Flag to enable or disable auto-refresh of scan results.
+ * @param {number} [props.refreshInterval=30000] - Interval in milliseconds for auto-refreshing the scan.
+ */
 export function MemoryLeakDashboard({
   className = '',
   autoRefresh = true,
@@ -188,6 +201,9 @@ export function MemoryLeakDashboard({
     }) || [];
 
   // Export report data
+  /**
+   * Exports the project report as a JSON file.
+   */
   const exportReport = () => {
     if (!state.projectReport) return;
 
