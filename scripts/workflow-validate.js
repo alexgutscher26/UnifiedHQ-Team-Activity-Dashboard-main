@@ -243,7 +243,7 @@ class WorkflowValidator {
                         );
                       }
                       // Check for major version pinning
-                      if (step.uses.match(/@v\d+$/)) {
+                      if (/@v\d+$/.test(step.uses)) {
                         // This is actually good practice, no warning
                       }
                     }

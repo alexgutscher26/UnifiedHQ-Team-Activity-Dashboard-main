@@ -248,7 +248,6 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
     return (
       <li key={item.id} role='none'>
         <button
-          role='menuitem'
           tabIndex={isActive ? 0 : -1}
           aria-current={item.current ? 'page' : undefined}
           aria-expanded={hasChildren ? isExpanded : undefined}
@@ -286,7 +285,7 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
           )}
         </button>
         {hasChildren && isExpanded && (
-          <ul role='menu' className='mt-1 space-y-1'>
+          <ul className='mt-1 space-y-1'>
             {item.children!.map(child => renderNavItem(child, level + 1))}
           </ul>
         )}
@@ -306,7 +305,6 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
       )}
     >
       <ul
-        role='menu'
         className={cn(
           'space-y-1',
           orientation === 'horizontal' && 'flex space-x-1'

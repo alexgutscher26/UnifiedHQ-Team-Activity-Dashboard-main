@@ -74,7 +74,6 @@ class ReleaseManager {
         };
       } catch (error) {
         console.warn(`⚠️ Error loading config: ${error.message}`);
-        return this.getDefaultConfig();
       }
     }
     return this.getDefaultConfig();
