@@ -381,7 +381,7 @@ export const useAccessibilityAudit = () => {
 };
 
 /**
- * ARIA live region component for screen reader announcements
+ * Renders a live region for screen reader announcements.
  */
 export const AriaLiveRegion: React.FC<{ announcements: string[] }> = ({
   announcements,
@@ -401,7 +401,7 @@ export const AriaLiveRegion: React.FC<{ announcements: string[] }> = ({
 };
 
 /**
- * Skip links component for keyboard navigation
+ * Renders a Skip Links component for keyboard navigation.
  */
 export const SkipLinks: React.FC = () => {
   const { skipLinks } = useSkipLinks();

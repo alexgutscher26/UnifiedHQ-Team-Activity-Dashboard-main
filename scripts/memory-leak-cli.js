@@ -34,10 +34,16 @@ const colors = {
 };
 
 // Utility functions
+/**
+ * Wraps the given text in color codes.
+ */
 function colorize(text, color) {
   return `${colors[color]}${text}${colors.reset}`;
 }
 
+/**
+ * Logs a success message to the console in green.
+ */
 function logSuccess(message) {
   console.log(colorize(`✓ ${message}`, 'green'));
 }
@@ -46,15 +52,24 @@ function logError(message) {
   console.error(colorize(`✗ ${message}`, 'red'));
 }
 
+/**
+ * Logs a warning message to the console.
+ */
 function logWarning(message) {
   console.warn(colorize(`⚠ ${message}`, 'yellow'));
 }
 
+/**
+ * Logs an informational message to the console in blue.
+ */
 function logInfo(message) {
   console.log(colorize(`ℹ ${message}`, 'blue'));
 }
 
 // Format leak report for display
+/**
+ * Formats a leak report into a string representation.
+ */
 function formatLeakReport(report) {
   const severityColor = {
     critical: 'red',
@@ -75,6 +90,15 @@ function formatLeakReport(report) {
 }
 
 // Generate detailed report
+/**
+ * Generate a detailed report of memory leak detection results.
+ *
+ * This function processes an array of reports, logging a summary of the total issues categorized by severity levels.
+ * It also groups the issues by file, displaying each report along with any suggested fixes.
+ * If no reports are provided, a success message is logged indicating no memory leaks were detected.
+ *
+ * @param reports - An array of report objects containing memory leak details.
+ */
 function generateDetailedReport(reports) {
   if (reports.length === 0) {
     logSuccess('No memory leaks detected!');
@@ -171,6 +195,14 @@ async function saveReport(reports, format, outputPath) {
 }
 
 // Generate HTML report
+/**
+ * Generates an HTML report for memory leak detection issues.
+ *
+ * This function takes an array of report objects, calculates the total number of issues and categorizes them by severity (critical, high, medium, low).
+ * It then constructs an HTML document that includes a summary of the issues and a detailed table listing each report's file, line, severity, type, description, and suggested fix.
+ *
+ * @param {Array} reports - An array of report objects containing details about memory leak issues.
+ */
 function generateHTMLReport(reports) {
   const summary = {
     total: reports.length,
@@ -245,6 +277,20 @@ function generateHTMLReport(reports) {
 }
 
 // Apply fixes automatically
+/**
+ * Applies suggested fixes to reports based on provided options.
+ *
+ * This function filters the reports to identify those that have suggested fixes and do not require manual review.
+ * If no fixable reports are found, a warning is logged. If the dryRun option is enabled, it displays the fixes
+ * that would be applied without making any changes. Otherwise, it logs a warning indicating that the actual
+ * fix application is not yet implemented.
+ *
+ * @param {Array} reports - The list of reports to process for suggested fixes.
+ * @param {Object} [options={}] - Options to customize the behavior of the function.
+ * @param {boolean} [options.dryRun=false] - If true, performs a dry run without applying fixes.
+ * @param {boolean} [options.backup=true] - If true, creates a backup before applying fixes.
+ * @param {boolean} [options.interactive=false] - If true, enables interactive mode for user input.
+ */
 async function applyFixes(reports, options = {}) {
   const { dryRun = false, backup = true, interactive = false } = options;
 
