@@ -26,6 +26,9 @@ interface OfflineFirstSectionCardsProps {
   className?: string;
 }
 
+/**
+ * Renders a card displaying offline status or the regular SectionCards component based on network status.
+ */
 function OfflineFirstSectionCards({
   className,
 }: OfflineFirstSectionCardsProps) {
@@ -81,6 +84,9 @@ function OfflineFirstSectionCards({
   return <SectionCards className={className} />;
 }
 
+/**
+ * Renders the offline first dashboard content with network status indicators.
+ */
 export function OfflineFirstDashboardContent() {
   // Memory leak prevention
   useMemoryLeakPrevention('OfflineFirstDashboardContent');
