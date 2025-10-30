@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * Cache Deployment Test Runner
  * Runs comprehensive tests for cache deployment and configuration

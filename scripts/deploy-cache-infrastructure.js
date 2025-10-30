@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * Cache Infrastructure Deployment Script
  * Orchestrates the complete deployment of caching infrastructure

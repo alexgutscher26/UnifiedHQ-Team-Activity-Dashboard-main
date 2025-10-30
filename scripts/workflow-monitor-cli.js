@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * Workflow Monitor CLI
  * Command-line interface for workflow monitoring and reporting

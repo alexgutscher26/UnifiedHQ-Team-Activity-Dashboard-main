@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * Redis Setup and Deployment Script
  * Handles Redis configuration, connection testing, and initial setup

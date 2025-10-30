@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * Workflow Dashboard Generator
  * Creates HTML dashboard for workflow monitoring data
