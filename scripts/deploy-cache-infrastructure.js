@@ -166,7 +166,10 @@ class CacheInfrastructureDeployment {
       step.endTime = Date.now();
       step.duration = step.endTime - step.startTime;
 
-      safeLogger.error(`   ❌ Environment validation failed:`, sanitizeError(error));
+      safeLogger.error(
+        '   ❌ Environment validation failed:',
+        sanitizeError(error)
+      );
       throw error;
     } finally {
       this.deploymentSteps.push(step);
@@ -209,7 +212,7 @@ class CacheInfrastructureDeployment {
       step.endTime = Date.now();
       step.duration = step.endTime - step.startTime;
 
-      safeLogger.error(`   ❌ Redis setup failed:`, sanitizeError(error));
+      safeLogger.error('   ❌ Redis setup failed:', sanitizeError(error));
       throw error;
     } finally {
       this.deploymentSteps.push(step);
@@ -266,7 +269,10 @@ class CacheInfrastructureDeployment {
       step.endTime = Date.now();
       step.duration = step.endTime - step.startTime;
 
-      safeLogger.error(`   ❌ Application deployment failed:`, sanitizeError(error));
+      safeLogger.error(
+        '   ❌ Application deployment failed:',
+        sanitizeError(error)
+      );
       throw error;
     } finally {
       this.deploymentSteps.push(step);
@@ -323,14 +329,14 @@ class CacheInfrastructureDeployment {
       step.healthData = healthData;
 
       safeLogger.log(`   ✅ Health checks completed (${step.duration}ms)`);
-      safeLogger.log(`   📊 Overall health:`, healthData.overall);
+      safeLogger.log('   📊 Overall health:', healthData.overall);
     } catch (error) {
       step.status = 'failed';
       step.error = error.message;
       step.endTime = Date.now();
       step.duration = step.endTime - step.startTime;
 
-      safeLogger.error(`   ❌ Health checks failed:`, sanitizeError(error));
+      safeLogger.error('   ❌ Health checks failed:', sanitizeError(error));
       throw error;
     } finally {
       this.deploymentSteps.push(step);
@@ -384,7 +390,7 @@ class CacheInfrastructureDeployment {
       step.endTime = Date.now();
       step.duration = step.endTime - step.startTime;
 
-      safeLogger.error(`   ❌ Monitoring failed:`, sanitizeError(error));
+      safeLogger.error('   ❌ Monitoring failed:', sanitizeError(error));
       // Don't throw error for monitoring failure - it's not critical
     } finally {
       this.deploymentSteps.push(step);
