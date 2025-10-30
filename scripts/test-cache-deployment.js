@@ -74,6 +74,11 @@ class CacheDeploymentTestRunner {
 
   /**
    * Run configuration tests
+   *
+   * This function executes a series of configuration tests, including cache configuration and feature flags.
+   * It tracks the start time, status, and duration of the tests, updating the test result object accordingly.
+   * In case of an error, it captures the error message and updates the status to 'failed'.
+   * Finally, it pushes the test results to the `testResults` array.
    */
   async runConfigurationTests () {
     console.log('🔧 Running Configuration Tests...')
@@ -117,7 +122,12 @@ class CacheDeploymentTestRunner {
   }
 
   /**
-   * Run health check tests
+   * Run health check tests.
+   *
+   * This function initiates health check tests by logging the start of the process and creating a test result object.
+   * It attempts to run a specific test file for health endpoints and updates the test result based on the outcome.
+   * If the tests pass, it records the duration and logs a success message. In case of failure, it captures the error message,
+   * updates the status, and decides whether to continue with remaining tests based on the configuration.
    */
   async runHealthCheckTests () {
     console.log('\n🏥 Running Health Check Tests...')
@@ -210,7 +220,9 @@ class CacheDeploymentTestRunner {
   }
 
   /**
-   * Run end-to-end tests
+   * Run end-to-end tests.
+   *
+   * This function initiates the execution of end-to-end tests, starting with logging the test run. It creates a testResult object to track the status, start time, and results of the tests. The function attempts to run a specific test file for offline functionality and updates the testResult based on the outcome. If an error occurs, it logs the failure and decides whether to continue or halt the test suite based on the configuration.
    */
   async runEndToEndTests () {
     console.log('\n🎯 Running End-to-End Tests...')
@@ -254,7 +266,13 @@ class CacheDeploymentTestRunner {
   }
 
   /**
-   * Run a single test file
+   * Run a single test file and return the result of the test execution.
+   *
+   * This function checks if the specified test file exists, runs the test using the bun test command, and logs the outcome.
+   * It measures the duration of the test execution and handles errors gracefully, returning appropriate status and output.
+   *
+   * @param testFile - The path to the test file to be executed.
+   * @returns An object containing the test file name, status, duration, and either output or error message.
    */
   async runTestFile (testFile) {
     const startTime = Date.now()
@@ -313,7 +331,7 @@ class CacheDeploymentTestRunner {
   }
 
   /**
-   * Run a command and return result
+   * Executes a command and returns the result as a promise.
    */
   async runCommand (command) {
     return new Promise(resolve => {
@@ -332,7 +350,12 @@ class CacheDeploymentTestRunner {
   }
 
   /**
-   * Generate test report
+   * Generate test report.
+   *
+   * This function compiles the results of the tests stored in `this.testResults`, calculating the total number of tests,
+   * the number of passed and failed tests, and the total duration of all tests. It then constructs a report object
+   * containing a summary and saves it to a JSON file in the 'reports' directory. If the directory does not exist,
+   * it is created. Finally, the function displays a summary of the test results and logs the path to the saved report.
    */
   async generateTestReport () {
     const totalTests = this.testResults.length
@@ -416,7 +439,15 @@ class CacheDeploymentTestRunner {
   }
 
   /**
-   * Display test summary
+   * Display test summary.
+   *
+   * This function logs a summary of the test results, including total categories,
+   * passed and failed categories, success rate, and total duration. It iterates
+   * through each category to display its status and duration, and if verbose mode
+   * is enabled, it also logs any errors associated with the categories. Finally,
+   * it outputs the overall status of the tests based on the number of failed categories.
+   *
+   * @param {Object} report - The report object containing summary and category details.
    */
   displayTestSummary (report) {
     console.log('\n📊 TEST SUMMARY')
