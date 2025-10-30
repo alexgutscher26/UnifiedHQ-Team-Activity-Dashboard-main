@@ -4,7 +4,16 @@ import { SlackCacheManager } from '@/lib/integrations/slack-cached';
 import { RedisCache, CacheKeyGenerator } from '@/lib/redis';
 
 /**
- * Get Slack cache statistics for the authenticated user
+ * Get Slack cache statistics for the authenticated user.
+ *
+ * This function retrieves cache statistics for a user by first validating the user's session.
+ * It then fetches basic statistics or detailed statistics based on the request parameters.
+ * Detailed statistics are gathered for various cache types, including channels, messages, and users,
+ * while handling potential errors during data retrieval.
+ *
+ * @param request - The NextRequest object containing the request details.
+ * @returns A Promise that resolves to a NextResponse containing the cache statistics.
+ * @throws Error If there is an issue retrieving the session or cache statistics.
  */
 async function getSlackCacheStats(request: NextRequest): Promise<NextResponse> {
   try {

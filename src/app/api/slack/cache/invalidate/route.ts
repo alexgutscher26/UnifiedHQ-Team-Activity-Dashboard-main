@@ -3,7 +3,13 @@ import { auth } from '@/lib/auth';
 import { SlackCacheManager } from '@/lib/integrations/slack-cached';
 
 /**
- * Invalidate Slack cache for the authenticated user
+ * Invalidate Slack cache for the authenticated user.
+ *
+ * This function retrieves the user's session and checks for authorization. It then parses the request body to determine the type of cache to invalidate, which can include channels, users, messages, Redis, database, or all caches. Depending on the type, it calls the appropriate methods from SlackCacheManager to perform the invalidation and returns a response with the result.
+ *
+ * @param request - The NextRequest object containing the request data.
+ * @returns A NextResponse object indicating the result of the cache invalidation process.
+ * @throws Error If the cache invalidation process fails.
  */
 async function invalidateSlackCache(
   request: NextRequest
