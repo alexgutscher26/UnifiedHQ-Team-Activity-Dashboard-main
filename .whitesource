@@ -84,6 +84,7 @@
   },
   "hostRules": [
     {
+      "hostType": "npm",
       "matchHost": "registry.npmjs.org",
       "timeout": 60000
     }
