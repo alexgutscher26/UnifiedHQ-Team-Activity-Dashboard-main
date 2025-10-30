@@ -183,6 +183,9 @@ export class TimerLeakDetector {
   }
 
   // Analyze the context where timer is used
+  /**
+   * Analyzes the context of a timer in a given code string.
+   */
   private analyzeTimerContext(code: string, timerIndex: number): TimerContext {
     const beforeCode = code.substring(0, timerIndex);
     const afterCode = code.substring(timerIndex);
