@@ -379,6 +379,8 @@ jobs:
     environment:
       name: production
       url: ${{ steps.deploy.outputs.url }}
+    permissions:
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
