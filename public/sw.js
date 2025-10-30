@@ -432,7 +432,7 @@ self.addEventListener('message', (event) => {
 
     case 'TRACK_NAVIGATION':
       // Manual navigation tracking
-      if (payload && payload.path) {
+      if (payload?.path) {
         cachePreloader.trackNavigation(payload.path)
         event.ports[0].postMessage({ success: true })
       } else {

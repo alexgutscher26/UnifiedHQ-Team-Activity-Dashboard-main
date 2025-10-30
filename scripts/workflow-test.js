@@ -216,8 +216,7 @@ class WorkflowTester {
 
             // Check for potential security issues
             if (
-              step.run &&
-              step.run.includes('curl') &&
+              step.run?.includes('curl') &&
               step.run.includes('sudo')
             ) {
               warnings.push(
@@ -233,9 +232,8 @@ class WorkflowTester {
     if (content.jobs) {
       const hasCache = Object.values(content.jobs).some(
         job =>
-          job.steps &&
-          job.steps.some(
-            step => step.uses && step.uses.includes('actions/cache')
+          job.steps?.some(
+            step => step.uses?.includes('actions/cache')
           )
       )
 

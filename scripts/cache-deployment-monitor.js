@@ -169,7 +169,7 @@ class CacheDeploymentMonitor {
     }
 
     // Check individual service health
-    if (checkResult.data && checkResult.data.checks) {
+    if (checkResult.data?.checks) {
       const unhealthyServices = checkResult.data.checks.filter(
         c => c.status === 'unhealthy'
       )

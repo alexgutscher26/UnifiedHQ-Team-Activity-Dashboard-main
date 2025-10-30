@@ -194,8 +194,8 @@ class WorkflowOptimizer {
 
       // Check existing caches
       job.steps.forEach(step => {
-        if (step.uses && step.uses.includes('actions/cache')) {
-          if (step.with && step.with.path) {
+        if (step.uses?.includes('actions/cache')) {
+          if (step.with?.path) {
             const paths = Array.isArray(step.with.path)
               ? step.with.path
               : [step.with.path]
@@ -265,7 +265,7 @@ class WorkflowOptimizer {
       // Insert cache steps after checkout
       if (cacheSteps.length > 0) {
         const checkoutIndex = job.steps.findIndex(
-          step => step.uses && step.uses.includes('actions/checkout')
+          step => step.uses?.includes('actions/checkout')
         )
 
         if (checkoutIndex !== -1) {
@@ -311,7 +311,7 @@ class WorkflowOptimizer {
 
     // Optimize matrix strategies
     Object.entries(workflow.jobs).forEach(([jobName, job]) => {
-      if (job.strategy && job.strategy.matrix) {
+      if (job.strategy?.matrix) {
         const matrixOptimizations = this.optimizeJobMatrix(
           job.strategy.matrix,
           jobName
@@ -349,7 +349,7 @@ class WorkflowOptimizer {
     if (!workflow.jobs) return optimizations
 
     Object.entries(workflow.jobs).forEach(([jobName, job]) => {
-      if (job.strategy && job.strategy.matrix) {
+      if (job.strategy?.matrix) {
         const matrix = job.strategy.matrix
 
         // Optimize Node.js versions
@@ -400,7 +400,7 @@ class WorkflowOptimizer {
         (step.run &&
           (step.run.includes('bun install') ||
             step.run.includes('npm install'))) ||
-        (step.uses && step.uses.includes('setup-bun'))
+        (step.uses?.includes('setup-bun'))
     )
   }
 
@@ -526,9 +526,8 @@ class WorkflowOptimizer {
       // Check for caching
       analysis.metrics.hasCache = Object.values(workflow.content.jobs).some(
         job =>
-          job.steps &&
-          job.steps.some(
-            step => step.uses && step.uses.includes('actions/cache')
+          job.steps?.some(
+            step => step.uses?.includes('actions/cache')
           )
       )
 
@@ -539,7 +538,7 @@ class WorkflowOptimizer {
 
       // Calculate matrix size
       Object.values(workflow.content.jobs).forEach(job => {
-        if (job.strategy && job.strategy.matrix) {
+        if (job.strategy?.matrix) {
           const size = this.getMatrixCombinations(job.strategy.matrix).length
           analysis.metrics.matrixSize += size
         }

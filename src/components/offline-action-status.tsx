@@ -343,7 +343,7 @@ export function OfflineActionStatus() {
         )}
 
         {/* Sync Progress */}
-        {syncProgress && syncProgress.isRunning && (
+        {syncProgress?.isRunning && (
           <div className='space-y-2'>
             <div className='flex items-center justify-between text-sm'>
               <span>Syncing actions...</span>
