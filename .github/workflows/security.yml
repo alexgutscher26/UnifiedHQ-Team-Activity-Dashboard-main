@@ -154,7 +154,7 @@ jobs:
 
       - name: Upload OWASP report artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: dependency-check-report
           path: reports/
@@ -256,7 +256,7 @@ jobs:
 
       - name: Upload security scan artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: security-scan-results
           path: |

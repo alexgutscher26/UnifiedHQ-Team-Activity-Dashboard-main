@@ -76,7 +76,7 @@ jobs:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
 
       - name: Upload Lighthouse results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: lighthouse-results
@@ -163,7 +163,7 @@ jobs:
           find .next/static -name "*.js" -size +500k -exec ls -lh {} \; | awk '{print "- " $9 ": " $5}' >> bundle-analysis.md || echo "No large chunks found" >> bundle-analysis.md
 
       - name: Upload bundle analysis
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: bundle-analysis
           path: |
@@ -237,7 +237,7 @@ jobs:
           bun run memory-leak:report >> memory-report.md || echo "Memory leak report generation failed" >> memory-report.md
 
       - name: Upload memory analysis
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: memory-analysis
