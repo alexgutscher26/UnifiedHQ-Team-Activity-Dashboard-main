@@ -7,8 +7,8 @@ import memoryLeakPreventionPlugin from './src/lib/eslint-rules/index.js';
 const compat = new FlatCompat({
   baseDirectory: import.meta.dirname,
   recommendedConfig: js.configs.recommended,
-  allConfig: js.configs.all,
-});
+  allConfig: js.configs.all
+})
 
 export default [
   // Base JavaScript recommended rules
@@ -52,7 +52,7 @@ export default [
       '*.config.js',
       '*.config.mjs',
       'prisma/generated/**',
-      'src/generated/**',
-    ],
-  },
-];
+      'src/generated/**'
+    ]
+  }
+]
