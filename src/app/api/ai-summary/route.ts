@@ -23,85 +23,111 @@ async function generateIntelligentMockSummary(
   startDate: Date,
   endDate: Date
 ) {
-  const sourceBreakdown = activities.reduce((acc, activity) => {
-    acc[activity.source] = (acc[activity.source] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const sourceBreakdown = activities.reduce(
+    (acc, activity) => {
+      acc[activity.source] = (acc[activity.source] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
 
   const repositories = await prisma.selectedRepository.count({
-    where: { userId }
+    where: { userId },
   });
 
   const channels = await prisma.selectedChannel.count({
-    where: { userId }
+    where: { userId },
   });
 
   const totalActivities = activities.length;
   const sources = Object.keys(sourceBreakdown);
-  const primarySource = Object.entries(sourceBreakdown).sort(([, a], [, b]) => b - a)[0];
+  const primarySource = Object.entries(sourceBreakdown).sort(
+    ([, a], [, b]) => b - a
+  )[0];
 
   // Generate title based on activity level
-  let title = "Daily Activity Summary";
+  let title = 'Daily Activity Summary';
   if (totalActivities > 20) {
-    title = "High Activity Day - Great Progress!";
+    title = 'High Activity Day - Great Progress!';
   } else if (totalActivities > 10) {
-    title = "Productive Day - Steady Progress";
+    title = 'Productive Day - Steady Progress';
   } else if (totalActivities > 5) {
-    title = "Active Day - Good Momentum";
+    title = 'Active Day - Good Momentum';
   } else {
-    title = "Light Activity Day";
+    title = 'Light Activity Day';
   }
 
   // Generate key highlights
   const keyHighlights = [];
 
   if (primarySource) {
-    keyHighlights.push(`Most active on ${primarySource[0]} with ${primarySource[1]} activities`);
+    keyHighlights.push(
+      `Most active on ${primarySource[0]} with ${primarySource[1]} activities`
+    );
   }
 
   if (totalActivities > 0) {
-    keyHighlights.push(`Total of ${totalActivities} activities across ${sources.length} platform${sources.length !== 1 ? 's' : ''}`);
+    keyHighlights.push(
+      `Total of ${totalActivities} activities across ${sources.length} platform${sources.length !== 1 ? 's' : ''}`
+    );
   }
 
   if (sourceBreakdown.github > 0) {
-    keyHighlights.push(`GitHub activity: ${sourceBreakdown.github} commits/PRs/issues`);
+    keyHighlights.push(
+      `GitHub activity: ${sourceBreakdown.github} commits/PRs/issues`
+    );
   }
 
   if (sourceBreakdown.slack > 0) {
-    keyHighlights.push(`Slack engagement: ${sourceBreakdown.slack} messages/interactions`);
+    keyHighlights.push(
+      `Slack engagement: ${sourceBreakdown.slack} messages/interactions`
+    );
   }
 
   // Generate action items
   const actionItems = [];
 
   if (repositories === 0) {
-    actionItems.push("Connect GitHub repositories to track development progress");
+    actionItems.push(
+      'Connect GitHub repositories to track development progress'
+    );
   }
 
   if (channels === 0) {
-    actionItems.push("Connect Slack channels to monitor team communication");
+    actionItems.push('Connect Slack channels to monitor team communication');
   }
 
   if (totalActivities < 5) {
-    actionItems.push("Consider increasing daily activity to build momentum");
+    actionItems.push('Consider increasing daily activity to build momentum');
   }
 
   if (sources.length === 1) {
-    actionItems.push("Diversify activity across multiple platforms for better insights");
+    actionItems.push(
+      'Diversify activity across multiple platforms for better insights'
+    );
   }
 
   // Generate insights
   const insights = [];
 
-  const activityTrend = totalActivities > 10 ? "high" : totalActivities > 5 ? "moderate" : "low";
-  insights.push(`Activity level: ${activityTrend} (${totalActivities} activities in 24h)`);
+  const activityTrend =
+    totalActivities > 10 ? 'high' : totalActivities > 5 ? 'moderate' : 'low';
+  insights.push(
+    `Activity level: ${activityTrend} (${totalActivities} activities in 24h)`
+  );
 
   if (sourceBreakdown.github && sourceBreakdown.slack) {
-    insights.push("Good balance between development work and team communication");
+    insights.push(
+      'Good balance between development work and team communication'
+    );
   } else if (sourceBreakdown.github) {
-    insights.push("Focus on development activities - consider increasing team communication");
+    insights.push(
+      'Focus on development activities - consider increasing team communication'
+    );
   } else if (sourceBreakdown.slack) {
-    insights.push("Active in team communication - consider balancing with development work");
+    insights.push(
+      'Active in team communication - consider balancing with development work'
+    );
   }
 
   const timeSpread = calculateTimeSpread(activities);
@@ -154,17 +180,17 @@ async function generateIntelligentMockSummary(
  * @param {any[]} activities - An array of activity objects, each containing a timestamp.
  */
 function calculateTimeSpread(activities: any[]): string {
-  if (activities.length === 0) return "No activity";
+  if (activities.length === 0) return 'No activity';
 
   const hours = activities.map(a => new Date(a.timestamp).getHours());
   const uniqueHours = new Set(hours);
 
   if (uniqueHours.size > 8) {
-    return "Distributed throughout the day";
+    return 'Distributed throughout the day';
   } else if (uniqueHours.size > 4) {
-    return "Concentrated in several time periods";
+    return 'Concentrated in several time periods';
   } else {
-    return "Focused in specific time windows";
+    return 'Focused in specific time windows';
   }
 }
 
@@ -254,7 +280,7 @@ export async function GET(request: NextRequest) {
     // Check if it's been 24 hours since last summary
     const hoursSinceLastSummary = mostRecentSummary
       ? (now.getTime() - new Date(mostRecentSummary.generatedAt).getTime()) /
-      (60 * 60 * 1000)
+        (60 * 60 * 1000)
       : 24; // If no summaries, consider it as 24+ hours
 
     // Auto-generate summary if it's been 24+ hours since last summary OR if no summaries exist
@@ -280,7 +306,9 @@ export async function GET(request: NextRequest) {
           try {
             useAI = await AISummaryService.validateConnection();
           } catch (error) {
-            console.log('[AI Summary] AI service not available, using intelligent mock');
+            console.log(
+              '[AI Summary] AI service not available, using intelligent mock'
+            );
             useAI = false;
           }
 
@@ -393,7 +421,12 @@ export async function GET(request: NextRequest) {
             });
 
             if (activities.length > 0) {
-              const mockSummary = await generateIntelligentMockSummary(userId, activities, dailyStartDate, now);
+              const mockSummary = await generateIntelligentMockSummary(
+                userId,
+                activities,
+                dailyStartDate,
+                now
+              );
 
               return NextResponse.json({
                 summaries: [mockSummary],
@@ -422,7 +455,12 @@ export async function GET(request: NextRequest) {
             });
 
             if (activities.length > 0) {
-              const mockSummary = await generateIntelligentMockSummary(userId, activities, dailyStartDate, now);
+              const mockSummary = await generateIntelligentMockSummary(
+                userId,
+                activities,
+                dailyStartDate,
+                now
+              );
 
               return NextResponse.json({
                 summaries: [mockSummary],
