@@ -9,15 +9,15 @@ import { getCurrentUser } from '@/lib/get-user';
 
 interface InvalidationRequest {
   type:
-  | 'user'
-  | 'github'
-  | 'slack'
-  | 'ai'
-  | 'api'
-  | 'pattern'
-  | 'smart'
-  | 'realtime'
-  | 'batch';
+    | 'user'
+    | 'github'
+    | 'slack'
+    | 'ai'
+    | 'api'
+    | 'pattern'
+    | 'smart'
+    | 'realtime'
+    | 'batch';
   userId?: string;
   pattern?: string;
   context?: {

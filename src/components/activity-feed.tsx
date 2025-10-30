@@ -379,7 +379,9 @@ export function ActivityFeed() {
           console.error('Server error fetching activities');
           setActivities([]);
         } else {
-          console.error(`Failed to fetch activities: ${response.status} ${response.statusText}`);
+          console.error(
+            `Failed to fetch activities: ${response.status} ${response.statusText}`
+          );
           setActivities([]);
         }
       }

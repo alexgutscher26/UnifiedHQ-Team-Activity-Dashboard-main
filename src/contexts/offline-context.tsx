@@ -94,7 +94,14 @@ export function OfflineProvider({
         retrySyncRef.current?.();
       }
     }
-  }, [networkStatus.isOnline, networkStatus.isOffline, enableNotifications, hasBeenOffline, enableAutoSync, queuedActions]);
+  }, [
+    networkStatus.isOnline,
+    networkStatus.isOffline,
+    enableNotifications,
+    hasBeenOffline,
+    enableAutoSync,
+    queuedActions,
+  ]);
 
   const serviceWorker = useServiceWorkerContext();
 
@@ -225,12 +232,7 @@ export function OfflineProvider({
 
       return () => clearTimeout(timer);
     }
-  }, [
-    networkStatus.isOnline,
-    hasBeenOffline,
-    queuedActions,
-    enableAutoSync,
-  ]);
+  }, [networkStatus.isOnline, hasBeenOffline, queuedActions, enableAutoSync]);
 
   const contextValue: OfflineContextType = {
     isOffline: networkStatus.isOffline,
