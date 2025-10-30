@@ -5,7 +5,7 @@
  */
 
 class ServiceWorkerCachePreloader {
-  constructor() {
+  constructor () {
     this.patterns = new Map()
     this.config = {
       maxPatterns: 100,
@@ -33,7 +33,7 @@ class ServiceWorkerCachePreloader {
      * Track user navigation to build patterns.
      * @param {string} path - The path of the navigation.
      */
-  trackNavigation(path) {
+  trackNavigation (path) {
     const now = Date.now()
     const hour = new Date().getHours()
     const dayOfWeek = new Date().getDay()
@@ -90,7 +90,7 @@ class ServiceWorkerCachePreloader {
      *
      * @param {string} currentPath - The path for which predictions are being updated.
      */
-  updateNextPathPredictions(currentPath) {
+  updateNextPathPredictions (currentPath) {
     const lastPath = this.getLastAccessedPath(currentPath)
 
     if (lastPath && lastPath !== currentPath) {
@@ -107,7 +107,7 @@ class ServiceWorkerCachePreloader {
   /**
      * Retrieves the most recently accessed path, excluding the specified path.
      */
-  getLastAccessedPath(excludePath) {
+  getLastAccessedPath (excludePath) {
     let lastPath = null
     let lastTime = 0
 
@@ -130,7 +130,7 @@ class ServiceWorkerCachePreloader {
      *
      * @param {string} currentPath - The current path used to determine predictive preloading.
      */
-  async triggerPredictivePreload(currentPath) {
+  async triggerPredictivePreload (currentPath) {
     const pattern = this.patterns.get(currentPath)
     if (!pattern) return
 
@@ -156,7 +156,7 @@ class ServiceWorkerCachePreloader {
      *
      * @param {string} currentPath - The current path for which to predict next paths.
      */
-  getPredictedPaths(currentPath) {
+  getPredictedPaths (currentPath) {
     const pattern = this.patterns.get(currentPath)
     if (!pattern) return []
 
@@ -186,7 +186,7 @@ class ServiceWorkerCachePreloader {
      * @param path - The path to preload into the cache.
      * @returns {Promise<void>} A promise that resolves when the preloading is complete.
      */
-  async preloadPath(path) {
+  async preloadPath (path) {
     try {
       console.log(`[SW Cache Preloader] Preloading path: ${path}`)
 
@@ -235,7 +235,7 @@ class ServiceWorkerCachePreloader {
   /**
      * Check if the given path is a static asset.
      */
-  isStaticAsset(path) {
+  isStaticAsset (path) {
     return (
       path.startsWith('/_next/static/') ||
       path.startsWith('/static/') ||
@@ -253,7 +253,7 @@ class ServiceWorkerCachePreloader {
      * @param {Response} response - The response object to be cached.
      * @param {Object} config - Configuration options for cache cleanup.
      */
-  async putInCache(cache, request, response, config) {
+  async putInCache (cache, request, response, config) {
     if (!response.ok) return
 
     const responseWithTimestamp = new Response(response.body, {
@@ -282,7 +282,7 @@ class ServiceWorkerCachePreloader {
      * @param {Object} config - Configuration object containing cache settings.
      * @param {number} config.maxAgeSeconds - The maximum age in seconds for the cached response.
      */
-  isExpired(response, config) {
+  isExpired (response, config) {
     if (!config.maxAgeSeconds) return false
 
     const cachedAt = response.headers.get('sw-cached-at')
@@ -302,7 +302,7 @@ class ServiceWorkerCachePreloader {
      * @param config - Configuration object containing maxEntries and maxAgeSeconds limits.
      * @returns A promise that resolves when the cache cleanup is complete.
      */
-  async cleanupCache(cache, config) {
+  async cleanupCache (cache, config) {
     if (!config.maxEntries && !config.maxAgeSeconds) return
 
     const requests = await cache.keys()
@@ -345,7 +345,7 @@ class ServiceWorkerCachePreloader {
   /**
      * Preload critical dashboard data from specified endpoints.
      */
-  async preloadCriticalData() {
+  async preloadCriticalData () {
     console.log('[SW Cache Preloader] Starting critical data preload')
 
     const criticalEndpoints = [
@@ -366,14 +366,14 @@ class ServiceWorkerCachePreloader {
   /**
      * Setup idle detection for background preloading.
      */
-  setupIdleDetection() {
+  setupIdleDetection () {
     this.resetIdleTimer()
   }
 
   /**
      * Resets the idle timer and updates the last navigation time.
      */
-  resetIdleTimer() {
+  resetIdleTimer () {
     this.isIdle = false
     this.lastNavigationTime = Date.now()
 
@@ -390,7 +390,7 @@ class ServiceWorkerCachePreloader {
   /**
      * Perform background preloading during idle time
      */
-  async performIdlePreloading() {
+  async performIdlePreloading () {
     if (!this.isIdle) return
 
     console.log('[SW Cache Preloader] Starting idle preloading')
@@ -436,7 +436,7 @@ class ServiceWorkerCachePreloader {
      * the specified criteria, and if the frequency meets the minimum requirement.
      * The resulting recommendations are then sorted by frequency in descending order before being returned.
      */
-  getTimeBasedRecommendations() {
+  getTimeBasedRecommendations () {
     const currentHour = new Date().getHours()
     const currentDay = new Date().getDay()
 
@@ -461,7 +461,7 @@ class ServiceWorkerCachePreloader {
   /**
      * Cleans up old or infrequent patterns based on configured limits.
      */
-  cleanupPatterns() {
+  cleanupPatterns () {
     if (this.patterns.size <= this.config.maxPatterns) return
 
     const patternArray = Array.from(this.patterns.entries()).map(([path, pattern]) => ({
@@ -483,7 +483,7 @@ class ServiceWorkerCachePreloader {
   /**
      * Save patterns to IndexedDB
      */
-  async savePatterns() {
+  async savePatterns () {
     try {
       const db = await this.openDB()
       const transaction = db.transaction(['patterns'], 'readwrite')
@@ -508,7 +508,7 @@ class ServiceWorkerCachePreloader {
      * and retrieves the 'navigation-patterns'. If patterns are found, they are stored in the `this.patterns` Map,
      * and a message is logged indicating the number of loaded patterns. Errors during the process are caught and logged.
      */
-  async loadPatterns() {
+  async loadPatterns () {
     try {
       const db = await this.openDB()
       const transaction = db.transaction(['patterns'], 'readonly')
@@ -528,7 +528,7 @@ class ServiceWorkerCachePreloader {
   /**
      * Opens IndexedDB for pattern storage and handles version upgrades.
      */
-  openDB() {
+  openDB () {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open('unifiedhq-cache-preloader', 1)
 
@@ -548,7 +548,7 @@ class ServiceWorkerCachePreloader {
   /**
      * Retrieves cache statistics including frequent paths and predictions.
      */
-  async getCacheStats() {
+  async getCacheStats () {
     const frequentPaths = Array.from(this.patterns.values())
       .filter(pattern => pattern.frequency >= this.config.minFrequency)
       .sort((a, b) => b.frequency - a.frequency)
@@ -569,7 +569,7 @@ class ServiceWorkerCachePreloader {
   /**
      * Clear all patterns and save the changes.
      */
-  async clearPatterns() {
+  async clearPatterns () {
     this.patterns.clear()
     await this.savePatterns()
   }
