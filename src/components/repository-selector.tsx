@@ -41,6 +41,17 @@ interface RepositorySelectorProps {
   isConnected: boolean;
 }
 
+/**
+ * Renders a dialog for selecting GitHub repositories to track.
+ *
+ * The component fetches repositories from an API when opened and allows users to select or deselect repositories.
+ * It manages loading states, displays error messages using toast notifications, and updates the selection count dynamically.
+ * The component also includes a search feature to filter repositories based on user input.
+ *
+ * @param {RepositorySelectorProps} props - The properties for the RepositorySelector component.
+ * @param {boolean} props.isConnected - Indicates if the user is connected to the GitHub integration.
+ * @returns {JSX.Element | null} The rendered component or null if not connected.
+ */
 export function RepositorySelector({ isConnected }: RepositorySelectorProps) {
   const { toast } = useToast();
   const [repositories, setRepositories] = useState<Repository[]>([]);
@@ -85,6 +96,13 @@ export function RepositorySelector({ isConnected }: RepositorySelectorProps) {
     }
   };
 
+  /**
+   * Toggle the selection state of a repository by adding or removing it from tracking.
+   *
+   * The function checks if the repository is currently selected. If it is, it sends a DELETE request to remove the repository from tracking and updates the state accordingly. If it is not selected, it sends a POST request to add the repository, including its details in the request body. In both cases, it provides user feedback through toast notifications. Errors during the process are caught and displayed as a toast notification.
+   *
+   * @param repo - The repository object containing details such as id, name, owner, url, and selection state.
+   */
   const toggleRepository = async (repo: Repository) => {
     try {
       if (repo.isSelected) {
@@ -144,6 +162,15 @@ export function RepositorySelector({ isConnected }: RepositorySelectorProps) {
       repo.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  /**
+   * Formats a date string into a human-readable relative time format.
+   *
+   * The function calculates the difference in days between the current date and the provided date string.
+   * It returns a string indicating whether the date is today, yesterday, or how many days, weeks, or months ago it was.
+   * The logic accounts for various time frames to provide a concise representation of the date's recency.
+   *
+   * @param dateString - The date string to be formatted.
+   */
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();

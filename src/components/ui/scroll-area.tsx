@@ -28,6 +28,9 @@ function ScrollArea({
   );
 }
 
+/**
+ * Renders a customizable scrollbar component.
+ */
 function ScrollBar({
   className,
   orientation = 'vertical',

@@ -6,12 +6,18 @@ import { CheckIcon, ChevronRightIcon, CircleIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
+/**
+ * Renders a DropdownMenu component using DropdownMenuPrimitive.Root.
+ */
 function DropdownMenu({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
   return <DropdownMenuPrimitive.Root data-slot='dropdown-menu' {...props} />;
 }
 
+/**
+ * Renders a DropdownMenuPrimitive.Portal component with provided props.
+ */
 function DropdownMenuPortal({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Portal>) {
@@ -20,6 +26,9 @@ function DropdownMenuPortal({
   );
 }
 
+/**
+ * Renders a DropdownMenuPrimitive.Trigger component with provided props.
+ */
 function DropdownMenuTrigger({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
@@ -31,6 +40,9 @@ function DropdownMenuTrigger({
   );
 }
 
+/**
+ * Renders the content of a dropdown menu with customizable properties.
+ */
 function DropdownMenuContent({
   className,
   sideOffset = 4,
@@ -51,6 +63,9 @@ function DropdownMenuContent({
   );
 }
 
+/**
+ * Renders a DropdownMenuPrimitive.Group component with provided props.
+ */
 function DropdownMenuGroup({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Group>) {
@@ -59,6 +74,9 @@ function DropdownMenuGroup({
   );
 }
 
+/**
+ * Renders a dropdown menu item with customizable properties.
+ */
 function DropdownMenuItem({
   className,
   inset,
@@ -82,6 +100,9 @@ function DropdownMenuItem({
   );
 }
 
+/**
+ * Renders a checkbox item for a dropdown menu.
+ */
 function DropdownMenuCheckboxItem({
   className,
   children,
@@ -119,6 +140,9 @@ function DropdownMenuRadioGroup({
   );
 }
 
+/**
+ * Renders a radio item for a dropdown menu.
+ */
 function DropdownMenuRadioItem({
   className,
   children,
@@ -143,6 +167,9 @@ function DropdownMenuRadioItem({
   );
 }
 
+/**
+ * Renders a label for the dropdown menu with optional inset styling.
+ */
 function DropdownMenuLabel({
   className,
   inset,
@@ -163,6 +190,9 @@ function DropdownMenuLabel({
   );
 }
 
+/**
+ * Renders a separator for a dropdown menu.
+ */
 function DropdownMenuSeparator({
   className,
   ...props
@@ -192,12 +222,18 @@ function DropdownMenuShortcut({
   );
 }
 
+/**
+ * Renders a DropdownMenuPrimitive.Sub component with provided props.
+ */
 function DropdownMenuSub({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Sub>) {
   return <DropdownMenuPrimitive.Sub data-slot='dropdown-menu-sub' {...props} />;
 }
 
+/**
+ * Renders a dropdown menu sub-trigger component with optional inset styling.
+ */
 function DropdownMenuSubTrigger({
   className,
   inset,
@@ -222,6 +258,9 @@ function DropdownMenuSubTrigger({
   );
 }
 
+/**
+ * Renders a dropdown menu sub-content component with specified className and props.
+ */
 function DropdownMenuSubContent({
   className,
   ...props

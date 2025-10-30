@@ -67,6 +67,9 @@ export function DataManagementSettings({
   const [isExporting, setIsExporting] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
 
+  /**
+   * Saves the new settings to local storage and updates the state.
+   */
   const saveSettings = (newSettings: Partial<DataSettings>) => {
     const updatedSettings = { ...settings, ...newSettings };
     setSettings(updatedSettings);
@@ -88,6 +91,9 @@ export function DataManagementSettings({
     }
   };
 
+  /**
+   * Handles the export of data by creating a JSON file and triggering a download.
+   */
   const handleExport = async () => {
     try {
       setIsExporting(true);
@@ -161,6 +167,9 @@ export function DataManagementSettings({
     }
   };
 
+  /**
+   * Clears all user data and displays a success or error message.
+   */
   const handleClearAllData = async () => {
     try {
       // This would typically call an API endpoint to clear all user data

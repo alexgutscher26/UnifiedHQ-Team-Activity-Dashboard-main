@@ -6,28 +6,43 @@ import { XIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
+/**
+ * Renders a Sheet component using SheetPrimitive.Root.
+ */
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
   return <SheetPrimitive.Root data-slot='sheet' {...props} />;
 }
 
+/**
+ * Renders a SheetPrimitive.Trigger component with provided props.
+ */
 function SheetTrigger({
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Trigger>) {
   return <SheetPrimitive.Trigger data-slot='sheet-trigger' {...props} />;
 }
 
+/**
+ * Renders a close button for the sheet component.
+ */
 function SheetClose({
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Close>) {
   return <SheetPrimitive.Close data-slot='sheet-close' {...props} />;
 }
 
+/**
+ * Renders a SheetPrimitive.Portal component with the given props.
+ */
 function SheetPortal({
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Portal>) {
   return <SheetPrimitive.Portal data-slot='sheet-portal' {...props} />;
 }
 
+/**
+ * Renders a SheetOverlay component with specified className and props.
+ */
 function SheetOverlay({
   className,
   ...props
@@ -44,6 +59,18 @@ function SheetOverlay({
   );
 }
 
+/**
+ * Renders the content of a sheet component with customizable positioning and styling.
+ *
+ * The function accepts a `side` parameter to determine the position of the sheet (top, right, bottom, or left)
+ * and applies corresponding animations and styles based on its state. It also integrates with `SheetPrimitive.Content`
+ * and includes a close button for user interaction. Additional props can be passed to customize the component further.
+ *
+ * @param {Object} props - The properties for the SheetContent component.
+ * @param {string} [props.className] - Optional additional class names for styling.
+ * @param {React.ReactNode} props.children - The content to be displayed inside the sheet.
+ * @param {'top' | 'right' | 'bottom' | 'left'} [props.side='right'] - The position of the sheet.
+ */
 function SheetContent({
   className,
   children,
@@ -114,6 +141,9 @@ function SheetTitle({
   );
 }
 
+/**
+ * Renders a SheetPrimitive.Description component with additional props and className.
+ */
 function SheetDescription({
   className,
   ...props

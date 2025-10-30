@@ -40,6 +40,9 @@ export function ScrollOptimizationDemo() {
   );
 
   // Generate large dataset for testing
+  /**
+   * Generates an array of test data items.
+   */
   const generateTestData = (count: number) => {
     return Array.from({ length: count }, (_, i) => ({
       id: i,
@@ -52,6 +55,9 @@ export function ScrollOptimizationDemo() {
 
   const testData = generateTestData(1000);
 
+  /**
+   * Renders a test item with its details.
+   */
   const renderTestItem = (item: any, index: number) => (
     <div
       key={item.id}

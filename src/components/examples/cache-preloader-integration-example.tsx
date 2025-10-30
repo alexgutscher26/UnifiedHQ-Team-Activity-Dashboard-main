@@ -23,6 +23,9 @@ interface DashboardWithPreloadingProps {
   userId?: string;
 }
 
+/**
+ * Renders the dashboard with preloading recommendations and tracks user navigation.
+ */
 export function DashboardWithPreloading({
   userId,
 }: DashboardWithPreloadingProps) {
@@ -40,11 +43,17 @@ export function DashboardWithPreloading({
     // Navigate to GitHub section
   };
 
+  /**
+   * Navigates to the Slack section of the dashboard.
+   */
   const handleViewSlack = () => {
     trackNavigation('/dashboard/slack');
     // Navigate to Slack section
   };
 
+  /**
+   * Navigates to the AI summary section.
+   */
   const handleViewAISummary = () => {
     trackNavigation('/dashboard/ai-summary');
     // Navigate to AI summary section
@@ -145,6 +154,9 @@ export function NavigationWithTracking() {
     { path: '/settings', label: 'Settings' },
   ];
 
+  /**
+   * Handles navigation by tracking the path.
+   */
   const handleNavigation = (path: string) => {
     trackNavigation(path);
     // Perform actual navigation (e.g., router.push(path))
@@ -166,12 +178,15 @@ export function NavigationWithTracking() {
 }
 
 /**
- * Example of how to integrate with existing routing
+ * Integrates navigation tracking with an existing router.
  */
 export function useRouterWithPreloading() {
   const { trackNavigation } = useNavigationTracking();
 
   // This would integrate with your existing router (Next.js, React Router, etc.)
+  /**
+   * Navigates to the specified path while tracking the navigation.
+   */
   const navigateWithTracking = (path: string) => {
     // Track the navigation
     trackNavigation(path);

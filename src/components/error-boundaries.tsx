@@ -32,7 +32,7 @@ export function GlobalErrorBoundary({
 }
 
 /**
- * Error boundary for dashboard components
+ * Error boundary for handling errors in dashboard components.
  */
 export function DashboardErrorBoundary({
   children,
@@ -68,7 +68,7 @@ export function DashboardErrorBoundary({
 }
 
 /**
- * Error boundary for activity feed
+ * Error boundary component for handling activity feed errors.
  */
 export function ActivityFeedErrorBoundary({
   children,
@@ -107,7 +107,7 @@ export function ActivityFeedErrorBoundary({
 }
 
 /**
- * Error boundary for GitHub integration
+ * Renders an error boundary for GitHub integration.
  */
 export function GitHubErrorBoundary({
   children,
@@ -156,7 +156,7 @@ export function GitHubErrorBoundary({
 }
 
 /**
- * Error boundary for authentication components
+ * Renders an error boundary for authentication components.
  */
 export function AuthErrorBoundary({ children }: { children: React.ReactNode }) {
   return (
@@ -192,7 +192,7 @@ export function AuthErrorBoundary({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Error boundary for API components
+ * Renders an error boundary for API components with a retry option.
  */
 export function ApiErrorBoundary({ children }: { children: React.ReactNode }) {
   return (
@@ -228,7 +228,7 @@ export function ApiErrorBoundary({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Error boundary for form components
+ * Renders an error boundary for form components.
  */
 export function FormErrorBoundary({ children }: { children: React.ReactNode }) {
   return (

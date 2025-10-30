@@ -18,6 +18,15 @@ interface ToastProps {
   onRemove: (id: string) => void;
 }
 
+/**
+ * Renders a toast notification component with entrance and exit animations.
+ *
+ * The component manages its visibility state and triggers animations based on the toast's lifecycle.
+ * It displays an icon and message based on the toast type and provides a button to remove the toast,
+ * which triggers a callback function after a delay. The background color is determined by the toast type.
+ *
+ * @param {ToastProps} props - The properties for the ToastComponent, including the toast object and onRemove callback.
+ */
 function ToastComponent({ toast, onRemove }: ToastProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
@@ -28,6 +37,9 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
     return () => clearTimeout(timer);
   }, []);
 
+  /**
+   * Initiates the removal process for a toast notification.
+   */
   const handleRemove = () => {
     setIsLeaving(true);
     setTimeout(() => onRemove(toast.id), 300);
@@ -47,6 +59,14 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
     }
   };
 
+  /**
+   * Get the background color based on the type of toast notification.
+   *
+   * The function evaluates the `toast.type` and returns a corresponding CSS class string for the background and border colors.
+   * It handles four cases: 'success', 'error', 'warning', and 'info', defaulting to 'info' if none match.
+   *
+   * @returns A string representing the CSS classes for the background and border colors.
+   */
   const getBackgroundColor = () => {
     switch (toast.type) {
       case 'success':
@@ -90,6 +110,9 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
   );
 }
 
+/**
+ * Renders a container for displaying toast notifications.
+ */
 export function ToastContainer() {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
@@ -114,6 +137,9 @@ export function ToastContainer() {
 }
 
 // Hook for programmatic toast usage
+/**
+ * Provides methods to show and remove toasts.
+ */
 export function useToast() {
   return {
     show: toastManager.show,

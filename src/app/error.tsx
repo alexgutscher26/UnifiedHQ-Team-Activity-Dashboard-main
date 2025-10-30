@@ -11,6 +11,9 @@ import {
 } from '@/components/ui/card';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
+/**
+ * Displays an error message and provides options to reset or go to the home page.
+ */
 export default function Error({
   error,
   reset,

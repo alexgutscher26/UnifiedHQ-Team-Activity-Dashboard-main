@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 /**
  * Handles the GET request to retrieve user-related GitHub data.
  *
- * This function first checks the user's session for authentication. If the user is authenticated, it verifies the GitHub connection and retrieves selected repositories and stored activities. It then tests access to the GitHub API and the first selected repository, returning relevant data or error messages as JSON responses.
+ * This function first checks the user's session for authentication. If authenticated, it verifies the GitHub connection and retrieves selected repositories and stored activities. It tests access to the GitHub API and the first selected repository, returning relevant data or error messages as JSON responses. The function also handles various error scenarios and returns appropriate status codes.
  *
  * @param request - The incoming NextRequest object containing request headers.
  * @returns A JSON response containing user information, connection status, selected repositories, stored activities, and results of GitHub API tests.

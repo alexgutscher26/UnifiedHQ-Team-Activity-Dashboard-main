@@ -6,6 +6,9 @@ import { CheckIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
+/**
+ * Renders a customizable checkbox component using CheckboxPrimitive.
+ */
 function Checkbox({
   className,
   ...props

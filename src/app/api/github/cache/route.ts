@@ -5,18 +5,20 @@ import {
   GitHubCacheWarming,
 } from '@/lib/integrations/github-cached';
 import { RedisCache, CacheKeyGenerator } from '@/lib/redis';
-
 /**
- * GitHub cache management endpoint
- * Provides cache statistics, warming, and invalidation capabilities
+ * GitHub cache management endpoint.
+ *
+ * This function handles various actions related to GitHub cache management, including retrieving cache statistics, warming user repositories, and warming frequently accessed repositories. It checks for user authentication and responds with appropriate JSON data based on the requested action. If an error occurs during processing, it logs the error and returns a failure response.
+ *
+ * @param request - The NextRequest object containing the request details.
+ * @returns A JSON response with cache statistics, warming status, or available actions.
+ * @throws Error If an error occurs while managing the GitHub cache.
  */
-
 export async function GET(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
       headers: request.headers,
     });
-
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -85,6 +87,18 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * Handles the deletion of GitHub cache based on the specified scope.
+ *
+ * This function retrieves the user session from the request headers and checks for authorization.
+ * Depending on the provided scope ('user', 'memory', or 'redis'), it clears the appropriate cache
+ * using the GitHubCacheManager. It returns a JSON response with the status and relevant information
+ * or an error message if the scope is invalid or if an error occurs during the process.
+ *
+ * @param request - The NextRequest object containing the request details.
+ * @returns A JSON response indicating the result of the cache clearing operation.
+ * @throws Error If an error occurs while clearing the cache.
+ */
 export async function DELETE(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
@@ -149,6 +163,15 @@ export async function DELETE(request: NextRequest) {
   }
 }
 
+/**
+ * Handles POST requests for GitHub cache actions.
+ *
+ * This function retrieves the user session from the request headers and processes actions related to cache warming or invalidation for a specified repository. It validates the input and schedules cache warming or invalidates the cache based on the action provided. If the action is invalid or required parameters are missing, appropriate error responses are returned.
+ *
+ * @param request - The NextRequest object containing the request data.
+ * @returns A JSON response indicating the result of the cache action.
+ * @throws Error If an error occurs during the processing of the request.
+ */
 export async function POST(request: NextRequest) {
   try {
     const session = await auth.api.getSession({

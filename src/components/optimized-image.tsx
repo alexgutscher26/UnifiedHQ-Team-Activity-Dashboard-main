@@ -86,11 +86,17 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
     }
   }, [priority, src]);
 
+  /**
+   * Handles the load event by setting loading state and invoking onLoad callback.
+   */
   const handleLoad = () => {
     setIsLoading(false);
     onLoad?.();
   };
 
+  /**
+   * Handles error by updating loading state and error state, and optionally sets a fallback image source.
+   */
   const handleError = () => {
     setIsLoading(false);
     setHasError(true);
@@ -101,6 +107,9 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
   };
 
   // Get quality value
+  /**
+   * Retrieves the quality value based on the input quality type.
+   */
   const getQualityValue = () => {
     if (typeof quality === 'number') return quality;
 

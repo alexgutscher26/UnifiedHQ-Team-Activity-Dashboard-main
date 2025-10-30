@@ -64,6 +64,9 @@ export function SlackInstallationGuide({
     ? `https://slack.com/oauth/v2/authorize?client_id=${clientId}&scope=channels:read,channels:history,groups:read,im:history,mpim:history,users:read,team:read,channels:join&redirect_uri=${encodeURIComponent(window.location.origin + '/api/integrations/slack/callback')}`
     : '';
 
+  /**
+   * Copies the specified text to the clipboard and manages the copied state.
+   */
   const copyToClipboard = async (text: string, step: number) => {
     try {
       await navigator.clipboard.writeText(text);

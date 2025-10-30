@@ -11,24 +11,36 @@ function Drawer({
   return <DrawerPrimitive.Root data-slot='drawer' {...props} />;
 }
 
+/**
+ * Renders a DrawerPrimitive.Trigger component with provided props.
+ */
 function DrawerTrigger({
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Trigger>) {
   return <DrawerPrimitive.Trigger data-slot='drawer-trigger' {...props} />;
 }
 
+/**
+ * Renders a DrawerPrimitive.Portal component with provided props.
+ */
 function DrawerPortal({
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Portal>) {
   return <DrawerPrimitive.Portal data-slot='drawer-portal' {...props} />;
 }
 
+/**
+ * Renders a DrawerPrimitive.Close component with provided props.
+ */
 function DrawerClose({
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Close>) {
   return <DrawerPrimitive.Close data-slot='drawer-close' {...props} />;
 }
 
+/**
+ * Renders a DrawerOverlay component with specified className and props.
+ */
 function DrawerOverlay({
   className,
   ...props
@@ -45,6 +57,9 @@ function DrawerOverlay({
   );
 }
 
+/**
+ * Renders the content of a drawer with overlay and customizable properties.
+ */
 function DrawerContent({
   className,
   children,
@@ -72,6 +87,9 @@ function DrawerContent({
   );
 }
 
+/**
+ * Renders a header for the drawer component with customizable class names.
+ */
 function DrawerHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -85,6 +103,9 @@ function DrawerHeader({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * Renders a footer for the drawer component.
+ */
 function DrawerFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -95,6 +116,9 @@ function DrawerFooter({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * Renders a Drawer title component with optional className and props.
+ */
 function DrawerTitle({
   className,
   ...props

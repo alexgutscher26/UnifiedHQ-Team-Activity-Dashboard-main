@@ -1,5 +1,8 @@
 import { cn } from '@/lib/utils';
 
+/**
+ * Renders a styled <kbd> element with additional props and className.
+ */
 function Kbd({ className, ...props }: React.ComponentProps<'kbd'>) {
   return (
     <kbd
@@ -15,6 +18,9 @@ function Kbd({ className, ...props }: React.ComponentProps<'kbd'>) {
   );
 }
 
+/**
+ * Renders a kbd element with additional props and className.
+ */
 function KbdGroup({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <kbd

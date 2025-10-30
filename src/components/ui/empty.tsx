@@ -2,6 +2,9 @@ import { cva, type VariantProps } from 'class-variance-authority';
 
 import { cn } from '@/lib/utils';
 
+/**
+ * Renders an empty state component with customizable className and props.
+ */
 function Empty({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -15,6 +18,9 @@ function Empty({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * Renders an empty header component with optional className and props.
+ */
 function EmptyHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -43,6 +49,9 @@ const emptyMediaVariants = cva(
   }
 );
 
+/**
+ * Renders an empty media component with specified variant and className.
+ */
 function EmptyMedia({
   className,
   variant = 'default',
@@ -81,6 +90,9 @@ function EmptyDescription({ className, ...props }: React.ComponentProps<'p'>) {
   );
 }
 
+/**
+ * Renders an empty content placeholder with customizable className and props.
+ */
 function EmptyContent({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div

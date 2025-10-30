@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 /**
  * Handles the GET request to retrieve user-related data.
  *
- * This function first checks the user's session for authentication. If the user is authenticated, it retrieves the user's Slack connection, selected channels, and recent activities from the database. The results are then formatted and returned as a JSON response. In case of an error, it logs the error and returns a 500 status with error details.
+ * This function checks the user's session for authentication and retrieves the user's Slack connection, selected channels, and recent activities from the database. It formats the results into a JSON response, including counts of activities and channels. In case of an error, it logs the error and returns a 500 status with error details.
  *
  * @param request - The incoming NextRequest object containing request headers.
  * @returns A JSON response containing user data, including Slack connection, selected channels, and activities.

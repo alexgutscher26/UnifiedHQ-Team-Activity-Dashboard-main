@@ -16,6 +16,17 @@ interface TeamMember {
   reviews: number;
 }
 
+/**
+ * Retrieve the team members for the authenticated user.
+ *
+ * This function first checks the user's session for authentication. If the user is not authenticated, it returns a 401 Unauthorized response.
+ * If authenticated, it constructs a user object and simulates fetching team members, returning the current user as the only member for now.
+ * In case of an error during the process, it logs the error and returns a 500 response with an error message.
+ *
+ * @param request - The NextRequest object containing the request headers for session validation.
+ * @returns A Promise that resolves to a NextResponse containing the team members data or an error message.
+ * @throws Error If an error occurs while fetching team members.
+ */
 async function getTeamMembers(request: NextRequest): Promise<NextResponse> {
   const session = await auth.api.getSession({
     headers: request.headers,

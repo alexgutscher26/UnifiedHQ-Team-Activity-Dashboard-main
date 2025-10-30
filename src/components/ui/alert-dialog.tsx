@@ -6,6 +6,9 @@ import * as AlertDialogPrimitive from '@radix-ui/react-alert-dialog';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
 
+/**
+ * Renders an AlertDialog component with the given props.
+ */
 function AlertDialog({
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Root>) {
@@ -28,6 +31,9 @@ function AlertDialogPortal({
   );
 }
 
+/**
+ * Renders an overlay for the alert dialog with specified className and props.
+ */
 function AlertDialogOverlay({
   className,
   ...props
@@ -44,6 +50,9 @@ function AlertDialogOverlay({
   );
 }
 
+/**
+ * Renders the content of an alert dialog with specified props and className.
+ */
 function AlertDialogContent({
   className,
   ...props
@@ -63,6 +72,9 @@ function AlertDialogContent({
   );
 }
 
+/**
+ * Renders an alert dialog header component.
+ */
 function AlertDialogHeader({
   className,
   ...props
@@ -76,6 +88,9 @@ function AlertDialogHeader({
   );
 }
 
+/**
+ * Renders the footer of an alert dialog.
+ */
 function AlertDialogFooter({
   className,
   ...props
@@ -92,6 +107,9 @@ function AlertDialogFooter({
   );
 }
 
+/**
+ * Renders an AlertDialog title with optional className and props.
+ */
 function AlertDialogTitle({
   className,
   ...props
@@ -118,6 +136,9 @@ function AlertDialogDescription({
   );
 }
 
+/**
+ * Renders an AlertDialogAction component with optional className and props.
+ */
 function AlertDialogAction({
   className,
   ...props
@@ -130,6 +151,9 @@ function AlertDialogAction({
   );
 }
 
+/**
+ * Renders a cancel button for an alert dialog.
+ */
 function AlertDialogCancel({
   className,
   ...props

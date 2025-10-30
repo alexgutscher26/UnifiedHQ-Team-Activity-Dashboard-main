@@ -30,6 +30,16 @@ export function AISummary() {
   useMemoryLeakPrevention('AISummary');
 
   // Fetch real AI summary from API
+  /**
+   * Generates an AI summary by fetching data from the server.
+   *
+   * The function makes a POST request to the '/api/ai-summary/generate' endpoint and processes the response.
+   * If the response is successful, it updates the summary state with key highlights, action items, and the generation time.
+   * In case of an error, it logs the error and sets an empty summary to maintain the component structure.
+   *
+   * @returns {Promise<void>} A promise that resolves when the summary generation is complete.
+   * @throws Error If the response is not ok or if the data does not contain the expected structure.
+   */
   const generateSummary = async () => {
     try {
       const response = await fetch('/api/ai-summary/generate', {

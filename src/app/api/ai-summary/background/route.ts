@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 /**
  * Handles the POST request for generating AI summaries in the background.
  *
- * This function verifies the authorization token, checks the connection to the AI service, and retrieves users with recent activity who lack recent summaries. It processes each user to generate and save AI summaries, while handling potential errors and logging the results. The function also includes a delay to prevent rate limiting during summary generation.
+ * This function verifies the authorization token, checks the connection to the AI service, and retrieves users with recent activity who lack recent summaries. It processes each user to generate and save AI summaries, while handling potential errors and logging the results. A delay is included to prevent rate limiting during summary generation.
  *
  * @param request - The NextRequest object containing the request data.
  * @returns A JSON response indicating the success of the operation and the results of the summary generation.
@@ -191,11 +191,11 @@ export async function POST(request: NextRequest) {
 /**
  * Handles the GET request to check the health status of the AI service.
  *
- * This function validates the connection to the AI service using the
- * AISummaryService. It returns a JSON response indicating whether the
- * service is connected or disconnected, along with a timestamp. In case
- * of an error during the connection validation, it returns an unhealthy
- * status with the error message.
+ * This function attempts to validate the connection to the AI service using
+ * the AISummaryService. If the connection is successful, it returns a JSON
+ * response indicating the service is healthy, along with a timestamp. If an
+ * error occurs during validation, it returns an unhealthy status with the
+ * corresponding error message.
  *
  * @param request - The NextRequest object representing the incoming request.
  */

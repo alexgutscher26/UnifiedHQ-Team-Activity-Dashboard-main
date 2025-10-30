@@ -5,6 +5,9 @@ import { ChevronDownIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
+/**
+ * Renders a navigation menu with optional viewport support.
+ */
 function NavigationMenu({
   className,
   children,
@@ -29,6 +32,9 @@ function NavigationMenu({
   );
 }
 
+/**
+ * Renders a navigation menu list component.
+ */
 function NavigationMenuList({
   className,
   ...props
@@ -45,6 +51,9 @@ function NavigationMenuList({
   );
 }
 
+/**
+ * Renders a navigation menu item with optional className and props.
+ */
 function NavigationMenuItem({
   className,
   ...props
@@ -62,6 +71,9 @@ const navigationMenuTriggerStyle = cva(
   'group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground disabled:pointer-events-none disabled:opacity-50 data-[state=open]:hover:bg-accent data-[state=open]:text-accent-foreground data-[state=open]:focus:bg-accent data-[state=open]:bg-accent/50 focus-visible:ring-ring/50 outline-none transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1'
 );
 
+/**
+ * Renders a navigation menu trigger component with optional className and children.
+ */
 function NavigationMenuTrigger({
   className,
   children,
@@ -82,6 +94,9 @@ function NavigationMenuTrigger({
   );
 }
 
+/**
+ * Renders the navigation menu content with specified className and props.
+ */
 function NavigationMenuContent({
   className,
   ...props
@@ -99,6 +114,9 @@ function NavigationMenuContent({
   );
 }
 
+/**
+ * Renders a navigation menu viewport component.
+ */
 function NavigationMenuViewport({
   className,
   ...props
@@ -119,6 +137,9 @@ function NavigationMenuViewport({
   );
 }
 
+/**
+ * Renders a navigation menu link with specified styles and props.
+ */
 function NavigationMenuLink({
   className,
   ...props
@@ -135,6 +156,9 @@ function NavigationMenuLink({
   );
 }
 
+/**
+ * Renders a navigation menu indicator component.
+ */
 function NavigationMenuIndicator({
   className,
   ...props

@@ -6,24 +6,36 @@ import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
+/**
+ * Renders a SelectPrimitive.Root component with provided props.
+ */
 function Select({
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Root>) {
   return <SelectPrimitive.Root data-slot='select' {...props} />;
 }
 
+/**
+ * Renders a SelectPrimitive.Group component with provided props.
+ */
 function SelectGroup({
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Group>) {
   return <SelectPrimitive.Group data-slot='select-group' {...props} />;
 }
 
+/**
+ * Renders a SelectPrimitive.Value component with provided props.
+ */
 function SelectValue({
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Value>) {
   return <SelectPrimitive.Value data-slot='select-value' {...props} />;
 }
 
+/**
+ * Renders a customizable select trigger component.
+ */
 function SelectTrigger({
   className,
   size = 'default',
@@ -85,6 +97,9 @@ function SelectContent({
   );
 }
 
+/**
+ * Renders a label for the select component with additional props and styling.
+ */
 function SelectLabel({
   className,
   ...props
@@ -98,6 +113,9 @@ function SelectLabel({
   );
 }
 
+/**
+ * Renders a selectable item in a dropdown with custom styling and children.
+ */
 function SelectItem({
   className,
   children,
@@ -122,6 +140,9 @@ function SelectItem({
   );
 }
 
+/**
+ * Renders a separator for the Select component.
+ */
 function SelectSeparator({
   className,
   ...props
@@ -135,6 +156,9 @@ function SelectSeparator({
   );
 }
 
+/**
+ * Renders a ScrollUpButton component with optional className and props.
+ */
 function SelectScrollUpButton({
   className,
   ...props

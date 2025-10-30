@@ -21,6 +21,21 @@ interface ImageGalleryProps {
   interval?: number;
 }
 
+/**
+ * Renders an image gallery with navigation and fullscreen capabilities.
+ *
+ * The component manages the current image index, handles keyboard navigation, and supports auto-play functionality.
+ * It also provides a thumbnail view and announces changes to the current image for accessibility.
+ * The gallery displays a message when there are no images and allows users to navigate through images using buttons or keyboard shortcuts.
+ *
+ * @param {Object} props - The properties for the ImageGallery component.
+ * @param {Array} props.images - An array of image objects to display in the gallery.
+ * @param {string} [props.className=''] - Optional additional class names for styling.
+ * @param {boolean} [props.showThumbnails=true] - Flag to show or hide thumbnails.
+ * @param {boolean} [props.autoPlay=false] - Flag to enable automatic image transitions.
+ * @param {number} [props.interval=5000] - The interval time in milliseconds for auto-playing images.
+ * @returns {JSX.Element} The rendered image gallery component.
+ */
 export const ImageGallery: React.FC<ImageGalleryProps> = ({
   images,
   className = '',
@@ -41,6 +56,9 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
     );
   };
 
+  /**
+   * Updates the current image index to the previous image and announces it.
+   */
   const prevImage = () => {
     setCurrentIndex(prev => (prev - 1 + images.length) % images.length);
     announce(
@@ -48,6 +66,9 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
     );
   };
 
+  /**
+   * Navigates to the specified image and announces its details.
+   */
   const goToImage = (index: number) => {
     setCurrentIndex(index);
     announce(`Image ${index + 1} of ${images.length}: ${images[index].alt}`);
@@ -73,6 +94,16 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
 
   // Keyboard navigation
   React.useEffect(() => {
+    /**
+     * Handles key down events for fullscreen navigation.
+     *
+     * This function checks if the application is in fullscreen mode and responds to specific key presses.
+     * If the 'Escape' key is pressed, it calls the closeFullscreen function.
+     * The 'ArrowLeft' and 'ArrowRight' keys trigger the prevImage and nextImage functions, respectively,
+     * allowing users to navigate through images while in fullscreen.
+     *
+     * @param e - The KeyboardEvent object representing the key down event.
+     */
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isFullscreen) {
         switch (e.key) {

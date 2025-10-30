@@ -24,6 +24,9 @@ type ChartContextProps = {
 
 const ChartContext = React.createContext<ChartContextProps | null>(null);
 
+/**
+ * Retrieves the ChartContext, ensuring it is used within a <ChartContainer />.
+ */
 function useChart() {
   const context = React.useContext(ChartContext);
 
@@ -34,6 +37,9 @@ function useChart() {
   return context;
 }
 
+/**
+ * A component that renders a chart container with a unique ID and configuration.
+ */
 function ChartContainer({
   id,
   className,
@@ -104,6 +110,26 @@ ${colorConfig
 
 const ChartTooltip = RechartsPrimitive.Tooltip;
 
+/**
+ * Renders the content of a chart tooltip based on the provided data.
+ *
+ * This function utilizes React hooks and memoization to efficiently display tooltip information. It checks if the tooltip is active and if there is payload data to display. The tooltip label is formatted based on the provided labelFormatter and other configurations. Each item in the payload is rendered with its corresponding indicator and value, allowing for customization based on the indicator type and additional props.
+ *
+ * @param active - Indicates whether the tooltip is active.
+ * @param payload - The data to be displayed in the tooltip.
+ * @param className - Additional class names for styling the tooltip.
+ * @param indicator - The type of indicator to display (line, dot, or dashed).
+ * @param hideLabel - Flag to hide the label in the tooltip.
+ * @param hideIndicator - Flag to hide the indicator in the tooltip.
+ * @param label - The label to display in the tooltip.
+ * @param labelFormatter - A function to format the label.
+ * @param labelClassName - Additional class names for styling the label.
+ * @param formatter - A function to format the item values.
+ * @param color - The color of the indicator.
+ * @param nameKey - The key to access the name in the payload.
+ * @param labelKey - The key to access the label in the payload.
+ * @returns A JSX element representing the tooltip content or null if not active.
+ */
 function ChartTooltipContent({
   active,
   payload,
@@ -250,6 +276,18 @@ function ChartTooltipContent({
 
 const ChartLegend = RechartsPrimitive.Legend;
 
+/**
+ * Renders a legend for a chart based on the provided payload.
+ *
+ * The function checks if the payload is empty and returns null if so. It then maps over the payload to create a visual representation of each item, utilizing the configuration obtained from getPayloadConfigFromPayload. The legend items can optionally display an icon based on the hideIcon flag and the item's configuration.
+ *
+ * @param className - Additional class names to apply to the legend container.
+ * @param hideIcon - A flag to determine whether to hide the icons in the legend.
+ * @param payload - The data to be displayed in the legend.
+ * @param verticalAlign - The vertical alignment of the legend, defaulting to 'bottom'.
+ * @param nameKey - An optional key to use for naming the legend items.
+ * @returns A JSX element representing the chart legend, or null if the payload is empty.
+ */
 function ChartLegendContent({
   className,
   hideIcon = false,
@@ -305,6 +343,18 @@ function ChartLegendContent({
 }
 
 // Helper to extract item config from a payload.
+/**
+ * Retrieve the configuration value from a payload based on a specified key.
+ *
+ * The function first checks if the payload is a valid object. It then attempts to extract the 'payload' property if it exists.
+ * Depending on the presence of the key in either the payload or its nested payload, it determines the appropriate configuration label key
+ * and retrieves the corresponding value from the config object.
+ *
+ * @param config - The ChartConfig object containing configuration values.
+ * @param payload - The input payload from which to extract the configuration.
+ * @param key - The key used to look up the configuration value.
+ * @returns The configuration value associated with the specified key, or undefined if not found.
+ */
 function getPayloadConfigFromPayload(
   config: ChartConfig,
   payload: unknown,

@@ -7,9 +7,9 @@ const prisma = new PrismaClient();
 /**
  * Handles the POST request to clear the Slack cache for the authenticated user.
  *
- * This function retrieves the user session from the request headers and checks if the user is authenticated.
- * If the user is not authenticated, it returns a 401 Unauthorized response. If authenticated, it deletes all
- * Slack cache entries associated with the user and logs the action. In case of any errors during the process,
+ * This function retrieves the user session from the request headers using the auth.api.getSession method.
+ * It checks if the user is authenticated; if not, it returns a 401 Unauthorized response. If authenticated,
+ * it deletes all Slack cache entries associated with the userId and logs the action. In case of any errors,
  * it returns a 500 error response.
  *
  * @param request - The NextRequest object containing the request details.

@@ -70,6 +70,15 @@ export function ChannelSelector({ isConnected }: ChannelSelectorProps) {
     setSelectedCount(channels.filter(channel => channel.selected).length);
   }, [channels]);
 
+  /**
+   * Fetch the list of Slack channels and update the state accordingly.
+   *
+   * The function initiates a loading state, makes an API call to fetch channels, and processes the response.
+   * If the response is successful, it updates the channels state. In case of an error, it checks for specific error codes
+   * and displays appropriate toast notifications. Finally, it resets the loading state.
+   *
+   * @returns {Promise<void>} A promise that resolves when the fetch operation is complete.
+   */
   const fetchChannels = async () => {
     setIsLoading(true);
     try {
@@ -104,6 +113,9 @@ export function ChannelSelector({ isConnected }: ChannelSelectorProps) {
     }
   };
 
+  /**
+   * Toggles the selected state of a given channel.
+   */
   const toggleChannel = (channel: Channel) => {
     setChannels(prev =>
       prev.map(c => (c.id === channel.id ? { ...c, selected: !c.selected } : c))
@@ -175,6 +187,16 @@ export function ChannelSelector({ isConnected }: ChannelSelectorProps) {
     }
   };
 
+  /**
+   * Get the label for a given channel type.
+   *
+   * This function evaluates the type of the provided channel and returns a corresponding label.
+   * It handles various channel types such as 'public_channel', 'private_channel', 'im', and 'mpim',
+   * returning a default label for any unrecognized type.
+   *
+   * @param channel - The channel object containing the type to be evaluated.
+   * @returns The label corresponding to the channel type.
+   */
   const getChannelTypeLabel = (channel: Channel) => {
     switch (channel.type) {
       case 'public_channel':

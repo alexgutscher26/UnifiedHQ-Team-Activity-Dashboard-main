@@ -6,12 +6,18 @@ import { ChevronDownIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
+/**
+ * Renders an Accordion component using AccordionPrimitive.Root.
+ */
 function Accordion({
   ...props
 }: React.ComponentProps<typeof AccordionPrimitive.Root>) {
   return <AccordionPrimitive.Root data-slot='accordion' {...props} />;
 }
 
+/**
+ * Renders an Accordion item with specified className and props.
+ */
 function AccordionItem({
   className,
   ...props

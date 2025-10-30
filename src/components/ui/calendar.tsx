@@ -11,6 +11,21 @@ import { DayButton, DayPicker, getDefaultClassNames } from 'react-day-picker';
 import { cn } from '@/lib/utils';
 import { Button, buttonVariants } from '@/components/ui/button';
 
+/**
+ * Renders a customizable calendar component using DayPicker.
+ *
+ * The Calendar function accepts various props to configure its appearance and behavior, including class names, button variants, and formatters. It utilizes the getDefaultClassNames function to set default styles and merges them with user-defined classNames. The DayPicker component is then rendered with the specified configurations, including custom components for navigation and day buttons.
+ *
+ * @param {Object} props - The properties for the Calendar component.
+ * @param {string} [props.className] - Additional class names for the calendar.
+ * @param {Object} [props.classNames] - Custom class names for various parts of the calendar.
+ * @param {boolean} [props.showOutsideDays=true] - Whether to show days outside the current month.
+ * @param {string} [props.captionLayout='label'] - Layout style for the caption.
+ * @param {string} [props.buttonVariant='ghost'] - Variant style for buttons.
+ * @param {Object} [props.formatters] - Custom formatters for date display.
+ * @param {Object} [props.components] - Custom components to override default ones.
+ * @param {...any} props - Additional props passed to the DayPicker component.
+ */
 function Calendar({
   className,
   classNames,
@@ -172,6 +187,17 @@ function Calendar({
   );
 }
 
+/**
+ * Renders a button for a specific day in a calendar.
+ *
+ * The CalendarDayButton component utilizes React's useRef and useEffect hooks to manage focus on the button based on the provided modifiers. It constructs a button with various data attributes to indicate selection and range status, applying default and custom class names for styling. The button's appearance changes based on the modifiers, ensuring a responsive and interactive user experience.
+ *
+ * @param {Object} props - The properties for the CalendarDayButton component.
+ * @param {string} [props.className] - Additional class names to apply to the button.
+ * @param {Object} props.day - The day object containing date information.
+ * @param {Object} props.modifiers - An object indicating the state of the day (e.g., focused, selected, range).
+ * @param {...any} props - Additional props to pass to the Button component.
+ */
 function CalendarDayButton({
   className,
   day,

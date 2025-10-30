@@ -34,6 +34,14 @@ interface IntegrationStatus {
   details?: string;
 }
 
+/**
+ * Manages integration settings for GitHub and Slack, including connection, disconnection, and synchronization.
+ *
+ * This function initializes the integration status for GitHub and Slack, loading their connection states and details. It provides methods to connect, disconnect, and sync each integration, updating the UI accordingly. Error handling is implemented to manage failed requests, displaying appropriate messages to the user.
+ *
+ * @param onSettingsChange - A callback function that is invoked when the settings change.
+ * @returns void
+ */
 export function IntegrationSettings({
   onSettingsChange,
 }: IntegrationSettingsProps) {
@@ -50,6 +58,16 @@ export function IntegrationSettings({
     loadIntegrationStatus();
   }, []);
 
+  /**
+   * Load the integration status for GitHub and Slack.
+   *
+   * This function fetches the status of GitHub and Slack integrations by making API calls to their respective endpoints.
+   * It updates the state with the connection status, last sync time, and additional details for each integration.
+   * In case of an error during the fetch operations, it logs the error and displays a toast notification to the user.
+   *
+   * @returns {Promise<void>} A promise that resolves when the integration status has been loaded.
+   * @throws {Error} If there is an error during the fetch operations.
+   */
   const loadIntegrationStatus = async () => {
     try {
       setIsLoading(true);
@@ -93,6 +111,15 @@ export function IntegrationSettings({
     }
   };
 
+  /**
+   * Handles the connection process for a specified integration.
+   *
+   * The function updates the integration status to 'loading', makes a POST request to initiate the connection,
+   * and redirects the user to the provided URL if the response is successful. In case of an error, it logs the
+   * error, updates the integration status to 'error', and displays a toast notification with the error message.
+   *
+   * @param integration - The name of the integration to connect.
+   */
   const handleConnect = async (integration: string) => {
     try {
       setIntegrations(prev => ({
@@ -126,6 +153,15 @@ export function IntegrationSettings({
     }
   };
 
+  /**
+   * Handles the disconnection of an integration.
+   *
+   * This function updates the integration status to 'loading', sends a POST request to disconnect the specified integration,
+   * and manages the response. If the disconnection is successful, it loads the integration status and triggers a success toast.
+   * In case of an error, it updates the integration status to 'error' and displays an error toast.
+   *
+   * @param integration - The name of the integration to disconnect.
+   */
   const handleDisconnect = async (integration: string) => {
     try {
       setIntegrations(prev => ({
@@ -167,6 +203,15 @@ export function IntegrationSettings({
     }
   };
 
+  /**
+   * Handles the synchronization of a specified integration.
+   *
+   * This function updates the integration's status to 'loading', makes a POST request to sync the integration,
+   * and handles the response. If the sync is successful, it loads the integration status and triggers a success
+   * notification. In case of an error, it updates the integration's status to 'error' and displays an error notification.
+   *
+   * @param integration - The name of the integration to sync.
+   */
   const handleSync = async (integration: string) => {
     try {
       setIntegrations(prev => ({
@@ -205,6 +250,15 @@ export function IntegrationSettings({
     }
   };
 
+  /**
+   * Retrieves the appropriate icon based on the specified integration type.
+   *
+   * The function evaluates the provided integration string and returns a corresponding icon.
+   * It checks for specific cases such as 'github' and 'slack', returning their respective icons.
+   * If the integration does not match any known cases, a default icon (IconSettings) is returned.
+   *
+   * @param integration - The type of integration for which the icon is to be retrieved.
+   */
   const getIntegrationIcon = (integration: string) => {
     switch (integration) {
       case 'github':
@@ -216,6 +270,14 @@ export function IntegrationSettings({
     }
   };
 
+  /**
+   * Get the status badge based on the integration status.
+   *
+   * This function evaluates the status of an integration and returns a corresponding Badge component with appropriate styling and text. It handles various states such as 'connected', 'disconnected', 'error', 'loading', and a default case for unknown statuses.
+   *
+   * @param status - The integration status to evaluate.
+   * @returns A Badge component representing the current status.
+   */
   const getStatusBadge = (status: IntegrationStatus) => {
     switch (status.status) {
       case 'connected':

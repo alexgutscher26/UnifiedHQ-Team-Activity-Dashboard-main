@@ -124,6 +124,17 @@ export function PerformanceDashboard({
     return change > 5 ? 'up' : change < -5 ? 'down' : 'neutral';
   };
 
+  /**
+   * Renders a trend icon based on the provided trend direction.
+   *
+   * The function takes a trend parameter which can be 'up', 'down', or 'neutral'.
+   * Depending on the value of trend, it returns a corresponding icon component
+   * with specific class names for styling. If the trend is 'up', it returns
+   * an upward trending icon; if 'down', a downward trending icon; otherwise,
+   * it returns a neutral div.
+   *
+   * @param {('up' | 'down' | 'neutral')} trend - The direction of the trend.
+   */
   const renderTrendIcon = (trend: 'up' | 'down' | 'neutral') => {
     switch (trend) {
       case 'up':

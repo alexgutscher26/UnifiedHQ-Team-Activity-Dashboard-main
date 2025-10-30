@@ -210,9 +210,9 @@ interface AccessibleSelectProps {
  * Renders an accessible select component with support for live announcements.
  *
  * This component utilizes the useAriaLiveAnnouncer to announce the selected option when the value changes,
- * provided the announceOnChange prop is true. It also manages the rendering of the select field,
- * including its label, description, error state, and required status. The options are dynamically generated
- * from the provided options array, ensuring that each option is represented correctly.
+ * provided the announceOnChange prop is true. It manages the rendering of the select field, including its label,
+ * description, error state, and required status. The options are dynamically generated from the provided options array,
+ * ensuring that each option is represented correctly.
  *
  * @param {Object} props - The properties for the AccessibleSelect component.
  * @param {string} props.label - The label for the select field.
@@ -380,7 +380,7 @@ interface AccessibleRadioGroupProps {
 /**
  * Renders an accessible radio group component with support for live announcements.
  *
- * This component displays a set of radio buttons based on the provided options. It handles value changes by announcing the selected option if `announceOnChange` is true. The component also manages accessibility attributes such as aria-describedby and aria-invalid based on the presence of description and error messages.
+ * This component displays a set of radio buttons based on the provided options. It handles value changes by announcing the selected option if `announceOnChange` is true. The component also manages accessibility attributes such as aria-describedby and aria-invalid based on the presence of description and error messages. The `handleValueChange` function is responsible for announcing the selection and invoking the `onValueChange` callback.
  *
  * @param label - The label for the radio group.
  * @param description - An optional description for the radio group.
@@ -570,7 +570,7 @@ interface AccessibleSliderProps {
 /**
  * A React functional component that renders an accessible slider.
  *
- * This component allows users to select a value within a specified range. It utilizes ARIA attributes for accessibility and can announce value changes if specified. The component handles value changes through the `onValueChange` callback and displays error messages if provided. It also conditionally renders a description and the current value of the slider.
+ * This component allows users to select a value within a specified range using ARIA attributes for accessibility. It handles value changes through the `onValueChange` callback and can announce value changes if `announceOnChange` is true. The component also conditionally displays a description, the current value, and any error messages provided.
  *
  * @param label - The label for the slider.
  * @param description - An optional description for the slider.

@@ -4,8 +4,15 @@ import { PrismaClient } from '@/generated/prisma';
 const prisma = new PrismaClient();
 
 /**
- * GET /api/ai-summary/monitoring
- * Retrieves monitoring data for AI summary generation
+ * Retrieves monitoring data for AI summary generation.
+ *
+ * This function processes a GET request to fetch monitoring records based on optional query parameters for type and status.
+ * It aggregates statistics for the last 7 days, retrieves recent failures from the last 24 hours, and calculates the success rate.
+ * The results are returned in a structured JSON response, including error handling for potential failures during data fetching.
+ *
+ * @param request - The incoming NextRequest object containing the request details.
+ * @returns A JSON response containing the monitoring records, statistics, and recent failures.
+ * @throws Error If there is an issue fetching the monitoring data.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -100,8 +107,15 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST /api/ai-summary/monitoring
- * Creates a new monitoring record (for testing or manual tracking)
+ * Creates a new monitoring record for testing or manual tracking.
+ *
+ * This function processes a POST request, extracts the JSON body, and validates the required fields: type and status.
+ * If validation passes, it creates a new monitoring record in the database using prisma.aISummaryMonitoring.create.
+ * In case of an error during the process, it logs the error and returns a JSON response with the error details.
+ *
+ * @param request - The NextRequest object containing the request data.
+ * @returns A JSON response indicating success or failure, along with the created monitoring record or error details.
+ * @throws Error If there is an issue creating the monitoring record or if required fields are missing.
  */
 export async function POST(request: NextRequest) {
   try {

@@ -12,6 +12,9 @@ function ContextMenu({
   return <ContextMenuPrimitive.Root data-slot='context-menu' {...props} />;
 }
 
+/**
+ * Renders a ContextMenuPrimitive.Trigger component with provided props.
+ */
 function ContextMenuTrigger({
   ...props
 }: React.ComponentProps<typeof ContextMenuPrimitive.Trigger>) {
@@ -20,6 +23,9 @@ function ContextMenuTrigger({
   );
 }
 
+/**
+ * Renders a ContextMenuPrimitive.Group component with provided props.
+ */
 function ContextMenuGroup({
   ...props
 }: React.ComponentProps<typeof ContextMenuPrimitive.Group>) {
@@ -28,6 +34,9 @@ function ContextMenuGroup({
   );
 }
 
+/**
+ * Renders a ContextMenuPrimitive.Portal component with provided props.
+ */
 function ContextMenuPortal({
   ...props
 }: React.ComponentProps<typeof ContextMenuPrimitive.Portal>) {
@@ -53,6 +62,9 @@ function ContextMenuRadioGroup({
   );
 }
 
+/**
+ * Renders a context menu sub-trigger component with optional inset styling.
+ */
 function ContextMenuSubTrigger({
   className,
   inset,
@@ -93,6 +105,9 @@ function ContextMenuSubContent({
   );
 }
 
+/**
+ * Renders the content of a context menu with specified className and props.
+ */
 function ContextMenuContent({
   className,
   ...props
@@ -111,6 +126,9 @@ function ContextMenuContent({
   );
 }
 
+/**
+ * Renders a context menu item with customizable properties.
+ */
 function ContextMenuItem({
   className,
   inset,
@@ -134,6 +152,9 @@ function ContextMenuItem({
   );
 }
 
+/**
+ * Renders a checkbox item for a context menu.
+ */
 function ContextMenuCheckboxItem({
   className,
   children,
@@ -160,6 +181,9 @@ function ContextMenuCheckboxItem({
   );
 }
 
+/**
+ * Renders a context menu radio item with specified properties.
+ */
 function ContextMenuRadioItem({
   className,
   children,
@@ -184,6 +208,9 @@ function ContextMenuRadioItem({
   );
 }
 
+/**
+ * Renders a context menu label with optional inset styling.
+ */
 function ContextMenuLabel({
   className,
   inset,
