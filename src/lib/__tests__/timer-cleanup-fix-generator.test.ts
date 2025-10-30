@@ -505,7 +505,7 @@ function regularFunction() {
 
   describe('error handling', () => {
     it('should handle missing timer call', () => {
-      const sourceCode = `function test() {}`;
+      const sourceCode = 'function test() {}';
       generator = createTimerCleanupFixGenerator(sourceCode, fileName);
 
       const leak: LeakDetectionResult = {
@@ -552,7 +552,7 @@ function TestComponent() {
     });
 
     it('should handle invalid node positions', () => {
-      const sourceCode = `function test() {}`;
+      const sourceCode = 'function test() {}';
       generator = createTimerCleanupFixGenerator(sourceCode, fileName);
 
       const leak: LeakDetectionResult = {
