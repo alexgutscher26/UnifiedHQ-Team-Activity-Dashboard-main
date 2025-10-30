@@ -113,7 +113,7 @@ export const AccessibleButton = forwardRef<
     const { handleKeyDown } = useKeyboardNavigation();
 
     /**
-     * Handles the click event for a button, announcing a message if required.
+     * Handles the click event for a button and announces a message if needed.
      */
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
       if (announceOnClick) {

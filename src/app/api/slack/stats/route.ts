@@ -13,7 +13,7 @@ const prisma = new PrismaClient();
 /**
  * Fetch Slack activity statistics for the authenticated user with Redis caching.
  *
- * This function retrieves the user's Slack activities from the last 24 hours, calculates the number of messages, threads, and reactions, and formats the last message time. It also compiles a summary of the user's activity status and channel information.
+ * This function retrieves the user's Slack activities from the last 24 hours, calculates the number of messages, threads, and reactions, and formats the last message time. It checks for a cached version of the stats, verifies Slack connection, and compiles a summary of the user's activity status and channel information before returning the data. If an error occurs during the process, it handles the exception and returns an appropriate error response.
  *
  * @param request - The NextRequest object containing the request headers.
  * @returns A JSON response containing the activity count, status, details, last update time, breakdown of activities, and channel statistics.
@@ -202,7 +202,7 @@ async function getSlackStats(request: NextRequest): Promise<NextResponse> {
 }
 
 /**
- * GET handler with caching middleware
+ * Handles GET requests with caching.
  */
 export async function GET(request: NextRequest) {
   return withCache(request, getSlackStats);

@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * GET handler for cache warming (for convenience)
+ * Handles GET requests to warm the Slack cache.
  */
 export async function GET(request: NextRequest) {
   return warmSlackCache(request);

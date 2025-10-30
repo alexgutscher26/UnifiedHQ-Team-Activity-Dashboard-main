@@ -20,6 +20,9 @@ const CachePreloaderContext = createContext<CachePreloaderContextType>({
   error: null,
 });
 
+/**
+ * Retrieves the CachePreloaderContext using useContext.
+ */
 export function useCachePreloaderContext() {
   return useContext(CachePreloaderContext);
 }
@@ -28,6 +31,17 @@ interface CachePreloaderProviderProps {
   children: React.ReactNode;
 }
 
+/**
+ * Provides a context for cache preloading functionality.
+ *
+ * This component checks for the support of service workers and the Cache API in the browser.
+ * If supported, it initializes the cache preloader using the preloadManager. The state is managed
+ * to reflect whether the initialization was successful, and any errors encountered during the process
+ * are captured and stored. The component renders its children within the CachePreloaderContext.Provider.
+ *
+ * @param {Object} props - The properties for the component.
+ * @param {ReactNode} props.children - The child components to be rendered within the context provider.
+ */
 export function CachePreloaderProvider({
   children,
 }: CachePreloaderProviderProps) {
@@ -51,6 +65,11 @@ export function CachePreloaderProvider({
     }
 
     // Initialize the cache preloader
+    /**
+     * Initializes the preloader and updates the application state.
+     *
+     * This function attempts to initialize the preloadManager. If successful, it sets the state to indicate that the preloader is initialized and supported, while logging a success message. In case of an error, it updates the state to reflect the failure and logs the error message for debugging purposes.
+     */
     const initializePreloader = async () => {
       try {
         await preloadManager.initialize();

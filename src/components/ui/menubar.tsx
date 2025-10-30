@@ -6,6 +6,9 @@ import { CheckIcon, ChevronRightIcon, CircleIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
+/**
+ * Renders a Menubar component with specified className and props.
+ */
 function Menubar({
   className,
   ...props
@@ -22,12 +25,18 @@ function Menubar({
   );
 }
 
+/**
+ * Renders a Menubar menu component with provided props.
+ */
 function MenubarMenu({
   ...props
 }: React.ComponentProps<typeof MenubarPrimitive.Menu>) {
   return <MenubarPrimitive.Menu data-slot='menubar-menu' {...props} />;
 }
 
+/**
+ * Renders a MenubarPrimitive.Group component with provided props.
+ */
 function MenubarGroup({
   ...props
 }: React.ComponentProps<typeof MenubarPrimitive.Group>) {
@@ -40,6 +49,9 @@ function MenubarPortal({
   return <MenubarPrimitive.Portal data-slot='menubar-portal' {...props} />;
 }
 
+/**
+ * Renders a MenubarRadioGroup component.
+ */
 function MenubarRadioGroup({
   ...props
 }: React.ComponentProps<typeof MenubarPrimitive.RadioGroup>) {
@@ -48,6 +60,9 @@ function MenubarRadioGroup({
   );
 }
 
+/**
+ * Renders a MenubarTrigger component with specified className and props.
+ */
 function MenubarTrigger({
   className,
   ...props
@@ -64,6 +79,9 @@ function MenubarTrigger({
   );
 }
 
+/**
+ * Renders the Menubar content with specified alignment and offsets.
+ */
 function MenubarContent({
   className,
   align = 'start',
@@ -88,6 +106,9 @@ function MenubarContent({
   );
 }
 
+/**
+ * Renders a Menubar item with customizable properties.
+ */
 function MenubarItem({
   className,
   inset,
@@ -137,6 +158,9 @@ function MenubarCheckboxItem({
   );
 }
 
+/**
+ * Renders a menubar radio item with specified className and children.
+ */
 function MenubarRadioItem({
   className,
   children,
@@ -161,6 +185,9 @@ function MenubarRadioItem({
   );
 }
 
+/**
+ * Renders a menubar label with optional inset styling.
+ */
 function MenubarLabel({
   className,
   inset,
@@ -181,6 +208,9 @@ function MenubarLabel({
   );
 }
 
+/**
+ * Renders a separator for the menubar with optional className and props.
+ */
 function MenubarSeparator({
   className,
   ...props
@@ -194,6 +224,9 @@ function MenubarSeparator({
   );
 }
 
+/**
+ * Renders a span element for the menubar shortcut with optional className and props.
+ */
 function MenubarShortcut({
   className,
   ...props
@@ -210,12 +243,18 @@ function MenubarShortcut({
   );
 }
 
+/**
+ * Renders a MenubarPrimitive.Sub component with provided props.
+ */
 function MenubarSub({
   ...props
 }: React.ComponentProps<typeof MenubarPrimitive.Sub>) {
   return <MenubarPrimitive.Sub data-slot='menubar-sub' {...props} />;
 }
 
+/**
+ * Renders a Menubar sub-trigger component with optional inset styling.
+ */
 function MenubarSubTrigger({
   className,
   inset,
@@ -240,6 +279,9 @@ function MenubarSubTrigger({
   );
 }
 
+/**
+ * Renders the MenubarSubContent component with specified className and props.
+ */
 function MenubarSubContent({
   className,
   ...props

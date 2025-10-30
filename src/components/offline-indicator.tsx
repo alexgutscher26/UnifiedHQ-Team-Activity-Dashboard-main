@@ -14,6 +14,18 @@ interface OfflineIndicatorProps {
   variant?: 'banner' | 'badge' | 'toast';
 }
 
+/**
+ * Displays an offline indicator based on the network status.
+ *
+ * The component uses the network status context to determine if the user is online or offline. It manages visibility based on the network state and user preferences for showing online status. The indicator can auto-hide after a specified delay and supports different visual variants (banner, badge, toast) based on the provided props.
+ *
+ * @param className - Additional CSS classes to apply to the indicator.
+ * @param showWhenOnline - A flag indicating whether to show the indicator when the user is back online.
+ * @param autoHide - A flag indicating whether the indicator should auto-hide when online.
+ * @param autoHideDelay - The delay in milliseconds before the indicator auto-hides when online.
+ * @param position - The position of the indicator (top or bottom).
+ * @param variant - The visual style of the indicator (banner, badge, or toast).
+ */
 export function OfflineIndicator({
   className,
   showWhenOnline = false,
@@ -70,6 +82,13 @@ export function OfflineIndicator({
   const isOffline = networkStatus.isOffline;
   const isOnline = networkStatus.isOnline && justCameOnline;
 
+  /**
+   * Get the variant styles based on the provided variant type.
+   *
+   * This function constructs a set of CSS class names based on the variant type ('banner', 'badge', or 'toast') and the online/offline status. It uses a base style and conditionally adds additional styles based on the variant and the current state of isOffline and isOnline. The final class names are generated using the cn function.
+   *
+   * @returns A string containing the combined CSS class names for the specified variant.
+   */
   const getVariantStyles = () => {
     const baseStyles =
       'flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-300';
@@ -107,6 +126,13 @@ export function OfflineIndicator({
     }
   };
 
+  /**
+   * Returns an icon based on the online/offline status.
+   *
+   * The function checks the current network status using the variables isOffline and isOnline.
+   * If the device is offline, it returns a WifiOff icon. If online, it returns a CheckCircle icon.
+   * If neither condition is met, it defaults to returning a Wifi icon.
+   */
   const getIcon = () => {
     if (isOffline) {
       return <WifiOff className='h-4 w-4' />;
@@ -117,6 +143,14 @@ export function OfflineIndicator({
     return <Wifi className='h-4 w-4' />;
   };
 
+  /**
+   * Retrieves a message based on the current online status.
+   *
+   * The function checks the values of `isOffline` and `isOnline` to determine the appropriate message to return.
+   * If the user is offline, it informs them that some features may not be available.
+   * If the user is online, it confirms their online status.
+   * If neither condition is met, it returns a default message indicating a connected state.
+   */
   const getMessage = () => {
     if (isOffline) {
       return "You're offline. Some features may not be available.";
@@ -127,6 +161,14 @@ export function OfflineIndicator({
     return 'Connected';
   };
 
+  /**
+   * Retrieves the connection details based on the current network status.
+   *
+   * The function checks if the network status has an effective type or downlink speed.
+   * If either is present, it constructs an array of details including the effective type
+   * (converted to uppercase), downlink speed in Mbps, and round-trip time in milliseconds.
+   * Finally, it returns a formatted string of these details or null if no information is available.
+   */
   const getConnectionDetails = () => {
     if (!networkStatus.effectiveType && !networkStatus.downlink) {
       return null;
@@ -166,14 +208,23 @@ export function OfflineIndicator({
 }
 
 // Preset variants for common use cases
+/**
+ * Renders an OfflineIndicator with a 'banner' variant.
+ */
 export function OfflineBanner(props: Omit<OfflineIndicatorProps, 'variant'>) {
   return <OfflineIndicator {...props} variant='banner' />;
 }
 
+/**
+ * Renders an OfflineIndicator with a 'badge' variant.
+ */
 export function OfflineBadge(props: Omit<OfflineIndicatorProps, 'variant'>) {
   return <OfflineIndicator {...props} variant='badge' />;
 }
 
+/**
+ * Renders an OfflineIndicator with a 'toast' variant.
+ */
 export function OfflineToast(props: Omit<OfflineIndicatorProps, 'variant'>) {
   return <OfflineIndicator {...props} variant='toast' />;
 }

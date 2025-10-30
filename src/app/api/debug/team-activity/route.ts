@@ -4,6 +4,16 @@ import { PrismaClient } from '@/generated/prisma';
 
 const prisma = new PrismaClient();
 
+/**
+ * Handles the GET request for debugging user activity and connections.
+ *
+ * This function performs a series of checks including user authentication, database connection, GitHub connection, and selected repositories.
+ * It logs relevant information at each step and returns a JSON response indicating success or failure, along with appropriate error messages and status codes.
+ *
+ * @param request - The incoming NextRequest object containing request headers.
+ * @returns A JSON response with user activity details or error information.
+ * @throws Error If there is a general error or a database connection error occurs.
+ */
 export async function GET(request: NextRequest) {
   try {
     console.log('[Team Activity Debug] Starting debug check...');

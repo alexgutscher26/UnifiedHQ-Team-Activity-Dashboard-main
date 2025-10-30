@@ -10,8 +10,11 @@ const prisma = new PrismaClient();
 /**
  * Fetch Slack channels for the authenticated user with Redis caching.
  *
+ * This function retrieves the user's Slack channels by first checking for an active session. If the session is valid, it attempts to fetch the channels from Redis cache. If not found, it checks the user's Slack connection, creates a Slack client, and fetches the channels. The channels are then marked as selected based on the user's preferences, and the result is cached in Redis for future requests.
+ *
  * @param request - The NextRequest object containing the request headers.
- * @returns A JSON response containing the user's Slack channels.
+ * @returns A JSON response containing the user's Slack channels or an error message.
+ * @throws Error If there is an issue fetching Slack channels or if the user is unauthorized.
  */
 async function getSlackChannels(request: NextRequest): Promise<NextResponse> {
   try {
@@ -101,7 +104,7 @@ async function getSlackChannels(request: NextRequest): Promise<NextResponse> {
 }
 
 /**
- * GET handler with caching middleware
+ * Handles GET requests with caching middleware.
  */
 export async function GET(request: NextRequest) {
   return withCache(request, getSlackChannels);

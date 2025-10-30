@@ -1,4 +1,9 @@
 name: Deploy to Production
+permissions:
+  contents: read
+
+permissions:
+  contents: read
 
 on:
   release:
@@ -78,6 +83,8 @@ jobs:
   pre-deployment-checks:
     name: Pre-deployment Checks
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     needs: validate
     steps:
       - name: Checkout release
@@ -124,6 +131,7 @@ jobs:
           bun run build
 
   approval:
+    permissions: {}
     name: Manual Approval
     runs-on: ubuntu-latest
     needs: [validate, pre-deployment-checks]
@@ -291,8 +299,14 @@ jobs:
   post-deployment:
     name: Post-deployment Tasks
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
     needs: [validate, deploy]
     if: success()
+    permissions:
+      contents: write
+      deployments: write
     steps:
       - name: Update release status
         uses: actions/github-script@v7

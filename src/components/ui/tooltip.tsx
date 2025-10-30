@@ -5,6 +5,9 @@ import * as TooltipPrimitive from '@radix-ui/react-tooltip';
 
 import { cn } from '@/lib/utils';
 
+/**
+ * A component that provides tooltip functionality with a customizable delay.
+ */
 function TooltipProvider({
   delayDuration = 0,
   ...props
@@ -18,6 +21,9 @@ function TooltipProvider({
   );
 }
 
+/**
+ * Renders a Tooltip component with provided props.
+ */
 function Tooltip({
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
@@ -28,12 +34,18 @@ function Tooltip({
   );
 }
 
+/**
+ * Renders a TooltipPrimitive.Trigger component with provided props.
+ */
 function TooltipTrigger({
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
   return <TooltipPrimitive.Trigger data-slot='tooltip-trigger' {...props} />;
 }
 
+/**
+ * Renders a tooltip content component with specified properties.
+ */
 function TooltipContent({
   className,
   sideOffset = 0,

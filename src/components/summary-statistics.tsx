@@ -26,6 +26,17 @@ interface SummaryStatisticsProps {
   timeRange?: '7d' | '30d' | '90d';
 }
 
+/**
+ * Renders summary statistics based on a specified time range.
+ *
+ * The component fetches statistics from an API endpoint when the timeRange changes, manages loading and error states,
+ * and formats the fetched data for display. It includes functionality to refresh the statistics and formats numbers
+ * and dates for better readability.
+ *
+ * @param className - A string representing additional CSS classes for styling the component.
+ * @param timeRange - A string indicating the time range for which statistics are fetched, defaulting to '30d'.
+ * @returns A JSX element representing the summary statistics or loading/error states.
+ */
 export function SummaryStatistics({
   className,
   timeRange = '30d',
@@ -38,6 +49,13 @@ export function SummaryStatistics({
     fetchStats();
   }, [timeRange]);
 
+  /**
+   * Fetches statistics from the server and updates the application state.
+   *
+   * This function initiates a loading state, makes an API call to retrieve statistics based on the specified time range,
+   * and handles potential errors during the fetch process. It updates the state with the fetched data or an error message
+   * if the request fails, ensuring that the loading state is reset at the end of the operation.
+   */
   const fetchStats = async () => {
     try {
       setIsLoading(true);

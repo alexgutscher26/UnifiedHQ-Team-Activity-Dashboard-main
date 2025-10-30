@@ -21,6 +21,9 @@ const buttonGroupVariants = cva(
   }
 );
 
+/**
+ * Renders a button group with specified orientation and additional props.
+ */
 function ButtonGroup({
   className,
   orientation,
@@ -37,6 +40,9 @@ function ButtonGroup({
   );
 }
 
+/**
+ * Renders a button group text component with optional child element.
+ */
 function ButtonGroupText({
   className,
   asChild = false,
@@ -57,6 +63,9 @@ function ButtonGroupText({
   );
 }
 
+/**
+ * Renders a separator for a button group with customizable orientation and className.
+ */
 function ButtonGroupSeparator({
   className,
   orientation = 'vertical',

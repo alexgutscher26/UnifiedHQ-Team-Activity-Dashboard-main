@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/sidebar';
 
 /**
- * Renders a secondary navigation component with menu items.
+ * Renders a secondary navigation component with menu items and handles navigation.
  */
 export function NavSecondary({
   items,

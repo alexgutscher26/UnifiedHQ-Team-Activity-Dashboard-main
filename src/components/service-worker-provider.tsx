@@ -33,6 +33,16 @@ interface ServiceWorkerProviderProps {
   enableErrorToasts?: boolean;
 }
 
+/**
+ * Provides a context for managing service worker updates and notifications.
+ *
+ * This component handles the registration of a service worker, manages update prompts, and displays error toasts based on the provided props. It utilizes hooks to manage state and side effects, including showing notifications when updates are available and logging service worker status changes. The context value includes methods for accepting updates and dismissing prompts.
+ *
+ * @param children - The child components to be rendered within the provider.
+ * @param enableUpdatePrompts - A flag to enable or disable update prompts (default is true).
+ * @param enableErrorToasts - A flag to enable or disable error toasts (default is true).
+ * @returns A ServiceWorkerContext.Provider component wrapping the children.
+ */
 export function ServiceWorkerProvider({
   children,
   enableUpdatePrompts = true,
@@ -72,11 +82,19 @@ export function ServiceWorkerProvider({
     },
   });
 
+  /**
+   * Hides the update prompt and resets the pending registration.
+   */
   const dismissUpdatePrompt = () => {
     setShowUpdatePrompt(false);
     setPendingRegistration(null);
   };
 
+  /**
+   * Handles the acceptance of an update for the service worker.
+   *
+   * This function checks if there is a pending registration. If so, it attempts to skip the waiting state of the service worker, hides the update prompt, and clears the pending registration. In case of an error during this process, it logs the error and optionally displays a toast notification to inform the user about the failure.
+   */
   const acceptUpdate = async () => {
     if (pendingRegistration) {
       try {

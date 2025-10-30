@@ -17,6 +17,21 @@ interface OptimizedScrollContainerProps {
   enableScrollbar?: boolean;
 }
 
+/**
+ * Renders an optimized scrollable container component.
+ *
+ * The OptimizedScrollContainer component utilizes a reference to a div element to manage scrolling behavior. It configures an optimized scroll handler based on the provided optimizationPreset and attaches it to the container. The component also manages the scroll event listener lifecycle, ensuring proper cleanup. The container's style is dynamically set based on the provided height, maxHeight, and enableScrollbar properties.
+ *
+ * @param {Object} props - The properties for the component.
+ * @param {React.ReactNode} props.children - The content to be rendered inside the container.
+ * @param {string} [props.className=''] - Additional class names for the container.
+ * @param {React.CSSProperties} [props.style={}] - Custom styles for the container.
+ * @param {string} [props.optimizationPreset='smooth'] - The preset for scroll optimization.
+ * @param {function} [props.onScroll] - Callback function triggered on scroll events.
+ * @param {string} [props.height] - The height of the container.
+ * @param {string} [props.maxHeight] - The maximum height of the container.
+ * @param {boolean} [props.enableScrollbar=true] - Flag to enable or disable the scrollbar.
+ */
 export function OptimizedScrollContainer({
   children,
   className = '',
@@ -41,6 +56,9 @@ export function OptimizedScrollContainer({
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+    /**
+     * Removes the scroll event listener from the container.
+     */
     const cleanup = () => {
       container.removeEventListener('scroll', optimizedScrollHandler);
     };
@@ -80,6 +98,15 @@ interface ScrollPerformanceIndicatorProps {
   className?: string;
 }
 
+/**
+ * Renders a scroll performance indicator based on provided scroll metrics.
+ *
+ * This function calculates the performance grade based on the average scroll time and displays various metrics including average scroll time, maximum scroll time, jank percentage, and the number of scroll events. The performance grade is determined by the average scroll time, categorizing it into grades A to D, each associated with a specific color. The jank percentage is calculated only if there are scroll events recorded.
+ *
+ * @param {Object} props - The properties for the component.
+ * @param {ScrollPerformanceIndicatorProps} props.scrollMetrics - The metrics related to scroll performance.
+ * @param {string} [props.className=''] - Optional additional class names for styling.
+ */
 export function ScrollPerformanceIndicator({
   scrollMetrics,
   className = '',
@@ -142,6 +169,18 @@ interface ScrollOptimizationSettingsProps {
   className?: string;
 }
 
+/**
+ * Renders the scroll optimization settings component.
+ *
+ * This component allows users to select a scroll optimization preset from a dropdown menu.
+ * It updates the current preset through the onPresetChange callback when a new option is selected.
+ * Additionally, it displays a description of the selected preset to inform the user about its functionality.
+ *
+ * @param {Object} props - The properties for the component.
+ * @param {keyof typeof scrollOptimizationPresets} props.currentPreset - The currently selected scroll optimization preset.
+ * @param {function} props.onPresetChange - Callback function to handle changes to the selected preset.
+ * @param {string} [props.className=''] - Optional additional class names for styling.
+ */
 export function ScrollOptimizationSettings({
   currentPreset,
   onPresetChange,

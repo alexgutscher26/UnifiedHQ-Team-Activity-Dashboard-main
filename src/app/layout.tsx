@@ -22,6 +22,9 @@ export const metadata: Metadata = {
   description: 'One dashboard to see everything your team did today',
 };
 
+/**
+ * Renders a loading screen with animated indicators and messages.
+ */
 function LoadingScreen() {
   return (
     <div className='min-h-screen bg-background flex items-center justify-center'>
@@ -49,6 +52,9 @@ function LoadingScreen() {
   );
 }
 
+/**
+ * Renders the root layout of the application with various providers and components.
+ */
 export default function RootLayout({
   children,
 }: Readonly<{

@@ -42,6 +42,20 @@ function useCarousel() {
   return context;
 }
 
+/**
+ * Renders a carousel component with navigation capabilities.
+ *
+ * The Carousel component initializes an Embla carousel instance with the specified orientation and options. It manages the scroll state and handles keyboard navigation for scrolling through items. The component also provides context to its children, allowing them to access the carousel API and state. Event listeners are set up to respond to selection changes and reinitialization of the carousel.
+ *
+ * @param orientation - The orientation of the carousel, either 'horizontal' or 'vertical'.
+ * @param opts - Options for configuring the carousel behavior.
+ * @param setApi - A function to set the carousel API instance.
+ * @param plugins - An array of plugins to enhance carousel functionality.
+ * @param className - Additional class names for styling the carousel.
+ * @param children - The content to be displayed within the carousel.
+ * @param props - Additional props to be passed to the underlying div element.
+ * @returns A JSX element representing the carousel.
+ */
 function Carousel({
   orientation = 'horizontal',
   opts,
@@ -132,6 +146,9 @@ function Carousel({
   );
 }
 
+/**
+ * Renders the carousel content with specified className and props.
+ */
 function CarouselContent({ className, ...props }: React.ComponentProps<'div'>) {
   const { carouselRef, orientation } = useCarousel();
 
@@ -153,6 +170,9 @@ function CarouselContent({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * Renders a carousel item with appropriate styling based on orientation.
+ */
 function CarouselItem({ className, ...props }: React.ComponentProps<'div'>) {
   const { orientation } = useCarousel();
 
@@ -171,6 +191,9 @@ function CarouselItem({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * Renders a button to navigate to the previous slide in a carousel.
+ */
 function CarouselPrevious({
   className,
   variant = 'outline',
@@ -201,6 +224,9 @@ function CarouselPrevious({
   );
 }
 
+/**
+ * Renders a button to navigate to the next slide in a carousel.
+ */
 function CarouselNext({
   className,
   variant = 'outline',

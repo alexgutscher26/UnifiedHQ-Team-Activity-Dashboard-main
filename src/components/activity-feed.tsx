@@ -31,14 +31,10 @@ import { useToast } from '@/hooks/use-toast';
 /**
  * Determines the appropriate icon component to display for an activity based on its source and type.
  *
- * @param activity - The activity object containing source and metadata information
- * @returns The corresponding Tabler icon component for the activity
+ * The function evaluates the source of the activity, which can be 'github' or 'slack', and further inspects the event type for GitHub activities to return the corresponding icon. It handles multiple cases for GitHub events, including 'commit', 'pull_request', and 'issue', defaulting to a general GitHub icon if none match. For Slack activities, it returns a specific Slack icon.
  *
- * @example
- * ```tsx
- * const Icon = getActivityIcon(activity);
- * return <Icon className="size-4" />;
- * ```
+ * @param activity - The activity object containing source and metadata information.
+ * @returns The corresponding Tabler icon component for the activity.
  */
 const getActivityIcon = (activity: Activity) => {
   if (activity.source === 'github') {
@@ -72,14 +68,12 @@ const getActivityIcon = (activity: Activity) => {
 /**
  * Determines the appropriate color class for an activity based on its source and event type.
  *
- * @param activity - The activity object containing source and metadata information
- * @returns A Tailwind CSS color class string for styling the activity icon
+ * The function evaluates the source of the activity, checking for specific event types if the source is 'github'.
+ * It returns a corresponding Tailwind CSS color class string for styling the activity icon.
+ * If the source is 'slack', a specific color class is returned, while other sources default to a gray color.
  *
- * @example
- * ```tsx
- * const colorClass = getActivityColor(activity);
- * return <div className={`p-2 rounded-lg ${colorClass}`}>
- * ```
+ * @param activity - The activity object containing source and metadata information.
+ * @returns A Tailwind CSS color class string for styling the activity icon.
  */
 const getActivityColor = (activity: Activity) => {
   if (activity.source === 'github') {
@@ -113,14 +107,11 @@ const getActivityColor = (activity: Activity) => {
 /**
  * Formats a timestamp into a human-readable relative time string.
  *
- * @param timestamp - The timestamp to format, either as a Date object or ISO string
- * @returns A formatted string like "Just now", "2 hours ago", or "3 days ago"
+ * This function takes a timestamp, which can be a Date object or an ISO string, and calculates the difference
+ * between the current time and the provided timestamp. It then returns a string representing this difference
+ * in hours or days, such as "Just now", "2 hours ago", or "3 days ago".
  *
- * @example
- * ```tsx
- * formatTimestamp(new Date()) // "Just now"
- * formatTimestamp("2024-01-01T10:00:00Z") // "2 hours ago"
- * ```
+ * @param timestamp - The timestamp to format, either as a Date object or ISO string
  */
 const formatTimestamp = (timestamp: Date | string) => {
   const now = new Date();
@@ -143,31 +134,11 @@ const formatTimestamp = (timestamp: Date | string) => {
 /**
  * ActivityFeed component displays a real-time feed of team activities from connected integrations.
  *
- * Features:
- * - Real-time updates via EventSource/SSE connection
- * - Manual refresh with sync capabilities for GitHub and Slack
- * - Scroll-based fade effects for better UX
- * - Live connection status indicator
- * - External links to original activities
- * - Auto-refresh every 60 seconds
+ * It establishes a connection to live updates via Server-Sent Events (SSE), fetches activities from the API,
+ * and manages the state for loading, refreshing, and displaying activities. The component also handles
+ * scroll events to show fade effects and provides manual refresh capabilities for GitHub and Slack integrations.
  *
- * The component automatically connects to live updates on mount and handles cleanup
- * of EventSource connections and intervals to prevent memory leaks.
- *
- * @returns JSX element containing the activity feed card with header, content, and controls
- *
- * @example
- * ```tsx
- * import { ActivityFeed } from '@/components/activity-feed';
- *
- * export default function Dashboard() {
- *   return (
- *     <div className="grid gap-6">
- *       <ActivityFeed />
- *     </div>
- *   );
- * }
- * ```
+ * @returns JSX element containing the activity feed card with header, content, and controls.
  */
 export function ActivityFeed() {
   const { toast } = useToast();
@@ -358,11 +329,10 @@ export function ActivityFeed() {
   /**
    * Fetches the latest activities from the API endpoint.
    *
-   * Makes a GET request to `/api/activities` and updates the activities state.
-   * Handles errors gracefully by logging them and always sets loading to false.
-   *
-   * @async
-   * @returns Promise that resolves when the fetch operation completes
+   * Makes a GET request to `/api/activities` and updates the activities state based on the response.
+   * It handles various error scenarios, including authentication issues and server errors,
+   * ensuring that the activities state is set to an empty array when errors occur.
+   * Finally, it sets the loading state to false regardless of the outcome.
    */
   const fetchActivities = async () => {
     try {
@@ -394,10 +364,7 @@ export function ActivityFeed() {
   };
 
   /**
-   * Handles scroll events to manage fade effect visibility at top and bottom of the activity list.
-   *
-   * Calculates scroll position and updates fade states to show/hide gradient overlays
-   * that indicate more content is available above or below the current view.
+   * Manages fade effect visibility based on scroll position in the activity list.
    *
    * @param e - React scroll event containing scroll position information
    */
@@ -413,14 +380,12 @@ export function ActivityFeed() {
   /**
    * Handles manual refresh of activities by triggering sync operations for connected integrations.
    *
-   * Performs the following operations:
-   * 1. Triggers GitHub and Slack sync operations in parallel
-   * 2. Checks sync results and handles token expiration errors
-   * 3. Refreshes the activity list after sync completion
-   * 4. Shows appropriate toast notifications for success/error states
+   * This function triggers GitHub and Slack sync operations in parallel and checks their results.
+   * It handles token expiration errors and refreshes the activity list after the sync completes.
+   * Appropriate toast notifications are displayed based on the success or failure of the operations.
    *
    * @async
-   * @returns Promise that resolves when all sync operations and activity refresh complete
+   * @returns Promise that resolves when all sync operations and activity refresh complete.
    */
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -606,10 +571,9 @@ export function ActivityFeed() {
                 /**
                  * Constructs the external URL for an activity to link to the original source.
                  *
-                 * For GitHub activities, links to commits, pull requests, or issues.
-                 * For Slack activities, constructs deep links to specific messages.
+                 * It checks the activity source type, either 'github' or 'slack', and constructs the appropriate URL based on the provided payload. For GitHub, it prioritizes links to commits, pull requests, or issues. For Slack, it builds a deep link to a specific message using the channel ID and message timestamp.
                  *
-                 * @returns The external URL string or null if no URL can be constructed
+                 * @returns The external URL string or null if no URL can be constructed.
                  */
                 const getExternalUrl = () => {
                   if (activity.source === 'github' && payload) {

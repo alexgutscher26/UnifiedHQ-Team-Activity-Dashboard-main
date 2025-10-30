@@ -36,6 +36,17 @@ interface CachedActivityData {
   source: 'network' | 'cache';
 }
 
+/**
+ * Retrieve the appropriate icon based on the activity source and event type.
+ *
+ * The function checks the source of the activity, which can be 'github' or 'slack'.
+ * For 'github', it further inspects the event type to return specific icons for commits, pull requests, or issues.
+ * If the source is 'slack', it returns the corresponding Slack icon.
+ * If the source is unrecognized, it defaults to returning the Git commit icon.
+ *
+ * @param activity - An object representing the activity, containing source and metadata.
+ * @returns The icon associated with the specified activity.
+ */
 const getActivityIcon = (activity: Activity) => {
   if (activity.source === 'github') {
     const eventType = activity.metadata?.eventType;
@@ -65,6 +76,16 @@ const getActivityIcon = (activity: Activity) => {
   }
 };
 
+/**
+ * Get the color associated with a specific activity based on its source and event type.
+ *
+ * The function checks the source of the activity, which can be 'github' or 'slack', and returns a corresponding color class.
+ * For 'github', it further distinguishes between event types such as 'commit', 'pull_request', and 'issue' to return specific colors.
+ * If the source is not recognized, a default color is returned.
+ *
+ * @param activity - An object representing the activity, which includes a source and optional metadata.
+ * @returns A string representing the color class associated with the activity.
+ */
 const getActivityColor = (activity: Activity) => {
   if (activity.source === 'github') {
     const eventType = activity.metadata?.eventType;
@@ -94,6 +115,18 @@ const getActivityColor = (activity: Activity) => {
   }
 };
 
+/**
+ * Formats a given timestamp into a human-readable string.
+ *
+ * The function checks if the provided timestamp is a Date object or a string,
+ * converts it to a Date if necessary, and calculates the difference in hours
+ * from the current time. Depending on the difference, it returns a string
+ * indicating how long ago the timestamp was, using appropriate singular or
+ * plural forms for hours and days.
+ *
+ * @param {Date | string} timestamp - The timestamp to format, which can be
+ * either a Date object or a string representation of a date.
+ */
 const formatTimestamp = (timestamp: Date | string) => {
   const now = new Date();
   const timestampDate =
@@ -112,6 +145,16 @@ const formatTimestamp = (timestamp: Date | string) => {
   }
 };
 
+/**
+ * Formats a cache timestamp into a human-readable string.
+ *
+ * This function calculates the difference between the current time and the provided timestamp in minutes.
+ * Depending on the difference, it returns a string indicating whether the cache was updated recently,
+ * or how many minutes or hours ago it was cached. The function handles three cases:
+ * less than a minute, less than an hour, and more than an hour.
+ *
+ * @param timestamp - The timestamp to format, represented as a number.
+ */
 const formatCacheTimestamp = (timestamp: number) => {
   const now = Date.now();
   const diffInMinutes = Math.floor((now - timestamp) / (1000 * 60));
@@ -126,6 +169,13 @@ const formatCacheTimestamp = (timestamp: number) => {
   }
 };
 
+/**
+ * Manages the offline-first activity feed, handling data loading and live updates.
+ *
+ * This function initializes state variables for managing activities, loading status, and network connectivity. It sets up effects to load activities from cache and network, connect to live updates, and handle refresh intervals. The function also manages the display of activities, including handling scroll events and refresh actions, while providing user feedback through toasts for errors and successes.
+ *
+ * @returns {JSX.Element} The rendered activity feed component.
+ */
 export function OfflineFirstActivityFeed() {
   const { toast } = useToast();
   const networkStatus = useNetworkStatusContext();
@@ -172,6 +222,14 @@ export function OfflineFirstActivityFeed() {
   }, [networkStatus.isOnline]);
 
   // Load activities from cache first, then network if available
+  /**
+   * Load activities from cache or network.
+   *
+   * The function first attempts to load activities from the cache. If cached data is available, it sets the cached data and logs the source. If the network is online, it attempts to fetch fresh data from the API, updating the cached data accordingly. In case of a network error, it falls back to cached data if available. Errors during the loading process are caught and handled, displaying a toast notification if no cached data is present.
+   *
+   * @returns {Promise<void>} A promise that resolves when the loading process is complete.
+   * @throws Error If the network request fails and no cached data is available.
+   */
   const loadActivities = async () => {
     try {
       setIsLoading(true);
@@ -236,6 +294,15 @@ export function OfflineFirstActivityFeed() {
     }
   };
 
+  /**
+   * Establish a connection to live updates via Server-Sent Events (SSE).
+   *
+   * The function first checks the network status and cleans up any existing EventSource before creating a new one.
+   * It handles various SSE events such as 'open', 'message', and 'error', processing incoming messages based on their type.
+   * Additionally, it implements a timeout mechanism to handle connection delays and logs relevant information throughout the process.
+   *
+   * @returns {void}
+   */
   const connectToLiveUpdates = () => {
     if (!networkStatus.isOnline) return;
 
@@ -322,6 +389,9 @@ export function OfflineFirstActivityFeed() {
     }
   };
 
+  /**
+   * Handles the scroll event to show or hide fade indicators.
+   */
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
     const isAtTop = scrollTop === 0;
@@ -331,6 +401,16 @@ export function OfflineFirstActivityFeed() {
     setShowBottomFade(!isAtBottom);
   };
 
+  /**
+   * Handles the refresh of activities by synchronizing with GitHub and Slack.
+   *
+   * This function sets the refreshing state, checks the network status, and triggers both GitHub and Slack syncs concurrently.
+   * It processes the results of the sync operations, handling any errors that may arise, and displays appropriate toast notifications.
+   * Finally, it attempts to refresh activities, using cached data if offline, and resets the refreshing state.
+   *
+   * @returns {Promise<void>} A promise that resolves when the refresh operation is complete.
+   * @throws {Error} If an error occurs during the sync or while loading activities.
+   */
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
@@ -563,6 +643,14 @@ export function OfflineFirstActivityFeed() {
                 const actor = activity.metadata?.actor;
                 const payload = activity.metadata?.payload;
 
+                /**
+                 * Retrieve the external URL based on the activity source and payload.
+                 *
+                 * The function checks if the activity source is 'github' or 'slack' and retrieves the corresponding URL from the payload.
+                 * For 'github', it prioritizes the commit, pull request, and issue URLs. For 'slack', it constructs a URL using the channel ID and message timestamp.
+                 *
+                 * @returns The external URL as a string or null if no URL is found.
+                 */
                 const getExternalUrl = () => {
                   if (activity.source === 'github' && payload) {
                     if (payload.commit?.url) return payload.commit.url;

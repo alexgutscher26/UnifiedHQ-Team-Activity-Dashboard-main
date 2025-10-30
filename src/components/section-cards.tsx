@@ -43,12 +43,12 @@ export function SectionCards() {
   const { setTimeout, clearTimeout } = useSafeTimer();
 
   /**
-   * Load and set statistics from GitHub and Slack APIs.
+   * Load and set statistics from GitHub, Slack, and AI summary APIs.
    *
    * The function fetches statistics from the GitHub and Slack APIs, handling both successful and failed responses.
-   * It sets the statistics data, including integration details and a summary of activities, while ensuring that
-   * loading state is managed appropriately. The function also ensures that default values are provided in case of
-   * missing data from the API responses.
+   * It also retrieves AI summary statistics, ensuring that default values are provided in case of missing data.
+   * Finally, it sets the statistics data, including integration details and a summary of activities, while managing
+   * the loading state appropriately.
    *
    * @returns {Promise<void>} A promise that resolves when the statistics have been loaded and set.
    */
@@ -128,6 +128,14 @@ export function SectionCards() {
   };
 
   // Connect to live updates for real-time GitHub stats
+  /**
+   * Establish a connection to live updates via Server-Sent Events (SSE).
+   *
+   * The function attempts to connect to the SSE endpoint, handling various message types such as 'connected', 'heartbeat', and 'activity_update'.
+   * It also manages connection state changes and implements a retry mechanism with exponential backoff for connection failures, up to a maximum of three attempts.
+   *
+   * @param retryCount - The number of retry attempts made to establish the connection.
+   */
   const connectToLiveUpdates = (retryCount = 0) => {
     try {
       setConnectionState('connecting');
@@ -228,6 +236,9 @@ export function SectionCards() {
     };
   }, []);
 
+  /**
+   * Renders a loading card with skeleton placeholders.
+   */
   const LoadingCard = () => (
     <Card className='@container/card'>
       <CardHeader>

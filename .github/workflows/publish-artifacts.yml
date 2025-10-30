@@ -363,6 +363,8 @@ jobs:
   validate-artifacts:
     runs-on: ubuntu-latest
     needs: [publish-to-registries, create-artifact-index]
+    permissions:
+      contents: read
     steps:
       - name: Extract version
         id: version

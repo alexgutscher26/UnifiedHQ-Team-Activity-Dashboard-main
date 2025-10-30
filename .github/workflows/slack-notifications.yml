@@ -1,4 +1,6 @@
 name: Slack Notifications
+permissions:
+  contents: read
 
 on:
   workflow_run:
@@ -303,6 +305,8 @@ jobs:
 
   send-deployment-notification:
     name: Send Deployment Notification
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     needs: determine-notification-context
     if: |
@@ -481,6 +485,8 @@ jobs:
 
   notification-summary:
     name: Notification Summary
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     needs:
       [

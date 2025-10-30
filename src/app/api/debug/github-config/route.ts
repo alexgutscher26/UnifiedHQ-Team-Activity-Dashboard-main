@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+/**
+ * Handles GET requests to retrieve GitHub configuration status.
+ *
+ * This function checks if the application is running in a development environment.
+ * If not, it returns a 403 error response. If in development, it constructs a configuration
+ * object containing the status of various environment variables related to GitHub and
+ * returns it in a JSON response along with a success message.
+ *
+ * @param request - The incoming NextRequest object.
+ */
 export async function GET(request: NextRequest) {
   // Only allow in development
   if (process.env.NODE_ENV !== 'development') {

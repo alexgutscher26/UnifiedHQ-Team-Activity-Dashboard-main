@@ -24,6 +24,9 @@ const actionTypes = {
 
 let count = 0;
 
+/**
+ * Generates a unique identifier as a string.
+ */
 function genId() {
   count = (count + 1) % Number.MAX_SAFE_INTEGER;
   return count.toString();
@@ -71,6 +74,17 @@ const addToRemoveQueue = (toastId: string) => {
   toastTimeouts.set(toastId, timeout);
 };
 
+/**
+ * Reducer function to manage the state of toasts in the application.
+ *
+ * This function handles various actions related to toasts, including adding, updating, dismissing, and removing toasts.
+ * It utilizes a switch statement to determine the action type and updates the state accordingly, ensuring that the
+ * number of toasts does not exceed the defined TOAST_LIMIT. Side effects are managed within the dismiss action.
+ *
+ * @param state - The current state of the application, including the list of toasts.
+ * @param action - The action object that describes the operation to be performed on the state.
+ * @returns The updated state after applying the action.
+ */
 export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case 'ADD_TOAST':
@@ -130,6 +144,9 @@ const listeners: Array<(state: State) => void> = [];
 
 let memoryState: State = { toasts: [] };
 
+/**
+ * Dispatches an action to update the memory state and notify listeners.
+ */
 function dispatch(action: Action) {
   memoryState = reducer(memoryState, action);
   listeners.forEach(listener => {
@@ -139,6 +156,9 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, 'id'>;
 
+/**
+ * Creates and manages a toast notification.
+ */
 function toast({ ...props }: Toast) {
   const id = genId();
 
@@ -168,6 +188,9 @@ function toast({ ...props }: Toast) {
   };
 }
 
+/**
+ * Custom hook to manage toast notifications state.
+ */
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState);
 

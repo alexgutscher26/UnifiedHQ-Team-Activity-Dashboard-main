@@ -5,6 +5,9 @@ import * as AvatarPrimitive from '@radix-ui/react-avatar';
 
 import { cn } from '@/lib/utils';
 
+/**
+ * Renders an Avatar component with specified className and props.
+ */
 function Avatar({
   className,
   ...props
@@ -21,6 +24,9 @@ function Avatar({
   );
 }
 
+/**
+ * Renders an Avatar image component with optional className and props.
+ */
 function AvatarImage({
   className,
   ...props

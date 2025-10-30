@@ -35,7 +35,7 @@ interface AccessibleModalProps {
 /**
  * A React functional component that renders an accessible modal dialog.
  *
- * The AccessibleModal component manages focus trapping, announces modal state changes, and handles keyboard and overlay interactions. It saves the previous focus when opened and restores it when closed. The modal can be customized with various props, including size, close behavior, and visibility of the close button.
+ * The AccessibleModal component manages focus trapping, saves the previous focus when opened, and restores it when closed. It announces modal state changes and handles keyboard and overlay interactions. The modal can be customized with various props, including size, close behavior, and visibility of the close button.
  *
  * @param open - A boolean indicating whether the modal is open.
  * @param onOpenChange - A function to handle changes to the modal's open state.
@@ -192,7 +192,7 @@ interface AccessibleAlertDialogProps {
 /**
  * Renders an accessible alert dialog component.
  *
- * The AccessibleAlertDialog component manages the dialog's open state and announces the title and description when opened. It utilizes focus management to trap focus within the dialog while open and restores focus when closed. The component provides action and cancel buttons, invoking the respective callbacks on user interaction, and allows customization of labels and variants for a user-friendly experience.
+ * The AccessibleAlertDialog component manages the dialog's open state and utilizes focus management to trap focus within the dialog while open. It announces the title and description when opened, and restores focus when closed. The component provides action and cancel buttons, invoking the respective callbacks on user interaction, and allows customization of labels and variants for a user-friendly experience.
  *
  * @param {boolean} open - Indicates whether the dialog is open or closed.
  * @param {function} onOpenChange - Callback function to handle changes in the dialog's open state.
@@ -299,7 +299,7 @@ interface AccessibleTooltipProps {
 /**
  * A React functional component that displays an accessible tooltip.
  *
- * The AccessibleTooltip component manages its visibility based on mouse and focus events. It uses the useAriaLiveAnnouncer to announce the tooltip content when it becomes visible. The tooltip's position can be adjusted using the 'side' prop, and it includes a delay before appearing. The component also applies conditional styling based on the provided className and the tooltip's position.
+ * The AccessibleTooltip component manages its visibility based on mouse and focus events. It utilizes the useAriaLiveAnnouncer to announce the tooltip content when it becomes visible. The tooltip's position can be adjusted using the 'side' prop, and it includes a delay before appearing. The component also applies conditional styling based on the provided className and the tooltip's position.
  *
  * @param children - The content to be displayed within the tooltip trigger area.
  * @param content - The text to be displayed within the tooltip.
@@ -326,6 +326,7 @@ export const AccessibleTooltip: React.FC<AccessibleTooltipProps> = ({
     announce(content);
   };
 
+  /** Closes the menu when the mouse leaves the designated area. */
   const handleMouseLeave = () => {
     setOpen(false);
   };
@@ -402,7 +403,7 @@ interface AccessiblePopoverProps {
 /**
  * A React functional component that renders an accessible popover.
  *
- * The AccessiblePopover component manages its open state, handles focus management, and announces its opening via ARIA live announcements. It provides a trigger element that toggles the popover's visibility and supports keyboard interactions for accessibility. The popover's position can be customized using the side and align props.
+ * The AccessiblePopover component manages its open state, handles focus management, and announces its opening via ARIA live announcements. It provides a trigger element that toggles the popover's visibility and supports keyboard interactions for accessibility. The popover's position can be customized using the side and align props, and it utilizes internal state management for better control over the popover's visibility.
  *
  * @param children - The content to be displayed as the trigger for the popover.
  * @param content - The content to be displayed inside the popover.

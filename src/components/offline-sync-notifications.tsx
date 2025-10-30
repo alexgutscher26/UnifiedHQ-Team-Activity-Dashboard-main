@@ -37,6 +37,13 @@ interface SyncNotification {
   dismissed?: boolean;
 }
 
+/**
+ * Manages offline synchronization notifications and network status.
+ *
+ * This function sets up event listeners for sync events and handles notifications based on the sync status. It monitors network connectivity and triggers synchronization when the network is restored. Notifications are displayed for various sync events, including success, failure, and conflicts, and are managed in a notification list.
+ *
+ * @returns null This function does not return any value.
+ */
 export function OfflineSyncNotifications() {
   const { toast } = useToast();
   const networkStatus = useNetworkStatusContext();
@@ -78,6 +85,15 @@ export function OfflineSyncNotifications() {
     }
   }, [networkStatus.isOnline, lastNetworkState]);
 
+  /**
+   * Handles synchronization events and triggers corresponding notifications.
+   *
+   * The function processes different types of sync events, including 'sync_started', 'sync_completed', 'sync_failed', 'conflict_detected', and 'action_failed'.
+   * For each event type, it calls the appropriate notification function with relevant data from the event.
+   * If the event type is unknown, it logs a message to the console.
+   *
+   * @param event - The synchronization event object containing type and relevant data.
+   */
   const handleSyncEvent = (event: any) => {
     switch (event.type) {
       case 'sync_started':
@@ -105,6 +121,9 @@ export function OfflineSyncNotifications() {
     }
   };
 
+  /**
+   * Displays a notification indicating that synchronization has started.
+   */
   const showSyncStartedNotification = () => {
     toast({
       title: 'Sync Started',
@@ -113,6 +132,13 @@ export function OfflineSyncNotifications() {
     });
   };
 
+  /**
+   * Displays a notification indicating the completion status of a synchronization process.
+   *
+   * The function checks the number of failed actions in the provided result. If there are no failed actions, it shows a success notification with the number of processed actions. If there are failed actions, it displays a notification indicating the number of successes and failures. Additionally, it adds a notification entry to the notifications list for tracking purposes.
+   *
+   * @param result - The result of the synchronization process, containing processedActions and failedActions.
+   */
   const showSyncCompletedNotification = (result: SyncResult) => {
     const { processedActions, failedActions } = result;
 
@@ -170,6 +196,9 @@ export function OfflineSyncNotifications() {
     });
   };
 
+  /**
+   * Displays a notification for detected data conflicts requiring manual resolution.
+   */
   const showConflictDetectedNotification = (conflict: any) => {
     toast({
       title: 'Data Conflict Detected',
@@ -190,6 +219,9 @@ export function OfflineSyncNotifications() {
     });
   };
 
+  /**
+   * Displays a notification for failed actions if the retry count exceeds 3.
+   */
   const showActionFailedNotification = (action: any, error: string) => {
     // Only show toast for critical failures, not retryable ones
     if (action.retryCount >= 3) {
@@ -225,6 +257,13 @@ export function OfflineSyncNotifications() {
     }, 2000);
   };
 
+  /**
+   * Checks for pending actions and triggers synchronization if necessary.
+   *
+   * This function fetches the current statistics of the offline queue from the API.
+   * If the response indicates that there are pending actions, it calls the triggerSync function
+   * to initiate synchronization. Errors during the fetch operation are logged to the console.
+   */
   const checkAndAutoSync = async () => {
     try {
       const response = await fetch('/api/offline/queue/stats');
@@ -240,6 +279,13 @@ export function OfflineSyncNotifications() {
     }
   };
 
+  /**
+   * Triggers a synchronization process by sending a POST request to the server.
+   *
+   * This function attempts to fetch the endpoint '/api/offline/sync/trigger' to initiate the sync.
+   * If the response is not successful, it throws an error. In case of any errors during the fetch operation,
+   * a toast notification is displayed to inform the user that the synchronization has failed.
+   */
   const triggerSync = async () => {
     try {
       const response = await fetch('/api/offline/sync/trigger', {
@@ -269,6 +315,9 @@ export function OfflineSyncNotifications() {
     });
   };
 
+  /**
+   * Displays synchronization errors in a toast notification.
+   */
   const showSyncErrors = (result: SyncResult) => {
     // This would open a detailed error view
     console.log('Sync errors:', result.errors);
@@ -296,6 +345,9 @@ export function OfflineSyncNotifications() {
     });
   };
 
+  /**
+   * Adds a new notification to the list, generating a unique id and timestamp.
+   */
   const addNotification = (
     notification: Omit<SyncNotification, 'id' | 'timestamp'>
   ) => {
@@ -314,6 +366,9 @@ export function OfflineSyncNotifications() {
     );
   };
 
+  /**
+   * Clears all notifications by setting the notifications state to an empty array.
+   */
   const clearAllNotifications = () => {
     setNotifications([]);
   };
@@ -345,6 +400,16 @@ export function NotificationCenter() {
     }
   };
 
+  /**
+   * Get the appropriate notification icon based on the notification type.
+   *
+   * The function uses a switch statement to determine which icon to return based on the provided type.
+   * It handles various notification types such as 'sync_complete', 'sync_error', 'network_restored',
+   * and 'conflict_detected', returning a default icon for any unrecognized type.
+   *
+   * @param type - The type of the notification, which determines the icon to be returned.
+   * @returns A JSX element representing the corresponding notification icon.
+   */
   const getNotificationIcon = (type: SyncNotification['type']) => {
     switch (type) {
       case 'sync_complete':

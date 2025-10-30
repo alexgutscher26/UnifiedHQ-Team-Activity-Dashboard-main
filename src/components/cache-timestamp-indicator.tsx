@@ -25,6 +25,22 @@ interface CacheTimestampIndicatorProps {
   staleThresholdMinutes?: number;
 }
 
+/**
+ * Render a cache timestamp indicator with varying styles based on freshness and source.
+ *
+ * The function calculates the age of the timestamp in minutes and determines if the data is stale or from cache.
+ * It formats the age for display, applies appropriate styles based on the variant, and provides tooltip content
+ * that indicates the source and freshness of the data. The rendering logic varies based on the specified variant.
+ *
+ * @param {Object} props - The properties for the CacheTimestampIndicator.
+ * @param {number} props.timestamp - The timestamp to evaluate.
+ * @param {string} props.source - The source of the data (e.g., 'cache').
+ * @param {string} [props.className] - Additional class names for styling.
+ * @param {string} [props.variant='badge'] - The variant of the indicator (e.g., 'text', 'icon', 'badge').
+ * @param {boolean} [props.showIcon=true] - Whether to show an icon alongside the timestamp.
+ * @param {number} [props.staleThresholdMinutes=15] - The threshold in minutes to consider the data stale.
+ * @returns {JSX.Element} The rendered cache timestamp indicator component.
+ */
 export function CacheTimestampIndicator({
   timestamp,
   source,
@@ -38,6 +54,16 @@ export function CacheTimestampIndicator({
   const isStale = ageInMinutes > staleThresholdMinutes;
   const isFromCache = source === 'cache';
 
+  /**
+   * Formats a given age in minutes into a human-readable string.
+   *
+   * The function checks the number of minutes and returns a corresponding string representation.
+   * If the minutes are less than 1, it returns 'Just now'. For minutes less than 60, it returns
+   * the number of minutes followed by 'm ago'. For hours and days, it calculates the appropriate
+   * values and returns them in the format of 'h ago' or 'd ago' respectively.
+   *
+   * @param minutes - The age in minutes to be formatted.
+   */
   const formatAge = (minutes: number) => {
     if (minutes < 1) {
       return 'Just now';
@@ -81,6 +107,14 @@ export function CacheTimestampIndicator({
     return cn('text-xs', className);
   };
 
+  /**
+   * Retrieves the appropriate icon based on the current state.
+   *
+   * The function checks if the icon should be displayed. If `showIcon` is false, it returns null.
+   * If the icon is from cache, it further checks if the data is stale to determine whether to
+   * return an `IconAlertTriangle` or an `IconDatabase`. If the icon is not from cache, it defaults
+   * to returning an `IconWifi`.
+   */
   const getIcon = () => {
     if (!showIcon) return null;
 
@@ -95,6 +129,9 @@ export function CacheTimestampIndicator({
     return <IconWifi className='size-3' />;
   };
 
+  /**
+   * Generates tooltip content based on data source and age.
+   */
   const getTooltipContent = () => {
     const ageText = formatAge(ageInMinutes);
     const sourceText = isFromCache ? 'cached' : 'live';
@@ -176,6 +213,19 @@ interface DataFreshnessIndicatorProps {
   showLabel?: boolean;
 }
 
+/**
+ * Render a data freshness indicator based on the provided timestamp and source.
+ *
+ * This function calculates the age of the data in minutes and determines if it is stale based on a 15-minute threshold.
+ * It also checks if the data is from cache to adjust the display color and text accordingly. The component returns a
+ * styled indicator along with an optional label that reflects the freshness status of the data.
+ *
+ * @param timestamp - The timestamp indicating when the data was last updated.
+ * @param source - The source of the data, which can affect its freshness status.
+ * @param className - Additional CSS classes to apply to the component.
+ * @param showLabel - A boolean indicating whether to display the freshness label (default is true).
+ * @returns A JSX element representing the data freshness indicator.
+ */
 export function DataFreshnessIndicator({
   timestamp,
   source,
@@ -187,6 +237,13 @@ export function DataFreshnessIndicator({
   const isStale = ageInMinutes > 15; // 15 minutes threshold
   const isFromCache = source === 'cache';
 
+  /**
+   * Determines the freshness color based on the age of the data.
+   *
+   * The function checks if the data is from cache and evaluates its age in minutes.
+   * If the data is cached, it returns a color indicating freshness: green for less than 5 minutes,
+   * yellow for less than 15 minutes, and red for older data. If the data is live, it is always considered fresh and returns green.
+   */
   const getFreshnessColor = () => {
     if (isFromCache) {
       if (ageInMinutes < 5) return 'text-green-500';

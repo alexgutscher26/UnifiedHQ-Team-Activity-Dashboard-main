@@ -17,9 +17,7 @@ interface Integration {
 /**
  * Renders a list of integrations with their connection statuses.
  *
- * This function initializes the integrations state and fetches the connection statuses for GitHub and Slack integrations.
- * It updates the state based on the fetched data and handles visibility changes and storage events to refresh the statuses.
- * The function also provides click handlers for navigating to the integrations page and determining the status color and text.
+ * This function initializes the integrations state with Slack and GitHub integrations, fetching their connection statuses concurrently using asynchronous functions. It updates the state based on the fetched data and handles visibility changes and storage events to refresh the statuses. The function also provides click handlers for navigating to the integrations page and determining the status color and text for each integration.
  *
  * @returns {JSX.Element} The rendered integrations list component.
  */
@@ -44,6 +42,15 @@ export function IntegrationsList() {
 
   // Fetch integration connection status
   useEffect(() => {
+    /**
+     * Fetches the current status of the GitHub integration.
+     *
+     * This asynchronous function sends a request to the GitHub sync API endpoint.
+     * If the response is successful, it updates the integration state by mapping
+     * through the existing integrations and modifying the GitHub integration's
+     * connection status based on the fetched data. In case of an error, it logs
+     * the error message to the console.
+     */
     const fetchGitHubStatus = async () => {
       try {
         const response = await fetch('/api/integrations/github/sync');
@@ -128,6 +135,9 @@ export function IntegrationsList() {
     };
   }, []);
 
+  /**
+   * Navigates to the integrations page.
+   */
   const handleIntegrationClick = (integration: Integration) => {
     // Navigate to integrations page
     router.push('/integrations');
@@ -146,6 +156,15 @@ export function IntegrationsList() {
     }
   };
 
+  /**
+   * Returns a user-friendly status text based on the provided integration status.
+   *
+   * The function evaluates the input status and returns a corresponding string that
+   * represents the connection state. It handles specific cases for 'connected',
+   * 'disconnected', and 'coming-soon', while returning 'Unknown' for any other status.
+   *
+   * @param status - The current status of the integration.
+   */
   const getStatusText = (status: Integration['status']) => {
     switch (status) {
       case 'connected':

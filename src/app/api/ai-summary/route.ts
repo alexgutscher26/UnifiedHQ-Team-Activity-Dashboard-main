@@ -9,9 +9,7 @@ const prisma = new PrismaClient();
 /**
  * Handles the GET request to fetch AI summaries for a user.
  *
- * This function retrieves the user's session, checks for authorization, and calculates the time range for fetching summaries.
- * It checks if a new daily summary needs to be generated based on the user's account age and the time since the last summary.
- * If necessary, it auto-generates a summary using activity data and saves it to the database. Finally, it returns the summaries in JSON format.
+ * This function retrieves the user's session and checks for authorization. It calculates the time range for fetching summaries based on the request parameters. If necessary, it auto-generates a summary using activity data if it's been 24 hours since the last summary. Finally, it returns the summaries in JSON format, including any newly generated summaries.
  *
  * @param request - The NextRequest object containing the request details.
  * @returns A JSON response containing the summaries and additional metadata.
@@ -245,6 +243,15 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * Handles the POST request to generate an AI summary based on user activities.
+ *
+ * This function retrieves the user's session, validates the time range for activities, checks for existing summaries, and generates a new AI summary if necessary. It also handles potential errors, including unauthorized access and service availability issues, while ensuring that the response is appropriately formatted based on the outcome of the operations.
+ *
+ * @param request - The NextRequest object containing the request data.
+ * @returns A JSON response containing the generated summary or an error message.
+ * @throws Error If an error occurs during the summary generation process.
+ */
 export async function POST(request: NextRequest) {
   try {
     const session = await auth.api.getSession({

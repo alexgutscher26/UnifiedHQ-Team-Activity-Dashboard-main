@@ -2,6 +2,9 @@ import type * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
+/**
+ * Renders a Card component with specified className and props.
+ */
 function Card({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -28,6 +31,9 @@ function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * Renders a card title component with optional className and props.
+ */
 function CardTitle({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -48,6 +54,9 @@ function CardDescription({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * Renders a card action component with specified className and props.
+ */
 function CardAction({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -61,6 +70,9 @@ function CardAction({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * Renders a div element for card content with optional className and props.
+ */
 function CardContent({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -71,6 +83,9 @@ function CardContent({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * Renders a card footer component with optional className and props.
+ */
 function CardFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div

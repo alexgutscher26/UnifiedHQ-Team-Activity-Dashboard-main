@@ -40,6 +40,8 @@ jobs:
   collect-workflow-metrics:
     name: Collect Workflow Metrics
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       report-period: ${{ steps.period.outputs.report-period }}
       start-date: ${{ steps.period.outputs.start-date }}
@@ -505,6 +507,9 @@ jobs:
 
   publish-report:
     name: Publish Report
+    permissions:
+      contents: read
+      issues: write
     runs-on: ubuntu-latest
     needs: [collect-workflow-metrics, generate-report]
     steps:
@@ -618,6 +623,8 @@ jobs:
 
   performance-analysis:
     name: Performance Analysis
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     needs: collect-workflow-metrics
     if: github.event.inputs.include_performance != 'false'
@@ -789,6 +796,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: [publish-report]
     if: always()
+    permissions:
+      issues: write
+      actions: write
+      contents: read
     steps:
       - name: Cleanup old workflow report issues
         uses: actions/github-script@v7

@@ -1,5 +1,8 @@
 name: Release Artifacts & Publishing
 
+permissions:
+  contents: read
+
 on:
   release:
     types: [published]
@@ -22,6 +25,8 @@ jobs:
   # Job 1: Build Production Artifacts
   build-production-artifacts:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       version: ${{ steps.version.outputs.version }}
       artifact-name: ${{ steps.artifact.outputs.name }}
@@ -379,6 +384,8 @@ jobs:
     environment:
       name: production
       url: ${{ steps.deploy.outputs.url }}
+    permissions:
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -784,6 +791,10 @@ jobs:
     if: failure() && needs.deploy-production.result == 'failure'
     runs-on: ubuntu-latest
     needs: [build-production-artifacts, deploy-production]
+    permissions:
+      contents: read
+      actions: write
+      issues: write
     environment:
       name: production-rollback
     steps:

@@ -6,24 +6,30 @@ import { XIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
+/** A functional component that renders a DialogPrimitive.Root with provided props. */
 function Dialog({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {
   return <DialogPrimitive.Root data-slot='dialog' {...props} />;
 }
 
+/** A component that renders a DialogPrimitive.Trigger with provided props. */
 function DialogTrigger({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Trigger>) {
   return <DialogPrimitive.Trigger data-slot='dialog-trigger' {...props} />;
 }
 
+/** Renders a DialogPrimitive.Portal component with provided props. */
 function DialogPortal({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Portal>) {
   return <DialogPrimitive.Portal data-slot='dialog-portal' {...props} />;
 }
 
+/**
+ * Renders a DialogPrimitive.Close component with provided props.
+ */
 function DialogClose({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Close>) {
@@ -90,6 +96,9 @@ function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * Renders a dialog footer component with customizable className and props.
+ */
 function DialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -103,6 +112,9 @@ function DialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * Renders a dialog title component with optional className and props.
+ */
 function DialogTitle({
   className,
   ...props
@@ -116,6 +128,9 @@ function DialogTitle({
   );
 }
 
+/**
+ * Renders a dialog description component with optional className and props.
+ */
 function DialogDescription({
   className,
   ...props

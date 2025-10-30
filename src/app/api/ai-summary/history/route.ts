@@ -4,6 +4,17 @@ import { PrismaClient } from '@/generated/prisma';
 
 const prisma = new PrismaClient();
 
+/**
+ * Handles the GET request to fetch AI summary history for a user.
+ *
+ * This function retrieves the user's session, validates authorization, and processes query parameters for pagination and time range.
+ * It calculates the date range based on the provided time range, fetches summaries from the database with pagination,
+ * and computes summary statistics including average activities. Finally, it returns the summaries, pagination info, and statistics in JSON format.
+ *
+ * @param request - The NextRequest object containing the request details.
+ * @returns A JSON response containing the summaries, pagination information, and statistics.
+ * @throws Error If there is an issue fetching the summary history.
+ */
 export async function GET(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
