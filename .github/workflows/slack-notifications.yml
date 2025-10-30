@@ -303,6 +303,8 @@ jobs:
 
   send-deployment-notification:
     name: Send Deployment Notification
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     needs: determine-notification-context
     if: |
