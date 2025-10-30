@@ -655,11 +655,10 @@ class RequirementsValidator {
   hasBlockingSecurityChecks (workflow) {
     return (
       workflow.jobs &&
-      Object.values(workflow.jobs).some(
-        job =>
-          job.steps?.some(
-            step => step.name && step.name.toLowerCase().includes('security')
-          )
+      Object.values(workflow.jobs).some(job =>
+        job.steps?.some(
+          step => step.name && step.name.toLowerCase().includes('security')
+        )
       )
     )
   }

@@ -173,11 +173,8 @@ class WorkflowValidator {
             const warnings = []
 
             if (workflow.jobs) {
-              const hasCache = Object.values(workflow.jobs).some(
-                job =>
-                  job.steps?.some(
-                    step => step.uses?.includes('actions/cache')
-                  )
+              const hasCache = Object.values(workflow.jobs).some(job =>
+                job.steps?.some(step => step.uses?.includes('actions/cache'))
               )
 
               if (!hasCache) {

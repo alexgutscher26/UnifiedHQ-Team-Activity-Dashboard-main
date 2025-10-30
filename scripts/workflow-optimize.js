@@ -264,8 +264,8 @@ class WorkflowOptimizer {
 
       // Insert cache steps after checkout
       if (cacheSteps.length > 0) {
-        const checkoutIndex = job.steps.findIndex(
-          step => step.uses?.includes('actions/checkout')
+        const checkoutIndex = job.steps.findIndex(step =>
+          step.uses?.includes('actions/checkout')
         )
 
         if (checkoutIndex !== -1) {
@@ -400,7 +400,7 @@ class WorkflowOptimizer {
         (step.run &&
           (step.run.includes('bun install') ||
             step.run.includes('npm install'))) ||
-        (step.uses?.includes('setup-bun'))
+        step.uses?.includes('setup-bun')
     )
   }
 
@@ -525,10 +525,7 @@ class WorkflowOptimizer {
 
       // Check for caching
       analysis.metrics.hasCache = Object.values(workflow.content.jobs).some(
-        job =>
-          job.steps?.some(
-            step => step.uses?.includes('actions/cache')
-          )
+        job => job.steps?.some(step => step.uses?.includes('actions/cache'))
       )
 
       // Check for conditionals
