@@ -434,6 +434,8 @@ jobs:
   # Summary and notification job
   workflow-summary:
     name: 'Workflow Summary'
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     needs: [dependency-scan, create-update-prs, security-updates]
     if: always()
