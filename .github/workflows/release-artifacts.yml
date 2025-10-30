@@ -22,6 +22,8 @@ jobs:
   # Job 1: Build Production Artifacts
   build-production-artifacts:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       version: ${{ steps.version.outputs.version }}
       artifact-name: ${{ steps.artifact.outputs.name }}
