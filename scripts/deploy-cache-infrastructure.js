@@ -3,7 +3,7 @@
  * Orchestrates the complete deployment of caching infrastructure
  */
 
-const { spawn, exec } = require('child_process');
+require('child_process');
 const fs = require('fs');
 const path = require('path');
 

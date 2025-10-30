@@ -4,7 +4,7 @@ import {
   GitHubCacheManager,
   GitHubCacheWarming,
 } from '@/lib/integrations/github-cached';
-import { RedisCache, CacheKeyGenerator } from '@/lib/redis';
+import { RedisCache } from '@/lib/redis';
 /**
  * GitHub cache management endpoint.
  *
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 
         // Get Redis cache statistics for this user
         const redisPattern = `unifiedhq:github:${userId}:*`;
-        const redisKeys = (await RedisCache.redis?.keys(redisPattern)) || [];
+        const redisKeys = await RedisCache.getKeysByPattern(redisPattern);
 
         return NextResponse.json({
           memory: memoryStats,

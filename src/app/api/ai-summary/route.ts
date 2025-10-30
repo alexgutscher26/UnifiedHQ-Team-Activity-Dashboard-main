@@ -7,6 +7,180 @@ import { Activity } from '@/types/components';
 const prisma = new PrismaClient();
 
 /**
+ * Generate an intelligent mock summary based on actual activity data
+ */
+async function generateIntelligentMockSummary(
+  userId: string,
+  activities: any[],
+  startDate: Date,
+  endDate: Date
+) {
+  const sourceBreakdown = activities.reduce(
+    (acc, activity) => {
+      acc[activity.source] = (acc[activity.source] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
+
+  const repositories = await prisma.selectedRepository.count({
+    where: { userId },
+  });
+
+  const channels = await prisma.selectedChannel.count({
+    where: { userId },
+  });
+
+  const totalActivities = activities.length;
+  const sources = Object.keys(sourceBreakdown);
+  const primarySource = Object.entries(sourceBreakdown).sort(
+    ([, a], [, b]) => (b as number) - (a as number)
+  )[0];
+
+  // Generate title based on activity level
+  let title = 'Daily Activity Summary';
+  if (totalActivities > 20) {
+    title = 'High Activity Day - Great Progress!';
+  } else if (totalActivities > 10) {
+    title = 'Productive Day - Steady Progress';
+  } else if (totalActivities > 5) {
+    title = 'Active Day - Good Momentum';
+  } else {
+    title = 'Light Activity Day';
+  }
+
+  // Generate key highlights
+  const keyHighlights = [];
+
+  if (primarySource) {
+    keyHighlights.push(
+      `Most active on ${primarySource[0]} with ${primarySource[1]} activities`
+    );
+  }
+
+  if (totalActivities > 0) {
+    keyHighlights.push(
+      `Total of ${totalActivities} activities across ${sources.length} platform${sources.length !== 1 ? 's' : ''}`
+    );
+  }
+
+  if (sourceBreakdown.github > 0) {
+    keyHighlights.push(
+      `GitHub activity: ${sourceBreakdown.github} commits/PRs/issues`
+    );
+  }
+
+  if (sourceBreakdown.slack > 0) {
+    keyHighlights.push(
+      `Slack engagement: ${sourceBreakdown.slack} messages/interactions`
+    );
+  }
+
+  // Generate action items
+  const actionItems = [];
+
+  if (repositories === 0) {
+    actionItems.push(
+      'Connect GitHub repositories to track development progress'
+    );
+  }
+
+  if (channels === 0) {
+    actionItems.push('Connect Slack channels to monitor team communication');
+  }
+
+  if (totalActivities < 5) {
+    actionItems.push('Consider increasing daily activity to build momentum');
+  }
+
+  if (sources.length === 1) {
+    actionItems.push(
+      'Diversify activity across multiple platforms for better insights'
+    );
+  }
+
+  // Generate insights
+  const insights = [];
+
+  const activityTrend =
+    totalActivities > 10 ? 'high' : totalActivities > 5 ? 'moderate' : 'low';
+  insights.push(
+    `Activity level: ${activityTrend} (${totalActivities} activities in 24h)`
+  );
+
+  if (sourceBreakdown.github && sourceBreakdown.slack) {
+    insights.push(
+      'Good balance between development work and team communication'
+    );
+  } else if (sourceBreakdown.github) {
+    insights.push(
+      'Focus on development activities - consider increasing team communication'
+    );
+  } else if (sourceBreakdown.slack) {
+    insights.push(
+      'Active in team communication - consider balancing with development work'
+    );
+  }
+
+  const timeSpread = calculateTimeSpread(activities);
+  insights.push(`Activity spread: ${timeSpread}`);
+
+  // Save to database
+  const savedSummary = await prisma.aISummary.create({
+    data: {
+      userId,
+      title,
+      keyHighlights: keyHighlights.slice(0, 4),
+      actionItems: actionItems.slice(0, 3),
+      insights: insights.slice(0, 3),
+      generatedAt: endDate,
+      timeRangeStart: startDate,
+      timeRangeEnd: endDate,
+      metadata: {
+        activityCount: totalActivities,
+        sourceBreakdown,
+        activeRepositories: repositories,
+        activeChannels: channels,
+        model: 'intelligent-mock-v1',
+        tokensUsed: 0,
+      },
+    },
+  });
+
+  return {
+    id: savedSummary.id,
+    title: savedSummary.title,
+    keyHighlights: savedSummary.keyHighlights,
+    actionItems: savedSummary.actionItems,
+    insights: savedSummary.insights,
+    generatedAt: savedSummary.generatedAt,
+    timeRange: {
+      start: savedSummary.timeRangeStart,
+      end: savedSummary.timeRangeEnd,
+    },
+    metadata: savedSummary.metadata,
+  };
+}
+
+/**
+ * Calculate how activities are spread throughout the day
+ */
+function calculateTimeSpread(activities: any[]): string {
+  if (activities.length === 0) return 'No activity';
+
+  const hours = activities.map(a => new Date(a.timestamp).getHours());
+  const uniqueHours = new Set(hours);
+
+  if (uniqueHours.size > 8) {
+    return 'Distributed throughout the day';
+  } else if (uniqueHours.size > 4) {
+    return 'Concentrated in several time periods';
+  } else {
+    return 'Focused in specific time windows';
+  }
+}
+
+/**
  * Handles the GET request to fetch AI summaries for a user.
  *
  * This function retrieves the user's session and checks for authorization. It calculates the time range for fetching summaries based on the request parameters. If necessary, it auto-generates a summary using activity data if it's been 24 hours since the last summary. Finally, it returns the summaries in JSON format, including any newly generated summaries.
@@ -95,8 +269,8 @@ export async function GET(request: NextRequest) {
         (60 * 60 * 1000)
       : 24; // If no summaries, consider it as 24+ hours
 
-    // Auto-generate summary if it's been 24+ hours since last summary
-    if (hoursSinceLastSummary >= 24) {
+    // Auto-generate summary if it's been 24+ hours since last summary OR if no summaries exist
+    if (hoursSinceLastSummary >= 24 || !mostRecentSummary) {
       // For auto-generation, always use the last 24 hours regardless of user's time range filter
       const dailyStartDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
@@ -113,9 +287,18 @@ export async function GET(request: NextRequest) {
       // Generate summary even with minimal activity (for daily summaries)
       if (activityCount >= 1) {
         try {
-          // Validate OpenRouter connection
-          const isConnected = await AISummaryService.validateConnection();
-          if (isConnected) {
+          // Try to use AI service, but fall back to intelligent mock if not available
+          let useAI = false;
+          try {
+            useAI = await AISummaryService.validateConnection();
+          } catch (error) {
+            console.log(
+              '[AI Summary] AI service not available, using intelligent mock'
+            );
+            useAI = false;
+          }
+
+          if (useAI) {
             // Get activities for auto-generation (last 24 hours)
             const activities = await prisma.activity.findMany({
               where: {
@@ -207,10 +390,75 @@ export async function GET(request: NextRequest) {
               count: 1,
               autoGenerated: true,
             });
+          } else {
+            // Generate intelligent mock summary when AI service is not available
+            const activities = await prisma.activity.findMany({
+              where: {
+                userId,
+                timestamp: {
+                  gte: dailyStartDate,
+                  lte: now,
+                },
+              },
+              orderBy: {
+                timestamp: 'desc',
+              },
+              take: 100,
+            });
+
+            if (activities.length > 0) {
+              const mockSummary = await generateIntelligentMockSummary(
+                userId,
+                activities,
+                dailyStartDate,
+                now
+              );
+
+              return NextResponse.json({
+                summaries: [mockSummary],
+                count: 1,
+                autoGenerated: true,
+                usingMockAI: true,
+              });
+            }
           }
         } catch (error) {
           console.error('Auto-generation failed:', error);
-          // Continue with empty results if auto-generation fails
+          // Try to generate a mock summary as fallback
+          try {
+            const activities = await prisma.activity.findMany({
+              where: {
+                userId,
+                timestamp: {
+                  gte: dailyStartDate,
+                  lte: now,
+                },
+              },
+              orderBy: {
+                timestamp: 'desc',
+              },
+              take: 100,
+            });
+
+            if (activities.length > 0) {
+              const mockSummary = await generateIntelligentMockSummary(
+                userId,
+                activities,
+                dailyStartDate,
+                now
+              );
+
+              return NextResponse.json({
+                summaries: [mockSummary],
+                count: 1,
+                autoGenerated: true,
+                usingMockAI: true,
+                fallback: true,
+              });
+            }
+          } catch (fallbackError) {
+            console.error('Fallback generation also failed:', fallbackError);
+          }
         }
       }
     }

@@ -44,7 +44,7 @@ const data = {
     },
     {
       title: 'AI Insights',
-      url: '#',
+      url: '/ai-insights',
       icon: IconSparkles,
     },
   ],
