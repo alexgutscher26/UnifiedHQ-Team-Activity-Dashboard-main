@@ -11,6 +11,9 @@ import {
 } from '@/components/ui/card';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
+/**
+ * Component that displays a global error message and provides options to retry or go home.
+ */
 export default function GlobalError({
   error,
   reset,
