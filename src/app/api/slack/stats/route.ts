@@ -44,7 +44,10 @@ async function getSlackStats(request: NextRequest): Promise<NextResponse> {
         return NextResponse.json(cachedStats);
       }
     } catch (cacheError) {
-      console.warn('[Slack Stats] Cache error, proceeding without cache:', cacheError);
+      console.warn(
+        '[Slack Stats] Cache error, proceeding without cache:',
+        cacheError
+      );
     }
 
     // Check if Slack is connected
@@ -95,9 +98,16 @@ async function getSlackStats(request: NextRequest): Promise<NextResponse> {
 
       // Try to cache the result
       try {
-        await RedisCache.set(cacheKey!, notConnectedStats, TTLManager.getTTL('SLACK_MESSAGES'));
+        await RedisCache.set(
+          cacheKey!,
+          notConnectedStats,
+          TTLManager.getTTL('SLACK_MESSAGES')
+        );
       } catch (cacheError) {
-        console.warn('[Slack Stats] Failed to cache not connected state:', cacheError);
+        console.warn(
+          '[Slack Stats] Failed to cache not connected state:',
+          cacheError
+        );
       }
 
       return NextResponse.json(notConnectedStats);

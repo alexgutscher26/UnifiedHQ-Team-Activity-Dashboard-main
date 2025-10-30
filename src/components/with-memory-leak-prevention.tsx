@@ -252,7 +252,7 @@ export function useSafeEventSource(
 
   const addEventListener = React.useCallback(
     (type: string, listener: (event: MessageEvent) => void) => {
-      if (!eventSource) return () => { };
+      if (!eventSource) return () => {};
 
       eventSource.addEventListener(type, listener);
       return () => {
