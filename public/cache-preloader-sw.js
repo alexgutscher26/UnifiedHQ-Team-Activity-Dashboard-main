@@ -29,7 +29,8 @@ class ServiceWorkerCachePreloader {
     }
 
     /**
-     * Track user navigation to build patterns
+     * Track user navigation to build patterns.
+     * @param {string} path - The path of the navigation.
      */
     trackNavigation(path) {
         const now = Date.now();
@@ -78,7 +79,15 @@ class ServiceWorkerCachePreloader {
     }
 
     /**
-     * Update predictions for what paths come after current path
+     * Update predictions for what paths come after the current path.
+     *
+     * This function retrieves the last accessed path using the currentPath parameter.
+     * If a valid lastPath is found and it differs from currentPath, it checks for an
+     * associated pattern. If the pattern exists and does not already include currentPath
+     * in its nextPaths, it initializes the count. The function then increments the count
+     * for currentPath in the nextPaths of the lastPattern.
+     *
+     * @param {string} currentPath - The path for which predictions are being updated.
      */
     updateNextPathPredictions(currentPath) {
         const lastPath = this.getLastAccessedPath(currentPath);
@@ -95,7 +104,7 @@ class ServiceWorkerCachePreloader {
     }
 
     /**
-     * Get the most recently accessed path (excluding current)
+     * Retrieves the most recently accessed path, excluding the specified path.
      */
     getLastAccessedPath(excludePath) {
         let lastPath = null;
@@ -112,7 +121,13 @@ class ServiceWorkerCachePreloader {
     }
 
     /**
-     * Trigger predictive preloading based on current path
+     * Trigger predictive preloading based on current path.
+     *
+     * This function retrieves a pattern associated with the given currentPath. If a pattern exists, it then calls
+     * getPredictedPaths to obtain potential next paths. For each predicted path, if its probability meets or exceeds
+     * the configured preloadThreshold, it invokes preloadPath to preload that path.
+     *
+     * @param {string} currentPath - The current path used to determine predictive preloading.
      */
     async triggerPredictivePreload(currentPath) {
         const pattern = this.patterns.get(currentPath);
@@ -130,7 +145,15 @@ class ServiceWorkerCachePreloader {
     }
 
     /**
-     * Get predicted next paths with probabilities
+     * Get predicted next paths with probabilities.
+     *
+     * This function retrieves the predicted next paths based on the current path provided.
+     * It first checks if there is a pattern associated with the current path. If no pattern exists,
+     * it returns an empty array. If a pattern is found, it calculates the total number of transitions
+     * to determine the probabilities for each next path, which are then sorted in descending order
+     * before being returned.
+     *
+     * @param {string} currentPath - The current path for which to predict next paths.
      */
     getPredictedPaths(currentPath) {
         const pattern = this.patterns.get(currentPath);
@@ -152,7 +175,15 @@ class ServiceWorkerCachePreloader {
     }
 
     /**
-     * Preload a specific path
+     * Preload a specific path into the service worker cache.
+     *
+     * This function determines the appropriate cache to use based on the provided path,
+     * checking if the path is already cached and whether it has expired. If not cached or expired,
+     * it fetches the resource and stores it in the appropriate cache. It also handles fallback cache names
+     * and configurations if not defined in the service worker context.
+     *
+     * @param path - The path to preload into the cache.
+     * @returns {Promise<void>} A promise that resolves when the preloading is complete.
      */
     async preloadPath(path) {
         try {
@@ -201,7 +232,7 @@ class ServiceWorkerCachePreloader {
     }
 
     /**
-     * Check if URL is a static asset
+     * Check if the given path is a static asset.
      */
     isStaticAsset(path) {
         return (
@@ -212,7 +243,14 @@ class ServiceWorkerCachePreloader {
     }
 
     /**
-     * Put response in cache with timestamp (reuse existing function)
+     * Caches the response with a timestamp if the response is successful.
+     *
+     * This function checks if the response is OK before creating a new Response object that includes the original response body, status, and headers, along with a timestamp indicating when it was cached. It then stores this response in the provided cache and performs a cleanup operation on the cache using the specified config.
+     *
+     * @param {Cache} cache - The cache object where the response will be stored.
+     * @param {Request} request - The request object associated with the response.
+     * @param {Response} response - The response object to be cached.
+     * @param {Object} config - Configuration options for cache cleanup.
      */
     async putInCache(cache, request, response, config) {
         if (!response.ok) return;
@@ -231,7 +269,17 @@ class ServiceWorkerCachePreloader {
     }
 
     /**
-     * Check if cached response is expired (reuse existing function)
+     * Check if cached response is expired.
+     *
+     * This function determines if the cached response has exceeded its maximum age.
+     * It first checks if a maximum age is defined in the config. If not, it returns false.
+     * Then, it retrieves the cached timestamp from the response headers and calculates the age
+     * of the cache. If the age exceeds the maximum allowed age, it returns true, indicating
+     * the cache is expired.
+     *
+     * @param {Response} response - The cached response object to check.
+     * @param {Object} config - Configuration object containing cache settings.
+     * @param {number} config.maxAgeSeconds - The maximum age in seconds for the cached response.
      */
     isExpired(response, config) {
         if (!config.maxAgeSeconds) return false;
@@ -244,7 +292,14 @@ class ServiceWorkerCachePreloader {
     }
 
     /**
-     * Cleanup cache based on size and age limits (reuse existing function)
+     * Cleanup cache based on size and age limits.
+     *
+     * This function checks the cache for entries that are either expired based on the maxAgeSeconds configuration or exceed the maxEntries limit.
+     * It removes expired entries first, then evaluates the remaining entries to delete the oldest ones if the total exceeds the specified maximum.
+     *
+     * @param cache - The cache object to be cleaned up.
+     * @param config - Configuration object containing maxEntries and maxAgeSeconds limits.
+     * @returns A promise that resolves when the cache cleanup is complete.
      */
     async cleanupCache(cache, config) {
         if (!config.maxEntries && !config.maxAgeSeconds) return;
@@ -287,7 +342,7 @@ class ServiceWorkerCachePreloader {
     }
 
     /**
-     * Preload critical dashboard data
+     * Preload critical dashboard data from specified endpoints.
      */
     async preloadCriticalData() {
         console.log('[SW Cache Preloader] Starting critical data preload');
@@ -308,14 +363,14 @@ class ServiceWorkerCachePreloader {
     }
 
     /**
-     * Setup idle detection for background preloading
+     * Setup idle detection for background preloading.
      */
     setupIdleDetection() {
         this.resetIdleTimer();
     }
 
     /**
-     * Reset idle timer
+     * Resets the idle timer and updates the last navigation time.
      */
     resetIdleTimer() {
         this.isIdle = false;
@@ -373,7 +428,12 @@ class ServiceWorkerCachePreloader {
     }
 
     /**
-     * Get current time-based recommendations
+     * Get current time-based recommendations.
+     *
+     * This function retrieves recommendations based on the current hour and day of the week.
+     * It iterates through the defined patterns, checking if the current time and day match
+     * the specified criteria, and if the frequency meets the minimum requirement.
+     * The resulting recommendations are then sorted by frequency in descending order before being returned.
      */
     getTimeBasedRecommendations() {
         const currentHour = new Date().getHours();
@@ -398,7 +458,7 @@ class ServiceWorkerCachePreloader {
     }
 
     /**
-     * Cleanup old or infrequent patterns
+     * Cleans up old or infrequent patterns based on configured limits.
      */
     cleanupPatterns() {
         if (this.patterns.size <= this.config.maxPatterns) return;
@@ -441,7 +501,11 @@ class ServiceWorkerCachePreloader {
     }
 
     /**
-     * Load patterns from IndexedDB
+     * Load patterns from IndexedDB.
+     *
+     * This function opens a connection to the IndexedDB, initiates a read-only transaction on the 'patterns' store,
+     * and retrieves the 'navigation-patterns'. If patterns are found, they are stored in the `this.patterns` Map,
+     * and a message is logged indicating the number of loaded patterns. Errors during the process are caught and logged.
      */
     async loadPatterns() {
         try {
@@ -461,7 +525,7 @@ class ServiceWorkerCachePreloader {
     }
 
     /**
-     * Open IndexedDB for pattern storage
+     * Opens IndexedDB for pattern storage and handles version upgrades.
      */
     openDB() {
         return new Promise((resolve, reject) => {
@@ -481,7 +545,7 @@ class ServiceWorkerCachePreloader {
     }
 
     /**
-     * Get cache statistics
+     * Retrieves cache statistics including frequent paths and predictions.
      */
     async getCacheStats() {
         const frequentPaths = Array.from(this.patterns.values())
@@ -502,7 +566,7 @@ class ServiceWorkerCachePreloader {
     }
 
     /**
-     * Clear all patterns
+     * Clear all patterns and save the changes.
      */
     async clearPatterns() {
         this.patterns.clear();
