@@ -3,6 +3,16 @@
 // Memory leak detection CLI script
 // This script requires tsx or ts-node to run TypeScript files
 
+/**
+ * Main function to execute the memory leak detection CLI.
+ *
+ * This function imports the TypeScript module for memory leak detection, parses command line arguments for options,
+ * and initiates the memory leak scan using the provided options. It handles errors related to module import and
+ * execution, providing user-friendly messages for required dependencies and usage instructions.
+ *
+ * @returns {Promise<void>} A promise that resolves when the memory leak detection process is complete.
+ * @throws Error If there is an issue with importing the TypeScript module or during the execution of the scan.
+ */
 async function main() {
   let cliScan;
 
