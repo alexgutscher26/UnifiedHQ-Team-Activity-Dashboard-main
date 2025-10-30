@@ -13,10 +13,21 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+/**
+ * Render the user profile component.
+ *
+ * This function retrieves the current session using authClient, handles user sign-out, and displays user information if signed in.
+ * It manages loading and error states, providing appropriate UI feedback and navigation options for signing in or signing up.
+ *
+ * @returns A JSX element representing the user profile or loading/error states.
+ */
 export function UserProfile() {
   const { data: session, isPending, error } = authClient.useSession();
   const router = useRouter();
 
+  /**
+   * Handles user sign out and redirects to the home page on success.
+   */
   const handleSignOut = async () => {
     try {
       await authClient.signOut({
