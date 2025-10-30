@@ -27,6 +27,15 @@ interface AISummaryNotificationsProps {
   onSettingsChange?: (settings: NotificationSettings) => void;
 }
 
+/**
+ * Component for managing AI summary notification settings.
+ *
+ * This component allows users to configure their notification preferences, including enabling/disabling notifications, setting daily reminders, and managing email notifications. It retrieves saved settings from localStorage on mount and updates them accordingly. The component also provides visual feedback through toast notifications when settings are updated.
+ *
+ * @param className - Optional additional class names for styling the component.
+ * @param onSettingsChange - Optional callback function that is called when the settings are updated.
+ * @returns JSX.Element representing the notification settings interface.
+ */
 export function AISummaryNotifications({
   className,
   onSettingsChange,
@@ -53,6 +62,9 @@ export function AISummaryNotifications({
     }
   }, []);
 
+  /**
+   * Updates notification settings and saves them to localStorage.
+   */
   const updateSettings = (newSettings: Partial<NotificationSettings>) => {
     const updatedSettings = { ...settings, ...newSettings };
     setSettings(updatedSettings);
@@ -74,26 +86,44 @@ export function AISummaryNotifications({
     });
   };
 
+  /**
+   * Toggles the notifications setting.
+   */
   const toggleNotifications = () => {
     updateSettings({ enabled: !settings.enabled });
   };
 
+  /**
+   * Toggles the daily reminder setting.
+   */
   const toggleDailyReminder = () => {
     updateSettings({ dailyReminder: !settings.dailyReminder });
   };
 
+  /**
+   * Toggles the new summary alert setting.
+   */
   const toggleNewSummaryAlert = () => {
     updateSettings({ newSummaryAlert: !settings.newSummaryAlert });
   };
 
+  /**
+   * Toggles the email notification setting.
+   */
   const toggleEmailNotifications = () => {
     updateSettings({ emailNotifications: !settings.emailNotifications });
   };
 
+  /**
+   * Updates the reminder time in settings.
+   */
   const handleTimeChange = (time: string) => {
     updateSettings({ reminderTime: time });
   };
 
+  /**
+   * Displays a test notification using the toast function.
+   */
   const testNotification = () => {
     toast({
       title: 'Test Notification',
