@@ -62,7 +62,7 @@ export async function DELETE(request: NextRequest) {
     const scope = searchParams.get('scope') || 'user'; // 'user' or 'all'
 
     if (scope === 'all') {
-      // Only allow admin users to invalidate all caches
+      // TODO: Only allow admin users to invalidate all caches
       // For now, we'll allow any authenticated user, but this should be restricted
       await AISummaryService.invalidateAllCache();
       await CacheInvalidator.invalidateAISummaryCache();

@@ -7,7 +7,7 @@ import { headers } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
-    const headersList = headers();
+    const headersList = await headers();
     const userAgent = headersList.get('user-agent') || '';
     const signature = headersList.get('x-hub-signature-256');
     const githubEvent = headersList.get('x-github-event');

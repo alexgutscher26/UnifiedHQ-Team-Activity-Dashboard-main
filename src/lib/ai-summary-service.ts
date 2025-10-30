@@ -335,6 +335,12 @@ Always respond with valid JSON format as requested.`;
         return false;
       }
 
+      // Check if it's a placeholder key
+      if (process.env.OPENROUTER_API_KEY.includes('your-actual-api-key-here')) {
+        console.log('🔧 OpenRouter API key is placeholder - using mock AI for development');
+        return false;
+      }
+
       const response = await generateWithOpenRouter({
         model: this.DEFAULT_MODEL,
         messages: [{ role: 'user', content: 'Hello' }],

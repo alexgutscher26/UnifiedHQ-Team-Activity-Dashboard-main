@@ -65,6 +65,13 @@ function verifySlackSignature(
 
 /**
  * Get user ID from Slack user ID by looking up connections in database
+ * 
+ * Note: Current limitation - we don't store individual Slack user IDs in the Connection model,
+ * so we can only match by team ID. This means we assume the connection owner is the user
+ * performing the action. For multi-user Slack workspaces, this may not be accurate.
+ * 
+ * TODO: Consider storing Slack user metadata in the Connection model or creating a separate
+ * SlackUser model to properly map Slack users to our internal users.
  */
 async function getUserIdFromSlackUserId(
   slackUserId: string,
@@ -74,45 +81,29 @@ async function getUserIdFromSlackUserId(
     const { PrismaClient } = await import('@/generated/prisma');
     const prisma = new PrismaClient();
 
-    // Look up user by Slack user ID in connection metadata
+    // Look up user by Slack team ID since we don't store individual Slack user IDs in connections
+    // For now, we'll match by team ID and assume the connection owner is the user
     const connection = await prisma.connection.findFirst({
       where: {
         type: 'slack',
-        OR: [
-          {
-            metadata: {
-              path: ['user', 'id'],
-              equals: slackUserId,
-            },
-          },
-          {
-            metadata: {
-              path: ['authed_user', 'id'],
-              equals: slackUserId,
-            },
-          },
-        ],
         ...(teamId && {
-          metadata: {
-            path: ['team', 'id'],
-            equals: teamId,
-          },
+          teamId: teamId,
         }),
       },
     });
 
     if (connection) {
       console.log(
-        `Found user ${connection.userId} for Slack user: ${slackUserId}`
+        `Found user ${connection.userId} for Slack team ${teamId} (assuming Slack user ${slackUserId} maps to this user)`
       );
       return connection.userId;
     }
 
-    console.log(`No user found for Slack user: ${slackUserId}`);
+    console.log(`No user found for Slack team: ${teamId}, Slack user: ${slackUserId}`);
     return null;
   } catch (error) {
     console.error(
-      `Error looking up user for Slack user ${slackUserId}:`,
+      `Error looking up user for Slack user ${slackUserId} in team ${teamId}:`,
       error
     );
     return null;

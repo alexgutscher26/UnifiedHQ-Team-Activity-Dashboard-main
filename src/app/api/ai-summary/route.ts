@@ -30,7 +30,7 @@ async function generateIntelligentMockSummary(
 
   const totalActivities = activities.length;
   const sources = Object.keys(sourceBreakdown);
-  const primarySource = Object.entries(sourceBreakdown).sort(([, a], [, b]) => b - a)[0];
+  const primarySource = Object.entries(sourceBreakdown).sort(([, a], [, b]) => (b as number) - (a as number))[0];
 
   // Generate title based on activity level
   let title = "Daily Activity Summary";

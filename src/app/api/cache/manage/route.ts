@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { redis, RedisCache, CacheKeyGenerator } from '@/lib/redis';
+import { redis, RedisCache } from '@/lib/redis';
 import { CacheInvalidationService } from '@/lib/cache-invalidation-service';
 import { CacheInvalidationTriggers } from '@/lib/cache-invalidation-triggers';
 import { CacheWarming } from '@/lib/cache-warming';

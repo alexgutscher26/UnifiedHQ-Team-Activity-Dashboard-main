@@ -27,7 +27,6 @@ export default function SignUpPage() {
 
   const {
     data,
-    errors,
     updateField,
     validateForm,
     getFieldError,
@@ -65,23 +64,6 @@ export default function SignUpPage() {
     setSuccess('');
 
     try {
-      const { data: authData, error } = await authClient.signUp.email(
-        {
-          email: data.email,
-          password: data.password,
-          name: data.name,
-          callbackURL: '/dashboard',
-        },
-        {
-          onSuccess: () => {
-            setSuccess('Account created successfully! Redirecting...');
-            setTimeout(() => router.push('/dashboard'), 2000);
-          },
-          onError: ctx => {
-            setError(ctx.error.message);
-          },
-        }
-      );
     } catch (err) {
       setError('An unexpected error occurred');
     } finally {

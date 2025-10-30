@@ -59,22 +59,60 @@ async function getTeamStats(request: NextRequest): Promise<NextResponse> {
     image: session.user.image,
   };
 
-  const { searchParams } = new URL(request.url);
-  const timeRange = searchParams.get('timeRange') || '30d';
-
   try {
-    // Get GitHub activity for the current user
-    console.log(`[Team Stats] Fetching GitHub activity for user: ${user.id}`);
 
+    const { searchParams } = new URL(request.url);
+    const timeRange = searchParams.get('timeRange') || '30d';
+
+    console.log(`[Team Stats] Fetching activity for user: ${user.id}`);
+
+    // Try to get GitHub activity, but handle errors gracefully
+    let githubActivities: any[] = [];
     try {
-      const githubActivities = await fetchGithubActivity(user.id);
-      console.log(
-        `[Team Stats] Found ${githubActivities.length} GitHub activities`
-      );
+      githubActivities = await fetchGithubActivity(user.id);
+      console.log(`[Team Stats] Found ${githubActivities.length} GitHub activities`);
+    } catch (githubError) {
+      console.warn('[Team Stats] GitHub fetch failed, returning empty stats:', githubError);
 
-      // Check if no repositories are selected
-      if (githubActivities.length === 0) {
-        // Check if user has GitHub connection but no selected repos
+      // Return empty stats instead of throwing error
+      const emptyStats: TeamStats = {
+        totalMembers: 1,
+        activeMembers: 1,
+        totalCommits: 0,
+        totalPullRequests: 0,
+        totalIssues: 0,
+        totalReviews: 0,
+        averageActivityPerDay: 0,
+        topContributors: [
+          {
+            id: user.id,
+            name: user.name || 'Unknown User',
+            email: user.email || '',
+            avatar: user.image,
+            role: 'Developer',
+            status: 'active' as const,
+            lastActive: new Date().toISOString(),
+            commits: 0,
+            pullRequests: 0,
+            issues: 0,
+            reviews: 0,
+          },
+        ],
+        activityTrends: [],
+        repositoryStats: [],
+      };
+
+      return NextResponse.json({
+        data: emptyStats,
+        success: true,
+        message: 'Unable to fetch GitHub activity. Please check your GitHub connection.',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Check if no repositories are selected
+    if (githubActivities.length === 0) {
+      try {
         const connection = await prisma.connection.findFirst({
           where: {
             userId: user.id,
@@ -121,99 +159,148 @@ async function getTeamStats(request: NextRequest): Promise<NextResponse> {
             return NextResponse.json({
               data: emptyStats,
               success: true,
-              message:
-                'No repositories selected. Please select repositories to track in the integrations page.',
+              message: 'No repositories selected. Please select repositories to track in the integrations page.',
               timestamp: new Date().toISOString(),
             });
           }
         }
+      } catch (dbError) {
+        console.warn('[Team Stats] Database check failed:', dbError);
+        // Continue with empty stats
       }
+    }
 
-      // Filter activities by time range first
-      const now = new Date();
-      const timeRangeDays =
-        timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
-      const cutoffDate = new Date(
-        now.getTime() - timeRangeDays * 24 * 60 * 60 * 1000
+    // Filter activities by time range first
+    const now = new Date();
+    const timeRangeDays =
+      timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
+    const cutoffDate = new Date(
+      now.getTime() - timeRangeDays * 24 * 60 * 60 * 1000
+    );
+
+    console.log(
+      `[Team Stats] Time filtering: cutoffDate=${cutoffDate.toISOString()}, timeRange=${timeRange}`
+    );
+    console.log(
+      `[Team Stats] Before filtering: ${githubActivities.length} activities`
+    );
+
+    const filteredActivities = githubActivities.filter(activity => {
+      const activityDate =
+        activity.timestamp instanceof Date
+          ? activity.timestamp
+          : new Date(activity.timestamp);
+      return activityDate >= cutoffDate;
+    });
+
+    console.log(
+      `[Team Stats] After filtering: ${filteredActivities.length} activities`
+    );
+
+    // Calculate statistics from filtered activities
+    const totalCommits = filteredActivities.filter(
+      a => a.metadata?.eventType === 'commit'
+    ).length;
+    const totalPullRequests = filteredActivities.filter(
+      a => a.metadata?.eventType === 'pull_request'
+    ).length;
+    const totalIssues = filteredActivities.filter(
+      a => a.metadata?.eventType === 'issue'
+    ).length;
+    const totalReviews = filteredActivities.filter(
+      a => a.metadata?.eventType === 'review'
+    ).length;
+
+    // Calculate average activity per day
+    const averageActivityPerDay = Math.round(
+      filteredActivities.length / timeRangeDays
+    );
+
+    // Get unique repositories from filtered activities
+    const repositories = [
+      ...new Set(
+        filteredActivities.map(a => a.metadata?.repo?.name).filter(Boolean)
+      ),
+    ];
+
+    // Calculate repository stats from filtered activities
+    const repositoryStats = repositories.map(repo => {
+      const repoActivities = filteredActivities.filter(
+        a => a.metadata?.repo?.name === repo
       );
+      return {
+        name: repo,
+        commits: repoActivities.filter(
+          a => a.metadata?.eventType === 'commit'
+        ).length,
+        pullRequests: repoActivities.filter(
+          a => a.metadata?.eventType === 'pull_request'
+        ).length,
+        issues: repoActivities.filter(a => a.metadata?.eventType === 'issue')
+          .length,
+        contributors: 1, // For now, just the current user
+      };
+    });
 
-      console.log(
-        `[Team Stats] Time filtering: cutoffDate=${cutoffDate.toISOString()}, timeRange=${timeRange}`
-      );
-      console.log(
-        `[Team Stats] Before filtering: ${githubActivities.length} activities`
-      );
+    // Generate activity trends (simplified - just show current stats)
+    const activityTrends = [
+      {
+        date: new Date().toISOString().split('T')[0],
+        commits: totalCommits,
+        pullRequests: totalPullRequests,
+        issues: totalIssues,
+        reviews: totalReviews,
+      },
+    ];
 
-      const filteredActivities = githubActivities.filter(activity => {
-        const activityDate =
-          activity.timestamp instanceof Date
-            ? activity.timestamp
-            : new Date(activity.timestamp);
-        return activityDate >= cutoffDate;
-      });
+    // Top contributors (just the current user for now)
+    const topContributors = [
+      {
+        id: user.id,
+        name: user.name || 'Unknown User',
+        email: user.email || '',
+        avatar: user.image,
+        role: 'Developer',
+        status: 'active' as const,
+        lastActive: new Date().toISOString(),
+        commits: totalCommits,
+        pullRequests: totalPullRequests,
+        issues: totalIssues,
+        reviews: totalReviews,
+      },
+    ];
 
-      console.log(
-        `[Team Stats] After filtering: ${filteredActivities.length} activities`
-      );
+    const stats: TeamStats = {
+      totalMembers: 1, // Just the current user for now
+      activeMembers: 1,
+      totalCommits,
+      totalPullRequests,
+      totalIssues,
+      totalReviews,
+      averageActivityPerDay,
+      topContributors,
+      activityTrends,
+      repositoryStats,
+    };
 
-      // Calculate statistics from filtered activities
-      const totalCommits = filteredActivities.filter(
-        a => a.metadata?.eventType === 'commit'
-      ).length;
-      const totalPullRequests = filteredActivities.filter(
-        a => a.metadata?.eventType === 'pull_request'
-      ).length;
-      const totalIssues = filteredActivities.filter(
-        a => a.metadata?.eventType === 'issue'
-      ).length;
-      const totalReviews = filteredActivities.filter(
-        a => a.metadata?.eventType === 'review'
-      ).length;
+    return NextResponse.json({
+      data: stats,
+      success: true,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.log(`[Team Stats] Error for user ${user.id}:`, error);
 
-      // Calculate average activity per day
-      const averageActivityPerDay = Math.round(
-        filteredActivities.length / timeRangeDays
-      );
-
-      // Get unique repositories from filtered activities
-      const repositories = [
-        ...new Set(
-          filteredActivities.map(a => a.metadata?.repo?.name).filter(Boolean)
-        ),
-      ];
-
-      // Calculate repository stats from filtered activities
-      const repositoryStats = repositories.map(repo => {
-        const repoActivities = filteredActivities.filter(
-          a => a.metadata?.repo?.name === repo
-        );
-        return {
-          name: repo,
-          commits: repoActivities.filter(
-            a => a.metadata?.eventType === 'commit'
-          ).length,
-          pullRequests: repoActivities.filter(
-            a => a.metadata?.eventType === 'pull_request'
-          ).length,
-          issues: repoActivities.filter(a => a.metadata?.eventType === 'issue')
-            .length,
-          contributors: 1, // For now, just the current user
-        };
-      });
-
-      // Generate activity trends (simplified - just show current stats)
-      const activityTrends = [
-        {
-          date: new Date().toISOString().split('T')[0],
-          commits: totalCommits,
-          pullRequests: totalPullRequests,
-          issues: totalIssues,
-          reviews: totalReviews,
-        },
-      ];
-
-      // Top contributors (just the current user for now)
-      const topContributors = [
+    // Return empty stats with helpful message
+    const emptyStats: TeamStats = {
+      totalMembers: 1,
+      activeMembers: 1,
+      totalCommits: 0,
+      totalPullRequests: 0,
+      totalIssues: 0,
+      totalReviews: 0,
+      averageActivityPerDay: 0,
+      topContributors: [
         {
           id: user.id,
           name: user.name || 'Unknown User',
@@ -222,119 +309,47 @@ async function getTeamStats(request: NextRequest): Promise<NextResponse> {
           role: 'Developer',
           status: 'active' as const,
           lastActive: new Date().toISOString(),
-          commits: totalCommits,
-          pullRequests: totalPullRequests,
-          issues: totalIssues,
-          reviews: totalReviews,
+          commits: 0,
+          pullRequests: 0,
+          issues: 0,
+          reviews: 0,
         },
-      ];
+      ],
+      activityTrends: [],
+      repositoryStats: [],
+    };
 
-      const stats: TeamStats = {
-        totalMembers: 1, // Just the current user for now
-        activeMembers: 1,
-        totalCommits,
-        totalPullRequests,
-        totalIssues,
-        totalReviews,
-        averageActivityPerDay,
-        topContributors,
-        activityTrends,
-        repositoryStats,
-      };
-
-      return NextResponse.json({
-        data: stats,
-        success: true,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (githubError) {
-      // Handle GitHub-specific errors gracefully
-      console.log(
-        `[Team Stats] GitHub error for user ${user.id}:`,
-        githubError
-      );
-
-      // Return empty stats with helpful message
-      const emptyStats: TeamStats = {
-        totalMembers: 1,
-        activeMembers: 1,
-        totalCommits: 0,
-        totalPullRequests: 0,
-        totalIssues: 0,
-        totalReviews: 0,
-        averageActivityPerDay: 0,
-        topContributors: [
-          {
-            id: user.id,
-            name: user.name || 'Unknown User',
-            email: user.email || '',
-            avatar: user.image,
-            role: 'Developer',
-            status: 'active' as const,
-            lastActive: new Date().toISOString(),
-            commits: 0,
-            pullRequests: 0,
-            issues: 0,
-            reviews: 0,
-          },
-        ],
-        activityTrends: [],
-        repositoryStats: [],
-      };
-
-      let message =
-        'Unable to fetch GitHub activity. Please check your GitHub connection.';
-      if (githubError instanceof Error) {
-        if (githubError.message.includes('GitHub not connected')) {
-          message =
-            'GitHub account not connected. Please connect your GitHub account in the integrations page.';
-        } else if (
-          githubError.message.includes('token expired') ||
-          githubError.message.includes('invalid')
-        ) {
-          message =
-            'GitHub token expired. Please reconnect your GitHub account.';
-        } else if (githubError.message.includes('rate limit')) {
-          message = 'GitHub API rate limit exceeded. Please try again later.';
-        }
-      }
-
-      return NextResponse.json({
-        data: emptyStats,
-        success: true,
-        message,
-        timestamp: new Date().toISOString(),
-      });
-    }
-  } catch (error) {
-    console.error('Error fetching team stats:', error);
-
-    // Handle specific error cases
-    let errorMessage = 'Failed to fetch team stats';
+    let message = 'Unable to fetch GitHub activity. Please check your GitHub connection.';
     if (error instanceof Error) {
       if (error.message.includes('GitHub not connected')) {
-        errorMessage =
-          'GitHub account not connected. Please connect your GitHub account in the integrations page.';
+        message = 'GitHub account not connected. Please connect your GitHub account in the integrations page.';
       } else if (
         error.message.includes('token expired') ||
         error.message.includes('invalid')
       ) {
-        errorMessage =
-          'GitHub token expired. Please reconnect your GitHub account.';
+        message = 'GitHub token expired. Please reconnect your GitHub account.';
       } else if (error.message.includes('rate limit')) {
-        errorMessage =
-          'GitHub API rate limit exceeded. Please try again later.';
-      } else {
-        errorMessage = error.message;
+        message = 'GitHub API rate limit exceeded. Please try again later.';
       }
     }
 
-    // Log error for debugging
-    console.error('Team stats API error:', error);
+    return NextResponse.json({
+      data: emptyStats,
+      success: true,
+      message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+}
 
+export async function GET(request: NextRequest) {
+  try {
+    return await getTeamStats(request);
+  } catch (error) {
+    console.error('[Team Stats API] Unhandled error:', error);
     return NextResponse.json(
       {
-        error: errorMessage,
+        error: 'Internal server error',
         success: false,
         timestamp: new Date().toISOString(),
       },
@@ -342,5 +357,3 @@ async function getTeamStats(request: NextRequest): Promise<NextResponse> {
     );
   }
 }
-
-export const GET = withErrorHandling(getTeamStats);

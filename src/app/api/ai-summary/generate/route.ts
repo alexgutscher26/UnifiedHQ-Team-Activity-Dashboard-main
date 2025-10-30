@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
             }, { status: 404 });
         }
 
-        // For now, generate a mock summary based on actual activity data
+        // TODO: For now, generate a mock summary based on actual activity data
         const sourceBreakdown = activities.reduce((acc, activity) => {
             acc[activity.source] = (acc[activity.source] || 0) + 1;
             return acc;
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
             where: { userId }
         });
 
-        // Generate intelligent mock summary based on actual data
+        // TODO: Generate intelligent mock summary based on actual data
         const mockSummary = generateIntelligentSummary(activities, sourceBreakdown, repositories, channels);
 
         // Save to database

@@ -1,6 +1,3 @@
-// Main Health Check API Endpoint
-// Provides overall system health including caching layers
-
 import { NextRequest, NextResponse } from 'next/server';
 
 interface SystemHealthCheck {
