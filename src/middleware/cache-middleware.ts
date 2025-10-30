@@ -260,7 +260,7 @@ function shouldSkipCache(req: NextRequest, config: CacheConfig): boolean {
 
   // Skip cache if no-cache header is present
   const cacheControl = req.headers.get('cache-control');
-  if (cacheControl && cacheControl.includes('no-cache')) {
+  if (cacheControl?.includes('no-cache')) {
     return true;
   }
 

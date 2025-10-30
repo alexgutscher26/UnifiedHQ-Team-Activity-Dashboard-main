@@ -258,7 +258,7 @@ export class CacheInvalidationMiddleware {
     try {
       // Try to get user ID from authorization header
       const authHeader = request.headers.get('authorization');
-      if (authHeader && authHeader.startsWith('Bearer ')) {
+      if (authHeader?.startsWith('Bearer ')) {
         // In a real implementation, decode JWT token here
         // For now, return a placeholder
         return 'user_from_token';

@@ -1282,7 +1282,7 @@ Breaking Change Detection:
 }
 
 // CLI Interface
-if (process.argv[1] && process.argv[1].endsWith('release-manager.js')) {
+if (process.argv[1]?.endsWith('release-manager.js')) {
   const command = process.argv[2]
   const args = process.argv.slice(3)
 

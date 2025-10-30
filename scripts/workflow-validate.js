@@ -173,12 +173,8 @@ class WorkflowValidator {
             const warnings = []
 
             if (workflow.jobs) {
-              const hasCache = Object.values(workflow.jobs).some(
-                job =>
-                  job.steps &&
-                  job.steps.some(
-                    step => step.uses && step.uses.includes('actions/cache')
-                  )
+              const hasCache = Object.values(workflow.jobs).some(job =>
+                job.steps?.some(step => step.uses?.includes('actions/cache'))
               )
 
               if (!hasCache) {
@@ -212,7 +208,7 @@ class WorkflowValidator {
 
             if (workflow.jobs) {
               Object.entries(workflow.jobs).forEach(([jobName, job]) => {
-                if (job.strategy && job.strategy.matrix) {
+                if (job.strategy?.matrix) {
                   const matrixSize = Object.values(job.strategy.matrix).reduce(
                     (acc, val) => acc * (Array.isArray(val) ? val.length : 1),
                     1

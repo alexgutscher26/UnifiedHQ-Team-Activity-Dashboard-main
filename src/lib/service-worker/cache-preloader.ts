@@ -376,7 +376,7 @@ export class CachePreloader {
 
       const result = await store.get('navigation-patterns');
 
-      if (result && result.patterns) {
+      if (result?.patterns) {
         this.patterns = new Map(result.patterns);
         console.log(
           `[Cache Preloader] Loaded ${this.patterns.size} navigation patterns`

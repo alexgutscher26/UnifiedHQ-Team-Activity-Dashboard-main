@@ -215,11 +215,7 @@ class WorkflowTester {
             }
 
             // Check for potential security issues
-            if (
-              step.run &&
-              step.run.includes('curl') &&
-              step.run.includes('sudo')
-            ) {
+            if (step.run?.includes('curl') && step.run.includes('sudo')) {
               warnings.push(
                 `Job '${jobName}' step ${index + 1} uses curl with sudo - potential security risk`
               )
@@ -231,12 +227,8 @@ class WorkflowTester {
 
     // Check for performance optimizations
     if (content.jobs) {
-      const hasCache = Object.values(content.jobs).some(
-        job =>
-          job.steps &&
-          job.steps.some(
-            step => step.uses && step.uses.includes('actions/cache')
-          )
+      const hasCache = Object.values(content.jobs).some(job =>
+        job.steps?.some(step => step.uses?.includes('actions/cache'))
       )
 
       if (!hasCache) {

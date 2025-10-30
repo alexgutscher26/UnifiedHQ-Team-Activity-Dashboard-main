@@ -494,7 +494,7 @@ describe('CDN Performance Tests', () => {
             break;
           case 'dynamic':
             assert.ok(
-              rule && rule.staleWhileRevalidate,
+              rule?.staleWhileRevalidate,
               `${path} should have stale-while-revalidate`
             );
             break;

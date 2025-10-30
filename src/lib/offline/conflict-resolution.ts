@@ -112,7 +112,7 @@ export class ConflictResolutionManager {
 
     const resolver = this.resolvers.get(action.resource);
 
-    if (resolver && resolver.canResolve(conflict)) {
+    if (resolver?.canResolve(conflict)) {
       const resolution = await resolver.resolve(conflict);
       this.callbacks.onConflictResolved?.(conflict, resolution);
       return resolution;
