@@ -78,6 +78,8 @@ jobs:
   pre-deployment-checks:
     name: Pre-deployment Checks
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     needs: validate
     steps:
       - name: Checkout release
