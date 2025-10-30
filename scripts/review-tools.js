@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * Code Review Tools
  * Automated tools for code review analysis and reporting
@@ -27,7 +25,7 @@ class ReviewTools {
   }
 
   /**
-   * Execute command with cross-platform compatibility
+   * Executes a command with cross-platform compatibility.
    */
   execCommand(command, options = {}) {
     try {
@@ -42,11 +40,27 @@ class ReviewTools {
   }
 
   /**
-   * Find files recursively (cross-platform)
+   * Find files recursively (cross-platform).
+   *
+   * This function searches for files within a specified directory and its subdirectories, filtering them by the provided extensions. It utilizes the `fs` module to read directory contents and checks each item to determine if it is a directory or a file. Directories that cannot be read are skipped, and only files with matching extensions are collected into an array, which is returned at the end.
+   *
+   * @param {string} directory - The root directory to start the search from.
+   * @param {Array<string>} extensions - An array of file extensions to filter the results.
    */
   findFiles(directory, extensions) {
     const files = [];
 
+    /**
+     * Recursively walks through a directory and collects file paths.
+     *
+     * This function reads the contents of the specified directory, iterating through each item.
+     * If an item is a directory (excluding hidden directories and 'node_modules'), it recursively
+     * calls itself to explore that directory. If an item is a file with an extension that matches
+     * the specified list, its full path is added to the `files` array. Errors encountered while
+     * reading directories are silently ignored.
+     *
+     * @param {string} dir - The directory path to walk through.
+     */
     function walkDir(dir) {
       try {
         const items = fs.readdirSync(dir);
@@ -77,7 +91,17 @@ class ReviewTools {
   }
 
   /**
-   * Search for pattern in files (cross-platform)
+   * Search for pattern in files (cross-platform).
+   *
+   * This function reads the contents of each file in the provided `files` array,
+   * searching for lines that match the specified `pattern`. It also checks each
+   * matching line against any patterns in `excludePatterns` to determine if it
+   * should be excluded from the results. The function returns an array of objects
+   * containing the file name, line number, and trimmed content of each matching line.
+   *
+   * @param {string[]} files - An array of file paths to search through.
+   * @param {RegExp} pattern - The regular expression pattern to search for in the file contents.
+   * @param {RegExp[]} [excludePatterns=[]] - An optional array of regular expressions for lines to exclude from results.
    */
   searchInFiles(files, pattern, excludePatterns = []) {
     const results = [];
@@ -136,7 +160,7 @@ class ReviewTools {
   }
 
   /**
-   * Check for console.log statements
+   * Checks for console.log statements in source files.
    */
   checkConsoleLogs() {
     const files = this.findFiles(path.join(this.projectRoot, 'src'), [
@@ -161,10 +185,7 @@ class ReviewTools {
   }
 
   /**
-   * Check for TODO comments.
-   *
-   * This function searches through the source files for any lines containing TODO, FIXME, or HACK comments.
-   * It uses cross-platform file searching to find and analyze comments in the specified file types.
+   * Checks for TODO, FIXME, or HACK comments in source files.
    */
   checkTODOComments() {
     const files = this.findFiles(path.join(this.projectRoot, 'src'), [
@@ -187,7 +208,7 @@ class ReviewTools {
   }
 
   /**
-   * Check for hardcoded values
+   * Checks for hardcoded values in source files.
    */
   checkHardcodedValues() {
     const files = this.findFiles(path.join(this.projectRoot, 'src'), [
@@ -273,7 +294,7 @@ class ReviewTools {
   }
 
   /**
-   * Check project-specific rules
+   * Checks project-specific rules for GitHub integration and image optimization.
    */
   checkProjectRules() {
     const files = this.findFiles(path.join(this.projectRoot, 'src'), [
@@ -371,7 +392,7 @@ class ReviewTools {
   }
 
   /**
-   * Generate review report
+   * Generate a review report and save it in JSON and Markdown formats.
    */
   generateReport() {
     console.log('📝 Generating review report...');
@@ -408,21 +429,21 @@ class ReviewTools {
    * Generate markdown report
    */
   generateMarkdownReport(report) {
-    let markdown = `# 🔍 Code Review Report\n\n`;
+    let markdown = '# 🔍 Code Review Report\n\n';
     markdown += `**Generated:** ${report.timestamp}\n\n`;
 
-    markdown += `## 📊 Summary\n\n`;
+    markdown += '## 📊 Summary\n\n';
     markdown += `- **Issues:** ${report.summary.totalIssues}\n`;
     markdown += `- **Warnings:** ${report.summary.totalWarnings}\n`;
     markdown += `- **Suggestions:** ${report.summary.totalSuggestions}\n\n`;
 
-    markdown += `## 📈 Metrics\n\n`;
+    markdown += '## 📈 Metrics\n\n';
     markdown += `- **Files:** ${report.summary.metrics.files}\n`;
     markdown += `- **Lines:** ${report.summary.metrics.lines}\n`;
     markdown += `- **Functions:** ${report.summary.metrics.functions}\n\n`;
 
     if (report.issues.length > 0) {
-      markdown += `## ❌ Issues\n\n`;
+      markdown += '## ❌ Issues\n\n';
       report.issues.forEach(issue => {
         markdown += `- **${issue.type}** in \`${issue.file}:${issue.line}\`\n`;
         markdown += `  - ${issue.message}\n\n`;
@@ -430,7 +451,7 @@ class ReviewTools {
     }
 
     if (report.warnings.length > 0) {
-      markdown += `## ⚠️ Warnings\n\n`;
+      markdown += '## ⚠️ Warnings\n\n';
       report.warnings.forEach(warning => {
         markdown += `- **${warning.type}** in \`${warning.file}:${warning.line}\`\n`;
         markdown += `  - ${warning.message}\n\n`;
@@ -438,7 +459,7 @@ class ReviewTools {
     }
 
     if (report.suggestions.length > 0) {
-      markdown += `## 💡 Suggestions\n\n`;
+      markdown += '## 💡 Suggestions\n\n';
       report.suggestions.forEach(suggestion => {
         markdown += `- **${suggestion.type}** in \`${suggestion.file}:${suggestion.line}\`\n`;
         markdown += `  - ${suggestion.message}\n\n`;
@@ -449,7 +470,7 @@ class ReviewTools {
   }
 
   /**
-   * Run all analysis
+   * Executes the code review analysis and generates a report.
    */
   async run() {
     console.log('🚀 Starting code review analysis...');

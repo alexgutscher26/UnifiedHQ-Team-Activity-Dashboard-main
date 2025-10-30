@@ -1,0 +1,20 @@
+{
+  "enabled": true,
+  "name": "Documentation Comment Checker",
+  "description": "Monitors code files for functions and classes that may be missing documentation comments and suggests adding them for better code understanding",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "src/**/*.js",
+      "src/**/*.jsx",
+      "scripts/*.js"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the modified code files and identify any functions, classes, or methods that are missing documentation comments. For each missing documentation comment, suggest appropriate JSDoc or TypeScript documentation that explains the purpose, parameters, return values, and usage examples where helpful. Focus on public APIs, complex functions, and exported components that would benefit from clear documentation for future developers."
+  }
+}

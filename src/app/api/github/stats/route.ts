@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { PrismaClient } from '@/generated/prisma';
 import { GitHubCacheManager } from '@/lib/integrations/github-cached';
+import { RedisCache, CacheKeyGenerator, TTLManager } from '@/lib/redis';
 
 const prisma = new PrismaClient();
 
@@ -25,6 +26,22 @@ export async function GET(request: NextRequest) {
     }
 
     const userId = session.user.id;
+
+    // Generate cache key for GitHub stats
+    const cacheKey = CacheKeyGenerator.github(userId, 'stats', '24h');
+
+    // Try to get from cache first
+    const cachedStats = await RedisCache.get(cacheKey);
+    if (cachedStats) {
+      console.log(`[GitHub Cache] Cache hit for stats: ${userId}`);
+      return NextResponse.json({
+        ...cachedStats,
+        cached: true,
+        cacheTimestamp: cachedStats.timestamp,
+      });
+    }
+
+    console.log(`[GitHub Cache] Cache miss for stats: ${userId}`);
 
     // Get GitHub activities from the last 24 hours
     const twentyFourHoursAgo = new Date();
@@ -102,7 +119,7 @@ export async function GET(request: NextRequest) {
     // Get cache statistics
     const cacheStats = GitHubCacheManager.getStats();
 
-    return NextResponse.json({
+    const statsData = {
       count: totalActivity,
       status: totalActivity > 0 ? 'Active' : 'Inactive',
       details: detailsText,
@@ -116,6 +133,15 @@ export async function GET(request: NextRequest) {
         memoryCache: cacheStats,
         databaseCache: 'enabled',
       },
+      timestamp: new Date().toISOString(),
+    };
+
+    // Cache the stats for 5 minutes (stats change frequently)
+    await RedisCache.set(cacheKey, statsData, TTLManager.getTTL('API_FAST'));
+
+    return NextResponse.json({
+      ...statsData,
+      cached: false,
     });
   } catch (error) {
     console.error('Error fetching GitHub stats:', error);

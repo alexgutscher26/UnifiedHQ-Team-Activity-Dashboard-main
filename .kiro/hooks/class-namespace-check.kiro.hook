@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "Class Namespace Prevention",
+  "description": "Detects when classes are being used as namespaces (empty classes or classes with only static members) and suggests using objects or proper class inheritance instead",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "scripts/**/*.js",
+      "scripts/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the modified TypeScript/JavaScript files for classes that are being used as namespaces. Look for:\n\n1. Empty classes that should extend a superclass instead\n2. Classes with only a constructor that calls functions (should be refactored)\n3. Classes with only static properties and methods (should be converted to objects)\n\nFor any violations found, provide specific recommendations:\n- Empty classes should extend a proper superclass\n- Constructor-only classes should be refactored to proper classes with parameters\n- Static-only classes should be converted to const objects with the same interface\n\nProvide code examples showing the problematic pattern and the recommended fix, following the TypeScript best practices for this Next.js project."
+  }
+}

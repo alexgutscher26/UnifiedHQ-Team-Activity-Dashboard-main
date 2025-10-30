@@ -1,0 +1,22 @@
+{
+  "enabled": true,
+  "name": "Var to Let/Const Converter",
+  "description": "Detects usage of 'var' keyword in JavaScript/TypeScript files and suggests replacing with 'let' or 'const' to follow ES6 best practices and avoid variable scoping issues",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.js",
+      "src/**/*.ts",
+      "src/**/*.jsx",
+      "src/**/*.tsx",
+      "scripts/**/*.js",
+      "*.js",
+      "*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "I need to review this code change for var keyword usage. Please analyze the modified code and:\n\n1. Identify any instances of 'var' declarations\n2. Determine if they should be replaced with 'let' or 'const' based on:\n   - Use 'const' for variables that are never reassigned\n   - Use 'let' for variables that are reassigned\n3. Explain the benefits of the suggested change (block scope vs function scope)\n4. Provide the corrected code with proper let/const usage\n5. Note any edge cases where 'var' might be intentionally used (like library initialization patterns)\n\nFocus on preventing variable redeclaration issues and improving code quality through proper ES6 variable declarations."
+  }
+}

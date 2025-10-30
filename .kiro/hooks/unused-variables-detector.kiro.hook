@@ -1,0 +1,23 @@
+{
+  "enabled": true,
+  "name": "Unused Variables Detector",
+  "description": "Monitors TypeScript and JavaScript files for unused variables and suggests removal or prefixing with underscore to improve code quality and prevent runtime performance issues.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "src/**/*.js",
+      "src/**/*.jsx",
+      "scripts/**/*.js",
+      "eslint.config.js",
+      "next.config.mjs",
+      "tailwind.config.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Analyze the modified files for unused variables, imports, or function parameters. Look for:\n1. Variables declared but never referenced\n2. Imported modules that are never used\n3. Function parameters that are never accessed\n4. Constants or types that are defined but not utilized\n\nFor each unused variable found:\n- Explain why it should be removed (performance, code clarity, potential conflicts)\n- If the variable appears intentionally unused, suggest prefixing with underscore (_)\n- Provide specific line numbers and variable names\n- Suggest the exact code changes needed\n\nFocus on TypeScript/JavaScript best practices and mention the performance benefits of removing unused imports to prevent unnecessary module loading at runtime."
+  }
+}

@@ -1,0 +1,857 @@
+name: Workflow Monitoring and Reporting
+
+on:
+  schedule:
+    # Run daily at 9 AM UTC to generate daily reports
+    - cron: '0 9 * * *'
+    # Run weekly on Sundays at 10 AM UTC for weekly reports
+    - cron: '0 10 * * 0'
+  workflow_dispatch:
+    inputs:
+      report_type:
+        description: 'Type of report to generate'
+        required: true
+        type: choice
+        options:
+          - daily
+          - weekly
+          - monthly
+          - custom
+        default: daily
+      start_date:
+        description: 'Start date for custom report (YYYY-MM-DD)'
+        required: false
+        type: string
+      end_date:
+        description: 'End date for custom report (YYYY-MM-DD)'
+        required: false
+        type: string
+      include_performance:
+        description: 'Include performance metrics'
+        required: false
+        default: true
+        type: boolean
+
+concurrency:
+  group: workflow-monitoring
+  cancel-in-progress: false
+
+jobs:
+  collect-workflow-metrics:
+    name: Collect Workflow Metrics
+    runs-on: ubuntu-latest
+    outputs:
+      report-period: ${{ steps.period.outputs.report-period }}
+      start-date: ${{ steps.period.outputs.start-date }}
+      end-date: ${{ steps.period.outputs.end-date }}
+      metrics-file: ${{ steps.collect.outputs.metrics-file }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Determine report period
+        id: period
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            REPORT_TYPE="${{ github.event.inputs.report_type }}"
+            
+            if [[ "$REPORT_TYPE" == "custom" ]]; then
+              START_DATE="${{ github.event.inputs.start_date }}"
+              END_DATE="${{ github.event.inputs.end_date }}"
+              REPORT_PERIOD="Custom ($START_DATE to $END_DATE)"
+            else
+              case "$REPORT_TYPE" in
+                "daily")
+                  START_DATE=$(date -d "1 day ago" +%Y-%m-%d)
+                  END_DATE=$(date +%Y-%m-%d)
+                  REPORT_PERIOD="Daily"
+                  ;;
+                "weekly")
+                  START_DATE=$(date -d "7 days ago" +%Y-%m-%d)
+                  END_DATE=$(date +%Y-%m-%d)
+                  REPORT_PERIOD="Weekly"
+                  ;;
+                "monthly")
+                  START_DATE=$(date -d "30 days ago" +%Y-%m-%d)
+                  END_DATE=$(date +%Y-%m-%d)
+                  REPORT_PERIOD="Monthly"
+                  ;;
+              esac
+            fi
+          else
+            # Scheduled run
+            if [[ "${{ github.event.schedule }}" == "0 10 * * 0" ]]; then
+              # Weekly report
+              START_DATE=$(date -d "7 days ago" +%Y-%m-%d)
+              END_DATE=$(date +%Y-%m-%d)
+              REPORT_PERIOD="Weekly"
+            else
+              # Daily report
+              START_DATE=$(date -d "1 day ago" +%Y-%m-%d)
+              END_DATE=$(date +%Y-%m-%d)
+              REPORT_PERIOD="Daily"
+            fi
+          fi
+
+          echo "report-period=$REPORT_PERIOD" >> $GITHUB_OUTPUT
+          echo "start-date=$START_DATE" >> $GITHUB_OUTPUT
+          echo "end-date=$END_DATE" >> $GITHUB_OUTPUT
+
+          echo "Report Period: $REPORT_PERIOD"
+          echo "Start Date: $START_DATE"
+          echo "End Date: $END_DATE"
+
+      - name: Collect workflow metrics
+        id: collect
+        run: |
+          METRICS_FILE="workflow-metrics-$(date +%Y%m%d-%H%M%S).json"
+          START_DATE="${{ steps.period.outputs.start-date }}"
+          END_DATE="${{ steps.period.outputs.end-date }}"
+
+          echo "Collecting workflow metrics from $START_DATE to $END_DATE..."
+
+          # Create metrics collection script
+          cat > collect_metrics.js << 'EOF'
+          const { Octokit } = require("@octokit/rest");
+          const fs = require("fs");
+
+          const octokit = new Octokit({
+            auth: process.env.GITHUB_TOKEN,
+          });
+
+          async function collectMetrics() {
+            const owner = process.env.GITHUB_REPOSITORY.split('/')[0];
+            const repo = process.env.GITHUB_REPOSITORY.split('/')[1];
+            const startDate = process.env.START_DATE;
+            const endDate = process.env.END_DATE;
+            
+            console.log(`Collecting metrics for ${owner}/${repo} from ${startDate} to ${endDate}`);
+            
+            const metrics = {
+              repository: `${owner}/${repo}`,
+              period: {
+                start: startDate,
+                end: endDate,
+                type: process.env.REPORT_PERIOD
+              },
+              workflows: {},
+              summary: {
+                total_runs: 0,
+                successful_runs: 0,
+                failed_runs: 0,
+                cancelled_runs: 0,
+                success_rate: 0,
+                average_duration: 0,
+                total_duration: 0
+              },
+              performance: {
+                fastest_workflow: null,
+                slowest_workflow: null,
+                most_reliable_workflow: null,
+                least_reliable_workflow: null
+              },
+              trends: {
+                daily_runs: {},
+                failure_patterns: {},
+                performance_trends: {}
+              }
+            };
+            
+            try {
+              // Get workflow runs for the period
+              const workflowRuns = await octokit.rest.actions.listWorkflowRunsForRepo({
+                owner,
+                repo,
+                created: `${startDate}..${endDate}`,
+                per_page: 100
+              });
+              
+              console.log(`Found ${workflowRuns.data.workflow_runs.length} workflow runs`);
+              
+              const dailyRuns = {};
+              let totalDuration = 0;
+              let durationCount = 0;
+              
+              for (const run of workflowRuns.data.workflow_runs) {
+                const workflowName = run.name;
+                const status = run.conclusion || run.status;
+                const duration = run.updated_at && run.created_at ? 
+                  (new Date(run.updated_at) - new Date(run.created_at)) / 1000 : 0;
+                
+                // Initialize workflow metrics if not exists
+                if (!metrics.workflows[workflowName]) {
+                  metrics.workflows[workflowName] = {
+                    total_runs: 0,
+                    successful_runs: 0,
+                    failed_runs: 0,
+                    cancelled_runs: 0,
+                    success_rate: 0,
+                    average_duration: 0,
+                    total_duration: 0,
+                    runs: []
+                  };
+                }
+                
+                // Update workflow metrics
+                const workflow = metrics.workflows[workflowName];
+                workflow.total_runs++;
+                workflow.total_duration += duration;
+                
+                if (status === 'success') {
+                  workflow.successful_runs++;
+                  metrics.summary.successful_runs++;
+                } else if (status === 'failure') {
+                  workflow.failed_runs++;
+                  metrics.summary.failed_runs++;
+                } else if (status === 'cancelled') {
+                  workflow.cancelled_runs++;
+                  metrics.summary.cancelled_runs++;
+                }
+                
+                workflow.runs.push({
+                  id: run.id,
+                  status: status,
+                  duration: duration,
+                  created_at: run.created_at,
+                  head_branch: run.head_branch,
+                  head_sha: run.head_sha.substring(0, 7),
+                  actor: run.actor.login
+                });
+                
+                // Track daily runs
+                const runDate = run.created_at.split('T')[0];
+                if (!dailyRuns[runDate]) {
+                  dailyRuns[runDate] = { total: 0, success: 0, failure: 0 };
+                }
+                dailyRuns[runDate].total++;
+                if (status === 'success') dailyRuns[runDate].success++;
+                if (status === 'failure') dailyRuns[runDate].failure++;
+                
+                metrics.summary.total_runs++;
+                if (duration > 0) {
+                  totalDuration += duration;
+                  durationCount++;
+                }
+              }
+              
+              // Calculate success rates and averages
+              for (const [workflowName, workflow] of Object.entries(metrics.workflows)) {
+                workflow.success_rate = workflow.total_runs > 0 ? 
+                  (workflow.successful_runs / workflow.total_runs * 100).toFixed(2) : 0;
+                workflow.average_duration = workflow.total_runs > 0 ? 
+                  (workflow.total_duration / workflow.total_runs).toFixed(2) : 0;
+              }
+              
+              metrics.summary.success_rate = metrics.summary.total_runs > 0 ? 
+                (metrics.summary.successful_runs / metrics.summary.total_runs * 100).toFixed(2) : 0;
+              metrics.summary.average_duration = durationCount > 0 ? 
+                (totalDuration / durationCount).toFixed(2) : 0;
+              metrics.summary.total_duration = totalDuration.toFixed(2);
+              
+              // Find performance extremes
+              const workflowEntries = Object.entries(metrics.workflows);
+              if (workflowEntries.length > 0) {
+                metrics.performance.fastest_workflow = workflowEntries.reduce((min, [name, workflow]) => 
+                  parseFloat(workflow.average_duration) < parseFloat(min[1].average_duration) ? [name, workflow] : min
+                )[0];
+                
+                metrics.performance.slowest_workflow = workflowEntries.reduce((max, [name, workflow]) => 
+                  parseFloat(workflow.average_duration) > parseFloat(max[1].average_duration) ? [name, workflow] : max
+                )[0];
+                
+                metrics.performance.most_reliable_workflow = workflowEntries.reduce((max, [name, workflow]) => 
+                  parseFloat(workflow.success_rate) > parseFloat(max[1].success_rate) ? [name, workflow] : max
+                )[0];
+                
+                metrics.performance.least_reliable_workflow = workflowEntries.reduce((min, [name, workflow]) => 
+                  parseFloat(workflow.success_rate) < parseFloat(min[1].success_rate) ? [name, workflow] : min
+                )[0];
+              }
+              
+              metrics.trends.daily_runs = dailyRuns;
+              
+              // Write metrics to file
+              fs.writeFileSync(process.env.METRICS_FILE, JSON.stringify(metrics, null, 2));
+              console.log(`Metrics written to ${process.env.METRICS_FILE}`);
+              
+            } catch (error) {
+              console.error('Error collecting metrics:', error);
+              process.exit(1);
+            }
+          }
+
+          collectMetrics();
+          EOF
+
+          # Install dependencies and run collection
+          npm install @octokit/rest
+
+          GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}" \
+          GITHUB_REPOSITORY="${{ github.repository }}" \
+          START_DATE="$START_DATE" \
+          END_DATE="$END_DATE" \
+          REPORT_PERIOD="${{ steps.period.outputs.report-period }}" \
+          METRICS_FILE="$METRICS_FILE" \
+          node collect_metrics.js
+
+          echo "metrics-file=$METRICS_FILE" >> $GITHUB_OUTPUT
+
+      - name: Upload metrics artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: workflow-metrics-${{ steps.period.outputs.start-date }}-to-${{ steps.period.outputs.end-date }}
+          path: ${{ steps.collect.outputs.metrics-file }}
+          retention-days: 90
+
+  generate-report:
+    name: Generate Workflow Report
+    runs-on: ubuntu-latest
+    needs: collect-workflow-metrics
+    outputs:
+      report-file: ${{ steps.generate.outputs.report-file }}
+      report-summary: ${{ steps.generate.outputs.report-summary }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download metrics
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow-metrics-${{ needs.collect-workflow-metrics.outputs.start-date }}-to-${{ needs.collect-workflow-metrics.outputs.end-date }}
+
+      - name: Generate report
+        id: generate
+        run: |
+          METRICS_FILE="${{ needs.collect-workflow-metrics.outputs.metrics-file }}"
+          REPORT_FILE="workflow-report-$(date +%Y%m%d-%H%M%S).md"
+
+          echo "Generating report from $METRICS_FILE..."
+
+          # Create report generation script
+          cat > generate_report.js << 'EOF'
+          const fs = require('fs');
+
+          const metricsFile = process.env.METRICS_FILE;
+          const reportFile = process.env.REPORT_FILE;
+
+          if (!fs.existsSync(metricsFile)) {
+            console.error(`Metrics file ${metricsFile} not found`);
+            process.exit(1);
+          }
+
+          const metrics = JSON.parse(fs.readFileSync(metricsFile, 'utf8'));
+
+          function formatDuration(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = Math.floor(seconds % 60);
+            return `${minutes}m ${remainingSeconds}s`;
+          }
+
+          function formatPercentage(value) {
+            return `${parseFloat(value).toFixed(1)}%`;
+          }
+
+          let report = `# Workflow Monitoring Report
+
+          **Repository:** ${metrics.repository}  
+          **Period:** ${metrics.period.type} (${metrics.period.start} to ${metrics.period.end})  
+          **Generated:** ${new Date().toISOString()}
+
+          ## Executive Summary
+
+          | Metric | Value |
+          |--------|-------|
+          | Total Workflow Runs | ${metrics.summary.total_runs} |
+          | Success Rate | ${formatPercentage(metrics.summary.success_rate)} |
+          | Failed Runs | ${metrics.summary.failed_runs} |
+          | Cancelled Runs | ${metrics.summary.cancelled_runs} |
+          | Average Duration | ${formatDuration(metrics.summary.average_duration)} |
+          | Total Compute Time | ${formatDuration(metrics.summary.total_duration)} |
+
+          `;
+
+          // Performance highlights
+          if (metrics.performance.fastest_workflow) {
+            report += `## Performance Highlights
+
+          - **Fastest Workflow:** ${metrics.performance.fastest_workflow} (${formatDuration(metrics.workflows[metrics.performance.fastest_workflow].average_duration)})
+          - **Slowest Workflow:** ${metrics.performance.slowest_workflow} (${formatDuration(metrics.workflows[metrics.performance.slowest_workflow].average_duration)})
+          - **Most Reliable:** ${metrics.performance.most_reliable_workflow} (${formatPercentage(metrics.workflows[metrics.performance.most_reliable_workflow].success_rate)} success rate)
+          - **Least Reliable:** ${metrics.performance.least_reliable_workflow} (${formatPercentage(metrics.workflows[metrics.performance.least_reliable_workflow].success_rate)} success rate)
+
+          `;
+          }
+
+          // Workflow details
+          report += `## Workflow Details
+
+          | Workflow | Runs | Success Rate | Avg Duration | Status |
+          |----------|------|--------------|--------------|--------|
+          `;
+
+          for (const [name, workflow] of Object.entries(metrics.workflows)) {
+            const status = parseFloat(workflow.success_rate) >= 95 ? '✅' : 
+                          parseFloat(workflow.success_rate) >= 80 ? '⚠️' : '❌';
+            report += `| ${name} | ${workflow.total_runs} | ${formatPercentage(workflow.success_rate)} | ${formatDuration(workflow.average_duration)} | ${status} |\n`;
+          }
+
+          // Daily trends
+          if (Object.keys(metrics.trends.daily_runs).length > 0) {
+            report += `\n## Daily Activity Trends\n\n`;
+            report += `| Date | Total Runs | Successful | Failed | Success Rate |\n`;
+            report += `|------|------------|------------|--------|--------------|\n`;
+            
+            for (const [date, runs] of Object.entries(metrics.trends.daily_runs)) {
+              const successRate = runs.total > 0 ? (runs.success / runs.total * 100).toFixed(1) : 0;
+              report += `| ${date} | ${runs.total} | ${runs.success} | ${runs.failure} | ${successRate}% |\n`;
+            }
+          }
+
+          // Recommendations
+          report += `\n## Recommendations\n\n`;
+
+          const overallSuccessRate = parseFloat(metrics.summary.success_rate);
+          if (overallSuccessRate < 90) {
+            report += `- 🚨 **Critical:** Overall success rate (${formatPercentage(overallSuccessRate)}) is below 90%. Investigate failing workflows immediately.\n`;
+          } else if (overallSuccessRate < 95) {
+            report += `- ⚠️ **Warning:** Success rate (${formatPercentage(overallSuccessRate)}) could be improved. Review failing workflows.\n`;
+          } else {
+            report += `- ✅ **Good:** Success rate (${formatPercentage(overallSuccessRate)}) is healthy.\n`;
+          }
+
+          // Find workflows with low success rates
+          const problematicWorkflows = Object.entries(metrics.workflows)
+            .filter(([name, workflow]) => parseFloat(workflow.success_rate) < 80)
+            .sort((a, b) => parseFloat(a[1].success_rate) - parseFloat(b[1].success_rate));
+
+          if (problematicWorkflows.length > 0) {
+            report += `- 🔧 **Action Required:** The following workflows have success rates below 80%:\n`;
+            for (const [name, workflow] of problematicWorkflows) {
+              report += `  - ${name}: ${formatPercentage(workflow.success_rate)} (${workflow.failed_runs}/${workflow.total_runs} failures)\n`;
+            }
+          }
+
+          // Find slow workflows
+          const slowWorkflows = Object.entries(metrics.workflows)
+            .filter(([name, workflow]) => parseFloat(workflow.average_duration) > 600) // > 10 minutes
+            .sort((a, b) => parseFloat(b[1].average_duration) - parseFloat(a[1].average_duration));
+
+          if (slowWorkflows.length > 0) {
+            report += `- ⏱️ **Performance:** Consider optimizing these slow workflows:\n`;
+            for (const [name, workflow] of slowWorkflows) {
+              report += `  - ${name}: ${formatDuration(workflow.average_duration)} average duration\n`;
+            }
+          }
+
+          // Recent failures
+          const recentFailures = [];
+          for (const [workflowName, workflow] of Object.entries(metrics.workflows)) {
+            const failedRuns = workflow.runs.filter(run => run.status === 'failure').slice(0, 3);
+            if (failedRuns.length > 0) {
+              recentFailures.push({ workflow: workflowName, failures: failedRuns });
+            }
+          }
+
+          if (recentFailures.length > 0) {
+            report += `\n## Recent Failures\n\n`;
+            for (const { workflow, failures } of recentFailures) {
+              report += `### ${workflow}\n\n`;
+              for (const failure of failures) {
+                report += `- **${failure.created_at}** (${failure.head_sha}) by ${failure.actor} - Duration: ${formatDuration(failure.duration)}\n`;
+              }
+              report += `\n`;
+            }
+          }
+
+          // Footer
+          report += `\n---\n\n*This report was automatically generated by the UnifiedHQ Workflow Monitoring System.*\n`;
+
+          fs.writeFileSync(reportFile, report);
+          console.log(`Report generated: ${reportFile}`);
+
+          // Generate summary for notifications
+          const summary = `${metrics.period.type} Report: ${metrics.summary.total_runs} runs, ${formatPercentage(metrics.summary.success_rate)} success rate, ${metrics.summary.failed_runs} failures`;
+
+          console.log(`REPORT_SUMMARY=${summary}`);
+          EOF
+
+          METRICS_FILE="$METRICS_FILE" \
+          REPORT_FILE="$REPORT_FILE" \
+          node generate_report.js
+
+          echo "report-file=$REPORT_FILE" >> $GITHUB_OUTPUT
+
+          # Extract summary for output
+          SUMMARY=$(node -e "
+            const fs = require('fs');
+            const metrics = JSON.parse(fs.readFileSync('$METRICS_FILE', 'utf8'));
+            const summary = \`\${metrics.period.type} Report: \${metrics.summary.total_runs} runs, \${parseFloat(metrics.summary.success_rate).toFixed(1)}% success rate, \${metrics.summary.failed_runs} failures\`;
+            console.log(summary);
+          ")
+
+          echo "report-summary=$SUMMARY" >> $GITHUB_OUTPUT
+
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: workflow-report-${{ needs.collect-workflow-metrics.outputs.start-date }}-to-${{ needs.collect-workflow-metrics.outputs.end-date }}
+          path: ${{ steps.generate.outputs.report-file }}
+          retention-days: 90
+
+  publish-report:
+    name: Publish Report
+    runs-on: ubuntu-latest
+    needs: [collect-workflow-metrics, generate-report]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download report
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow-report-${{ needs.collect-workflow-metrics.outputs.start-date }}-to-${{ needs.collect-workflow-metrics.outputs.end-date }}
+
+      - name: Create GitHub issue with report
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const reportFile = '${{ needs.generate-report.outputs.report-file }}';
+            const reportContent = fs.readFileSync(reportFile, 'utf8');
+            const reportPeriod = '${{ needs.collect-workflow-metrics.outputs.report-period }}';
+            const startDate = '${{ needs.collect-workflow-metrics.outputs.start-date }}';
+            const endDate = '${{ needs.collect-workflow-metrics.outputs.end-date }}';
+
+            const title = `📊 ${reportPeriod} Workflow Report (${startDate} to ${endDate})`;
+
+            // Check if a similar report issue already exists
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'workflow-report',
+              state: 'open',
+              per_page: 10
+            });
+
+            const existingReport = existingIssues.data.find(issue => 
+              issue.title.includes(reportPeriod) && 
+              issue.title.includes(startDate)
+            );
+
+            if (existingReport) {
+              // Update existing issue
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingReport.number,
+                body: reportContent
+              });
+              
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingReport.number,
+                body: `🔄 Report updated at ${new Date().toISOString()}`
+              });
+              
+              console.log(`Updated existing report issue #${existingReport.number}`);
+            } else {
+              // Create new issue
+              const issue = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: reportContent,
+                labels: ['workflow-report', 'monitoring', 'automated']
+              });
+              
+              console.log(`Created new report issue #${issue.data.number}`);
+            }
+
+      - name: Send Slack notification
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              "channel": "#dev-notifications",
+              "attachments": [
+                {
+                  "color": "good",
+                  "title": "📊 Workflow Monitoring Report Generated",
+                  "text": "${{ needs.generate-report.outputs.report-summary }}",
+                  "fields": [
+                    {
+                      "title": "Period",
+                      "value": "${{ needs.collect-workflow-metrics.outputs.report-period }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Date Range",
+                      "value": "${{ needs.collect-workflow-metrics.outputs.start-date }} to ${{ needs.collect-workflow-metrics.outputs.end-date }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Repository",
+                      "value": "${{ github.repository }}",
+                      "short": true
+                    },
+                    {
+                      "title": "View Report",
+                      "value": "<https://github.com/${{ github.repository }}/issues?q=is%3Aissue+label%3Aworkflow-report+is%3Aopen|GitHub Issues>",
+                      "short": true
+                    }
+                  ],
+                  "footer": "UnifiedHQ Workflow Monitoring",
+                  "footer_icon": "📊"
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  performance-analysis:
+    name: Performance Analysis
+    runs-on: ubuntu-latest
+    needs: collect-workflow-metrics
+    if: github.event.inputs.include_performance != 'false'
+    steps:
+      - name: Download metrics
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow-metrics-${{ needs.collect-workflow-metrics.outputs.start-date }}-to-${{ needs.collect-workflow-metrics.outputs.end-date }}
+
+      - name: Analyze performance trends
+        run: |
+          METRICS_FILE="${{ needs.collect-workflow-metrics.outputs.metrics-file }}"
+
+          echo "Analyzing performance trends..."
+
+          # Create performance analysis script
+          cat > analyze_performance.js << 'EOF'
+          const fs = require('fs');
+
+          const metrics = JSON.parse(fs.readFileSync(process.env.METRICS_FILE, 'utf8'));
+
+          console.log('=== Performance Analysis ===');
+          console.log(`Repository: ${metrics.repository}`);
+          console.log(`Period: ${metrics.period.type} (${metrics.period.start} to ${metrics.period.end})`);
+          console.log('');
+
+          // Overall performance
+          console.log('Overall Performance:');
+          console.log(`- Total runs: ${metrics.summary.total_runs}`);
+          console.log(`- Success rate: ${parseFloat(metrics.summary.success_rate).toFixed(1)}%`);
+          console.log(`- Average duration: ${Math.floor(metrics.summary.average_duration / 60)}m ${Math.floor(metrics.summary.average_duration % 60)}s`);
+          console.log(`- Total compute time: ${Math.floor(metrics.summary.total_duration / 3600)}h ${Math.floor((metrics.summary.total_duration % 3600) / 60)}m`);
+          console.log('');
+
+          // Workflow performance ranking
+          const workflowPerformance = Object.entries(metrics.workflows)
+            .map(([name, workflow]) => ({
+              name,
+              successRate: parseFloat(workflow.success_rate),
+              avgDuration: parseFloat(workflow.average_duration),
+              totalRuns: workflow.total_runs,
+              score: parseFloat(workflow.success_rate) - (parseFloat(workflow.average_duration) / 60) // Simple scoring
+            }))
+            .sort((a, b) => b.score - a.score);
+
+          console.log('Workflow Performance Ranking:');
+          workflowPerformance.forEach((workflow, index) => {
+            const duration = `${Math.floor(workflow.avgDuration / 60)}m ${Math.floor(workflow.avgDuration % 60)}s`;
+            console.log(`${index + 1}. ${workflow.name}`);
+            console.log(`   Success Rate: ${workflow.successRate.toFixed(1)}% | Avg Duration: ${duration} | Runs: ${workflow.totalRuns}`);
+          });
+          console.log('');
+
+          // Identify issues
+          const issues = [];
+
+          // Low success rate workflows
+          const lowSuccessWorkflows = workflowPerformance.filter(w => w.successRate < 90);
+          if (lowSuccessWorkflows.length > 0) {
+            issues.push(`Low Success Rate: ${lowSuccessWorkflows.map(w => w.name).join(', ')}`);
+          }
+
+          // Slow workflows
+          const slowWorkflows = workflowPerformance.filter(w => w.avgDuration > 600); // > 10 minutes
+          if (slowWorkflows.length > 0) {
+            issues.push(`Slow Workflows: ${slowWorkflows.map(w => w.name).join(', ')}`);
+          }
+
+          // Overall success rate issues
+          if (parseFloat(metrics.summary.success_rate) < 95) {
+            issues.push(`Overall success rate (${parseFloat(metrics.summary.success_rate).toFixed(1)}%) below target (95%)`);
+          }
+
+          if (issues.length > 0) {
+            console.log('⚠️ Issues Identified:');
+            issues.forEach(issue => console.log(`- ${issue}`));
+          } else {
+            console.log('✅ No performance issues identified');
+          }
+
+          // Recommendations
+          console.log('');
+          console.log('Recommendations:');
+
+          if (lowSuccessWorkflows.length > 0) {
+            console.log('- Investigate and fix failing workflows to improve success rates');
+          }
+
+          if (slowWorkflows.length > 0) {
+            console.log('- Optimize slow workflows by:');
+            console.log('  - Improving caching strategies');
+            console.log('  - Parallelizing jobs where possible');
+            console.log('  - Reducing unnecessary steps');
+          }
+
+          if (parseFloat(metrics.summary.success_rate) >= 95 && slowWorkflows.length === 0) {
+            console.log('- Workflows are performing well, continue monitoring');
+          }
+
+          console.log('- Consider setting up alerts for workflows with success rates below 90%');
+          console.log('- Review and update workflow configurations regularly');
+          EOF
+
+          METRICS_FILE="$METRICS_FILE" node analyze_performance.js
+
+      - name: Create performance alert
+        if: always()
+        run: |
+          METRICS_FILE="${{ needs.collect-workflow-metrics.outputs.metrics-file }}"
+
+          # Check if we need to create alerts
+          OVERALL_SUCCESS_RATE=$(node -e "
+            const metrics = JSON.parse(require('fs').readFileSync('$METRICS_FILE', 'utf8'));
+            console.log(parseFloat(metrics.summary.success_rate));
+          ")
+
+          if (( $(echo "$OVERALL_SUCCESS_RATE < 90" | bc -l) )); then
+            echo "🚨 CRITICAL: Overall success rate ($OVERALL_SUCCESS_RATE%) is below 90%"
+            echo "create-alert=true" >> $GITHUB_ENV
+            echo "alert-level=critical" >> $GITHUB_ENV
+          elif (( $(echo "$OVERALL_SUCCESS_RATE < 95" | bc -l) )); then
+            echo "⚠️ WARNING: Overall success rate ($OVERALL_SUCCESS_RATE%) is below 95%"
+            echo "create-alert=true" >> $GITHUB_ENV
+            echo "alert-level=warning" >> $GITHUB_ENV
+          else
+            echo "✅ Success rate ($OVERALL_SUCCESS_RATE%) is healthy"
+            echo "create-alert=false" >> $GITHUB_ENV
+          fi
+
+      - name: Send performance alert
+        if: env.create-alert == 'true'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              "channel": "#dev-alerts",
+              "attachments": [
+                {
+                  "color": "${{ env.alert-level == 'critical' && 'danger' || 'warning' }}",
+                  "title": "${{ env.alert-level == 'critical' && '🚨 CRITICAL' || '⚠️ WARNING' }}: Workflow Performance Alert",
+                  "text": "Workflow success rates have dropped below acceptable thresholds.",
+                  "fields": [
+                    {
+                      "title": "Repository",
+                      "value": "${{ github.repository }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Period",
+                      "value": "${{ needs.collect-workflow-metrics.outputs.report-period }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Action Required",
+                      "value": "Review workflow failures and implement fixes",
+                      "short": false
+                    }
+                  ],
+                  "footer": "UnifiedHQ Performance Monitoring"
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  cleanup:
+    name: Cleanup Old Reports
+    runs-on: ubuntu-latest
+    needs: [publish-report]
+    if: always()
+    steps:
+      - name: Cleanup old workflow report issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Keep only the last 10 workflow report issues
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'workflow-report',
+              state: 'open',
+              sort: 'created',
+              direction: 'desc',
+              per_page: 100
+            });
+
+            if (issues.data.length > 10) {
+              const issuesToClose = issues.data.slice(10);
+              
+              for (const issue of issuesToClose) {
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  state: 'closed'
+                });
+                
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  body: '🗄️ Automatically closed to maintain report history limit. Report data is still available in artifacts.'
+                });
+                
+                console.log(`Closed old report issue #${issue.number}`);
+              }
+            }
+
+      - name: Cleanup old artifacts
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Keep artifacts for 90 days, but clean up very old ones
+            const ninetyDaysAgo = new Date();
+            ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+            const artifacts = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+
+            for (const artifact of artifacts.data.artifacts) {
+              if ((artifact.name.startsWith('workflow-metrics-') || 
+                   artifact.name.startsWith('workflow-report-')) &&
+                  new Date(artifact.created_at) < ninetyDaysAgo) {
+                
+                await github.rest.actions.deleteArtifact({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  artifact_id: artifact.id,
+                });
+                
+                console.log(`Deleted old artifact: ${artifact.name}`);
+              }
+            }

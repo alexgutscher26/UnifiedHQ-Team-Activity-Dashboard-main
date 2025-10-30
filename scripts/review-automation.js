@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * Review Automation
  * Automates various aspects of the code review process
@@ -16,7 +14,7 @@ class ReviewAutomation {
   }
 
   /**
-   * Load review configuration
+   * Loads the review configuration from a YAML file.
    */
   loadConfig() {
     const configPath = path.join(
@@ -37,14 +35,19 @@ class ReviewAutomation {
   }
 
   /**
-   * Auto-assign reviewers based on changed files
+   * Auto-assign reviewers based on changed files in a pull request.
+   *
+   * This function retrieves the list of changed files in the specified pull request and assigns reviewers based on the file patterns. It checks for critical files to potentially add the security team to the reviewers. The function handles errors gracefully and returns an empty array if an error occurs during execution.
+   *
+   * @param prNumber - The pull request number for which reviewers are to be assigned.
+   * @returns An array of assigned reviewers based on the changed files.
    */
   async autoAssignReviewers(prNumber) {
     console.log(`🔍 Auto-assigning reviewers for PR #${prNumber}...`);
 
     try {
       // Get changed files
-      const changedFiles = execSync(`git diff --name-only HEAD~1 HEAD`, {
+      const changedFiles = execSync('git diff --name-only HEAD~1 HEAD', {
         encoding: 'utf8',
       });
       const files = changedFiles
@@ -104,7 +107,12 @@ class ReviewAutomation {
   }
 
   /**
-   * Auto-label PR based on content
+   * Auto-label PR based on content.
+   *
+   * This function retrieves the title and description of a pull request (PR) using the GitHub CLI, then assigns labels based on the title keywords, changed files, and the size of the changes. It checks for specific keywords in the title to determine labels like 'bug-fix', 'feature', and 'documentation'. It also analyzes the changed files to categorize them into frontend, backend, integrations, database, and devops. Finally, it calculates the total number of changes to label the PR as 'large-pr', 'medium-pr', or 'small-pr'.
+   *
+   * @param prNumber - The number of the pull request to be labeled.
+   * @returns An array of labels assigned to the pull request.
    */
   async autoLabelPR(prNumber) {
     console.log(`🏷️ Auto-labeling PR #${prNumber}...`);
@@ -131,7 +139,7 @@ class ReviewAutomation {
       }
 
       // Label based on changed files
-      const changedFiles = execSync(`git diff --name-only HEAD~1 HEAD`, {
+      const changedFiles = execSync('git diff --name-only HEAD~1 HEAD', {
         encoding: 'utf8',
       });
       const files = changedFiles
@@ -192,7 +200,7 @@ class ReviewAutomation {
   }
 
   /**
-   * Generate review checklist
+   * Generate review checklist for a pull request.
    */
   generateReviewChecklist(prNumber) {
     console.log(`📋 Generating review checklist for PR #${prNumber}...`);
@@ -235,7 +243,12 @@ class ReviewAutomation {
   }
 
   /**
-   * Check PR readiness
+   * Check PR readiness by executing various checks.
+   *
+   * This function runs a series of commands to verify the build, linting, formatting, TypeScript checks, and tests for the given PR number. It logs the results of each check and determines if the PR is ready based on the success of all checks. The results are returned as an object containing the status of each check and the overall readiness.
+   *
+   * @param prNumber - The number of the pull request to check.
+   * @returns An object containing the results of the checks and a boolean indicating if the PR is ready.
    */
   async checkPRReadiness(prNumber) {
     console.log(`✅ Checking PR readiness for #${prNumber}...`);
@@ -299,7 +312,16 @@ class ReviewAutomation {
   }
 
   /**
-   * Generate review summary
+   * Generate review summary.
+   *
+   * This function creates a summary object for a pull request, including the PR number,
+   * current timestamp, readiness status, reviewers, labels, and a checklist. It also
+   * evaluates the readiness checks and adds recommendations based on any issues found
+   * with the build, linting, formatting, or TypeScript types.
+   *
+   * @param {number} prNumber - The pull request number.
+   * @param {Object} reviewData - The data related to the review, including readiness,
+   *                              reviewers, labels, and checklist.
    */
   generateReviewSummary(prNumber, reviewData) {
     console.log(`📝 Generating review summary for PR #${prNumber}...`);
@@ -333,6 +355,13 @@ class ReviewAutomation {
 
   /**
    * Run automation for a PR
+   *
+   * This function orchestrates the automation process for a pull request identified by prNumber.
+   * It includes steps to auto-assign reviewers, auto-label the PR, check its readiness, and generate
+   * a review checklist and summary. The summary is then saved to a JSON file in the project directory.
+   * If any step fails, an error message is logged, and the function returns null.
+   *
+   * @param {number} prNumber - The number of the pull request to run automation for.
    */
   async runForPR(prNumber) {
     console.log(`🚀 Running automation for PR #${prNumber}...`);

@@ -133,10 +133,11 @@ export async function POST(request: NextRequest) {
           },
         };
 
-        // Generate AI summary
+        // Generate AI summary with caching for background jobs
         const aiSummary = await AISummaryService.generateSummary(
           user.id,
-          summaryData
+          summaryData,
+          { useCache: true, forceRegenerate: false }
         );
 
         // Save to database

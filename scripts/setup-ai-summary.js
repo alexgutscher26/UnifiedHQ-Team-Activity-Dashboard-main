@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * AI Summary Setup Script
  * Helps users configure OpenRouter API key and set up the AI summary feature
@@ -28,7 +26,7 @@ let envContent = readFileSync(ENV_FILE, 'utf8');
 // Check if OpenRouter API key is already configured
 if (envContent.includes('OPENROUTER_API_KEY=')) {
   const hasKey = envContent.match(/OPENROUTER_API_KEY=(.+)/);
-  if (hasKey && hasKey[1] && hasKey[1] !== 'your-openrouter-api-key') {
+  if (hasKey?.[1] && hasKey[1] !== 'your-openrouter-api-key') {
     console.log('✅ OpenRouter API key is already configured');
   } else {
     console.log(

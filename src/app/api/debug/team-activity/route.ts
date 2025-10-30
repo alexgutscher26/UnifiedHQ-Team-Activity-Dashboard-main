@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      console.log(`[Team Activity Debug] GitHub connection found`);
+      console.log('[Team Activity Debug] GitHub connection found');
 
       // Check selected repositories
       const selectedRepos = await prisma.selectedRepository.findMany({
@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
           userId,
           userName: user.name,
           userEmail: user.email,
-          hasGitHubConnection: !!connection,
+          hasGitHubConnection: Boolean(connection),
           selectedRepositories: selectedRepos.length,
           recentActivities: activities.map(activity => ({
             id: activity.id,

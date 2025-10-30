@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * Daily Summary Setup Script
  * Sets up environment variables and cron job configuration for automated daily summary generation
@@ -20,7 +18,7 @@ console.log('');
 console.log('Add these environment variables to your deployment:');
 console.log('');
 console.log('# Required for AI Summary Generation');
-console.log(`OPENROUTER_API_KEY=sk-or-v1-your-api-key-here`);
+console.log('OPENROUTER_API_KEY=sk-or-v1-your-api-key-here');
 console.log(`CRON_SECRET_TOKEN=${cronSecretToken}`);
 console.log('');
 console.log('# Database (if not already set)');
@@ -58,7 +56,7 @@ console.log('🔧 Manual Testing:');
 console.log('==================');
 console.log('');
 console.log('1. Test the cron endpoint:');
-console.log(`   curl -X POST http://localhost:3000/api/ai-summary/cron \\`);
+console.log('   curl -X POST http://localhost:3000/api/ai-summary/cron \\');
 console.log(`     -H "Authorization: Bearer ${cronSecretToken}"`);
 console.log('');
 console.log('2. Test health check:');

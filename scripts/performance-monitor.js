@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * Performance monitoring script for activity feeds
  * Monitors render times, memory usage, and user interactions

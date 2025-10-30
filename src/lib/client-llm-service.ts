@@ -25,7 +25,7 @@ export interface LLMResponse {
 export class ClientLLMService {
   private apiEndpoint: string;
 
-  constructor(apiEndpoint: string = '/api/openrouter') {
+  constructor(apiEndpoint = '/api/openrouter') {
     this.apiEndpoint = apiEndpoint;
   }
 

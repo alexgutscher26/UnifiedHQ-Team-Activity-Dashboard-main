@@ -1,6 +1,7 @@
 import { Octokit } from '@octokit/rest';
 import { PrismaClient } from '@/generated/prisma';
 import { withRetry, RetryPresets } from '@/lib/retry-utils';
+import { RedisCache, CacheKeyGenerator, TTLManager } from '@/lib/redis';
 
 const prisma = new PrismaClient();
 
@@ -164,15 +165,17 @@ class CachedGitHubClient {
   }
 
   /**
-   * Get cached or fetch fresh data from GitHub API.
+   * Get cached or fetch fresh data from GitHub API with Redis caching.
    *
-   * This function first attempts to retrieve data from the cache using a generated key based on the user ID, operation, and parameters.
-   * If the data is not found in the cache, it fetches fresh data using the provided fetcher function and stores it in the cache for the specified time-to-live (ttl).
-   * In case of a rate limit error, it attempts to return expired cached data if available.
+   * This function implements a multi-layer caching strategy:
+   * 1. First checks Redis cache for the data
+   * 2. Falls back to in-memory cache if Redis is unavailable
+   * 3. Fetches fresh data from GitHub API if not cached
+   * 4. Stores the result in both Redis and memory cache
    *
    * @param operation - The operation name to identify the request.
    * @param params - The parameters to be used for the request.
-   * @param ttl - The time-to-live for the cached data in seconds.
+   * @param ttl - The time-to-live for the cached data in milliseconds.
    * @param fetcher - A function that fetches fresh data from the API.
    * @returns The fetched or cached data.
    * @throws Any error encountered during the fetching process, including rate limit errors.
@@ -183,16 +186,33 @@ class CachedGitHubClient {
     ttl: number,
     fetcher: () => Promise<T>
   ): Promise<T> {
-    const cacheKey = githubCache.generateKey(
+    // Generate cache keys for both Redis and in-memory cache
+    const redisCacheKey = CacheKeyGenerator.github(
+      this.userId,
+      operation,
+      JSON.stringify(params)
+    );
+    const memoryCacheKey = githubCache.generateKey(
       `${this.userId}:${operation}`,
       params
     );
 
-    // Try to get from cache first
-    const cached = githubCache.get<T>(cacheKey);
-    if (cached) {
-      console.log(`[GitHub Cache] Cache hit for ${operation}`);
-      return cached;
+    // Try Redis cache first
+    const redisData = await RedisCache.get<T>(redisCacheKey);
+    if (redisData) {
+      console.log(`[GitHub Cache] Redis cache hit for ${operation}`);
+      // Also store in memory cache for faster subsequent access
+      githubCache.set(memoryCacheKey, redisData, ttl);
+      return redisData;
+    }
+
+    // Try in-memory cache as fallback
+    const memoryData = githubCache.get<T>(memoryCacheKey);
+    if (memoryData) {
+      console.log(`[GitHub Cache] Memory cache hit for ${operation}`);
+      // Store in Redis for persistence
+      await RedisCache.set(redisCacheKey, memoryData, Math.floor(ttl / 1000));
+      return memoryData;
     }
 
     console.log(
@@ -203,8 +223,11 @@ class CachedGitHubClient {
       const result = await withRetry(
         async () => {
           const data = await fetcher();
-          // Store in cache
-          githubCache.set(cacheKey, data, ttl);
+
+          // Store in both caches
+          githubCache.set(memoryCacheKey, data, ttl);
+          await RedisCache.set(redisCacheKey, data, Math.floor(ttl / 1000));
+
           return data;
         },
         {
@@ -230,9 +253,17 @@ class CachedGitHubClient {
         console.warn(
           `[GitHub Cache] Rate limit hit for ${operation} after retries, trying expired cache`
         );
-        const expiredCache = githubCache.get<T>(cacheKey);
-        if (expiredCache) {
-          return expiredCache;
+
+        // Try Redis first for expired data
+        const expiredRedisData = await RedisCache.get<T>(redisCacheKey);
+        if (expiredRedisData) {
+          return expiredRedisData;
+        }
+
+        // Fall back to memory cache
+        const expiredMemoryData = githubCache.get<T>(memoryCacheKey);
+        if (expiredMemoryData) {
+          return expiredMemoryData;
         }
       }
       throw error;
@@ -262,11 +293,7 @@ class CachedGitHubClient {
   /**
    * Get repository commits with caching
    */
-  async getCommits(
-    owner: string,
-    repo: string,
-    perPage: number = 10
-  ): Promise<any[]> {
+  async getCommits(owner: string, repo: string, perPage = 10): Promise<any[]> {
     return this.cachedRequest(
       'commits.list',
       { owner, repo, perPage },
@@ -288,7 +315,7 @@ class CachedGitHubClient {
   async getPullRequests(
     owner: string,
     repo: string,
-    perPage: number = 10
+    perPage = 10
   ): Promise<any[]> {
     return this.cachedRequest(
       'pulls.list',
@@ -310,11 +337,7 @@ class CachedGitHubClient {
   /**
    * Fetches issues from a repository with caching support.
    */
-  async getIssues(
-    owner: string,
-    repo: string,
-    perPage: number = 10
-  ): Promise<any[]> {
+  async getIssues(owner: string, repo: string, perPage = 10): Promise<any[]> {
     return this.cachedRequest(
       'issues.list',
       { owner, repo, perPage },
@@ -668,7 +691,7 @@ export async function fetchGithubActivity(
     );
 
     if (sortedActivities.length > 0) {
-      console.log(`[GitHub Sync] Sample activity:`, {
+      console.log('[GitHub Sync] Sample activity:', {
         title: sortedActivities[0].title,
         timestamp: sortedActivities[0].timestamp,
         metadata: sortedActivities[0].metadata,
@@ -835,7 +858,7 @@ export async function saveGithubActivities(
  */
 export async function getGithubActivities(
   userId: string,
-  limit: number = 10
+  limit = 10
 ): Promise<GitHubActivity[]> {
   // Get selected repositories
   const selectedRepos = await prisma.selectedRepository.findMany({
@@ -888,7 +911,7 @@ export async function isGithubConnected(userId: string): Promise<boolean> {
       type: 'github',
     },
   });
-  return !!connection;
+  return Boolean(connection);
 }
 
 /**
@@ -942,6 +965,205 @@ export async function disconnectGithub(userId: string): Promise<void> {
 }
 
 /**
+ * Cache warming service for frequently accessed repositories
+ */
+export class GitHubCacheWarming {
+  /**
+   * Warm cache for a user's selected repositories
+   */
+  static async warmUserRepositories(userId: string): Promise<void> {
+    try {
+      console.log(
+        `[GitHub Cache Warming] Starting cache warming for user: ${userId}`
+      );
+
+      const connection = await prisma.connection.findFirst({
+        where: { userId, type: 'github' },
+      });
+
+      if (!connection) {
+        console.log(
+          `[GitHub Cache Warming] No GitHub connection for user: ${userId}`
+        );
+        return;
+      }
+
+      const selectedRepos = await prisma.selectedRepository.findMany({
+        where: { userId },
+        orderBy: { updatedAt: 'desc' },
+        take: 10, // Warm cache for top 10 most recently updated repositories
+      });
+
+      if (selectedRepos.length === 0) {
+        console.log(
+          `[GitHub Cache Warming] No selected repositories for user: ${userId}`
+        );
+        return;
+      }
+
+      const client = new CachedGitHubClient(connection.accessToken, userId);
+
+      // Warm cache for each repository in parallel
+      const warmingPromises = selectedRepos.map(async repo => {
+        const [owner, repoName] = repo.repoName.split('/');
+
+        try {
+          // Pre-fetch and cache repository data
+          await Promise.all([
+            client.getCommits(owner, repoName, 10),
+            client.getPullRequests(owner, repoName, 10),
+            client.getIssues(owner, repoName, 10),
+          ]);
+
+          console.log(
+            `[GitHub Cache Warming] Warmed cache for ${repo.repoName}`
+          );
+        } catch (error: any) {
+          console.warn(
+            `[GitHub Cache Warming] Failed to warm cache for ${repo.repoName}:`,
+            error.message
+          );
+        }
+      });
+
+      await Promise.allSettled(warmingPromises);
+      console.log(
+        `[GitHub Cache Warming] Completed cache warming for ${selectedRepos.length} repositories`
+      );
+    } catch (error) {
+      console.error(
+        `[GitHub Cache Warming] Failed to warm cache for user ${userId}:`,
+        error
+      );
+    }
+  }
+
+  /**
+   * Warm cache for frequently accessed repositories across all users
+   */
+  static async warmFrequentRepositories(): Promise<void> {
+    try {
+      console.log(
+        '[GitHub Cache Warming] Starting global repository cache warming'
+      );
+
+      // Get most frequently selected repositories
+      const frequentRepos = await prisma.selectedRepository.groupBy({
+        by: ['repoName'],
+        _count: { userId: true },
+        orderBy: { _count: { userId: 'desc' } },
+        take: 20, // Top 20 most selected repositories
+      });
+
+      console.log(
+        `[GitHub Cache Warming] Found ${frequentRepos.length} frequently accessed repositories`
+      );
+
+      // Warm cache for each frequent repository
+      for (const repoGroup of frequentRepos) {
+        // Get a user who has this repository selected
+        const userWithRepo = await prisma.selectedRepository.findFirst({
+          where: { repoName: repoGroup.repoName },
+          include: {
+            user: {
+              include: {
+                connections: {
+                  where: { type: 'github' },
+                },
+              },
+            },
+          },
+        });
+
+        if (!userWithRepo?.user.connections[0]) {
+          continue;
+        }
+
+        const [owner, repoName] = repoGroup.repoName.split('/');
+        const client = new CachedGitHubClient(
+          userWithRepo.user.connections[0].accessToken,
+          userWithRepo.userId
+        );
+
+        try {
+          await Promise.all([
+            client.getCommits(owner, repoName, 10),
+            client.getPullRequests(owner, repoName, 10),
+            client.getIssues(owner, repoName, 10),
+          ]);
+
+          console.log(
+            `[GitHub Cache Warming] Warmed cache for frequent repository: ${repoGroup.repoName}`
+          );
+        } catch (error: any) {
+          console.warn(
+            `[GitHub Cache Warming] Failed to warm cache for ${repoGroup.repoName}:`,
+            error.message
+          );
+        }
+      }
+
+      console.log(
+        '[GitHub Cache Warming] Completed global repository cache warming'
+      );
+    } catch (error) {
+      console.error(
+        '[GitHub Cache Warming] Failed global cache warming:',
+        error
+      );
+    }
+  }
+
+  /**
+   * Schedule cache warming for a specific repository
+   */
+  static async scheduleRepositoryWarming(
+    userId: string,
+    repoName: string
+  ): Promise<void> {
+    try {
+      console.log(
+        `[GitHub Cache Warming] Scheduling cache warming for ${repoName}`
+      );
+
+      // Use setTimeout to warm cache in the background
+      setTimeout(async () => {
+        try {
+          const connection = await prisma.connection.findFirst({
+            where: { userId, type: 'github' },
+          });
+
+          if (!connection) return;
+
+          const [owner, repo] = repoName.split('/');
+          const client = new CachedGitHubClient(connection.accessToken, userId);
+
+          await Promise.all([
+            client.getCommits(owner, repo, 10),
+            client.getPullRequests(owner, repo, 10),
+            client.getIssues(owner, repo, 10),
+          ]);
+
+          console.log(
+            `[GitHub Cache Warming] Background warming completed for ${repoName}`
+          );
+        } catch (error) {
+          console.warn(
+            `[GitHub Cache Warming] Background warming failed for ${repoName}:`,
+            error
+          );
+        }
+      }, 1000); // Delay by 1 second to avoid blocking the main request
+    } catch (error) {
+      console.error(
+        `[GitHub Cache Warming] Failed to schedule warming for ${repoName}:`,
+        error
+      );
+    }
+  }
+}
+
+/**
  * Cache management functions
  */
 export const GitHubCacheManager = {
@@ -966,14 +1188,41 @@ export const GitHubCacheManager = {
   clearUserCache: (userId: string) => DatabaseCache.clearUserCache(userId),
 
   /**
-   * Clear all caches
+   * Clear Redis cache for GitHub data
+   */
+  clearRedisCache: async (userId?: string) => {
+    if (userId) {
+      const pattern = `unifiedhq:github:${userId}:*`;
+      return await RedisCache.deleteByPattern(pattern);
+    } else {
+      const pattern = 'unifiedhq:github:*';
+      return await RedisCache.deleteByPattern(pattern);
+    }
+  },
+
+  /**
+   * Clear all caches (memory, database, and Redis)
    */
   clearAllCaches: async (userId?: string) => {
     githubCache.clear();
+
     if (userId) {
       await DatabaseCache.clearUserCache(userId);
+      await GitHubCacheManager.clearRedisCache(userId);
     } else {
       await DatabaseCache.clearExpiredCache();
+      await GitHubCacheManager.clearRedisCache();
     }
   },
+
+  /**
+   * Warm cache for user's repositories
+   */
+  warmUserCache: (userId: string) =>
+    GitHubCacheWarming.warmUserRepositories(userId),
+
+  /**
+   * Warm cache for frequently accessed repositories
+   */
+  warmFrequentCache: () => GitHubCacheWarming.warmFrequentRepositories(),
 };

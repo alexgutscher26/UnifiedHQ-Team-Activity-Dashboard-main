@@ -192,7 +192,7 @@ interface AccessibleAlertDialogProps {
 /**
  * Renders an accessible alert dialog component.
  *
- * The AccessibleAlertDialog component manages the dialog's open state, announces the title and description when opened, and handles focus trapping. It provides action and cancel buttons, invoking the respective callbacks on user interaction. The dialog can be customized with different labels and variants, ensuring a user-friendly experience.
+ * The AccessibleAlertDialog component manages the dialog's open state and announces the title and description when opened. It utilizes focus management to trap focus within the dialog while open and restores focus when closed. The component provides action and cancel buttons, invoking the respective callbacks on user interaction, and allows customization of labels and variants for a user-friendly experience.
  *
  * @param {boolean} open - Indicates whether the dialog is open or closed.
  * @param {function} onOpenChange - Callback function to handle changes in the dialog's open state.
@@ -273,7 +273,7 @@ export const AccessibleAlertDialog: React.FC<AccessibleAlertDialogProps> = ({
       <div className='space-y-4'>
         <p className='text-sm text-muted-foreground'>{description}</p>
         <div className='flex justify-end space-x-2'>
-          <Button variant='outline' onClick={handleCancel} autoFocus>
+          <Button variant='outline' onClick={handleCancel}>
             {cancelLabel}
           </Button>
           <Button
@@ -359,13 +359,13 @@ export const AccessibleTooltip: React.FC<AccessibleTooltipProps> = ({
             'absolute z-50 px-3 py-2 text-sm text-primary-foreground bg-primary rounded-md shadow-lg',
             'animate-in fade-in-0 zoom-in-95',
             side === 'top' &&
-              'bottom-full left-1/2 transform -translate-x-1/2 mb-2',
+            'bottom-full left-1/2 transform -translate-x-1/2 mb-2',
             side === 'bottom' &&
-              'top-full left-1/2 transform -translate-x-1/2 mt-2',
+            'top-full left-1/2 transform -translate-x-1/2 mt-2',
             side === 'left' &&
-              'right-full top-1/2 transform -translate-y-1/2 mr-2',
+            'right-full top-1/2 transform -translate-y-1/2 mr-2',
             side === 'right' &&
-              'left-full top-1/2 transform -translate-y-1/2 ml-2'
+            'left-full top-1/2 transform -translate-y-1/2 ml-2'
           )}
         >
           {content}
@@ -373,13 +373,13 @@ export const AccessibleTooltip: React.FC<AccessibleTooltipProps> = ({
             className={cn(
               'absolute w-2 h-2 bg-primary transform rotate-45',
               side === 'top' &&
-                'top-full left-1/2 transform -translate-x-1/2 -mt-1',
+              'top-full left-1/2 transform -translate-x-1/2 -mt-1',
               side === 'bottom' &&
-                'bottom-full left-1/2 transform -translate-x-1/2 -mb-1',
+              'bottom-full left-1/2 transform -translate-x-1/2 -mb-1',
               side === 'left' &&
-                'left-full top-1/2 transform -translate-y-1/2 -ml-1',
+              'left-full top-1/2 transform -translate-y-1/2 -ml-1',
               side === 'right' &&
-                'right-full top-1/2 transform -translate-y-1/2 -mr-1'
+              'right-full top-1/2 transform -translate-y-1/2 -mr-1'
             )}
           />
         </div>
@@ -457,18 +457,16 @@ export const AccessiblePopover: React.FC<AccessiblePopoverProps> = ({
 
   return (
     <div className={cn('relative', className)}>
-      <div
+      <button
         ref={triggerRef}
         onClick={handleTriggerClick}
         onKeyDown={handleKeyDown}
-        role='button'
-        tabIndex={0}
         aria-expanded={isOpen}
         aria-haspopup='true'
-        className='inline-block'
+        className='inline-block border-none bg-transparent p-0 m-0'
       >
         {children}
-      </div>
+      </button>
 
       {isOpen && (
         <div

@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * Review Monitor
  * Monitors code review metrics and generates reports
@@ -53,7 +51,7 @@ class ReviewMonitor {
   }
 
   /**
-   * Calculate review metrics
+   * Calculate review metrics.
    */
   calculateMetrics() {
     console.log('📈 Calculating review metrics...');
@@ -118,7 +116,7 @@ class ReviewMonitor {
   }
 
   /**
-   * Generate recommendations
+   * Generate recommendations based on review metrics.
    */
   generateRecommendations() {
     const recommendations = [];
@@ -160,7 +158,7 @@ class ReviewMonitor {
   }
 
   /**
-   * Analyze trends
+   * Analyzes historical data to identify trends.
    */
   analyzeTrends() {
     // This would analyze historical data to identify trends
@@ -173,25 +171,25 @@ class ReviewMonitor {
   }
 
   /**
-   * Generate markdown report
+   * Generate markdown report from the provided metrics and recommendations.
    */
   generateMarkdownReport(report) {
-    let markdown = `# 📊 Review Metrics Report\n\n`;
+    let markdown = '# 📊 Review Metrics Report\n\n';
     markdown += `**Generated:** ${report.timestamp}\n\n`;
 
-    markdown += `## 📈 Summary\n\n`;
-    markdown += `### Weekly Metrics\n`;
+    markdown += '## 📈 Summary\n\n';
+    markdown += '### Weekly Metrics\n';
     markdown += `- **PRs:** ${report.metrics.weekly.prs}\n`;
     markdown += `- **Reviews:** ${report.metrics.weekly.reviews}\n`;
     markdown += `- **Avg Review Time:** ${report.metrics.weekly.avgReviewTime} days\n\n`;
 
-    markdown += `### Monthly Metrics\n`;
+    markdown += '### Monthly Metrics\n';
     markdown += `- **PRs:** ${report.metrics.monthly.prs}\n`;
     markdown += `- **Reviews:** ${report.metrics.monthly.reviews}\n`;
     markdown += `- **Avg Review Time:** ${report.metrics.monthly.avgReviewTime} days\n\n`;
 
     if (report.recommendations.length > 0) {
-      markdown += `## 💡 Recommendations\n\n`;
+      markdown += '## 💡 Recommendations\n\n';
       report.recommendations.forEach(rec => {
         const priority =
           rec.priority === 'high'
@@ -205,7 +203,7 @@ class ReviewMonitor {
       });
     }
 
-    markdown += `## 📊 Trends\n\n`;
+    markdown += '## 📊 Trends\n\n';
     markdown += `- **PR Volume:** ${report.trends.pr_volume}\n`;
     markdown += `- **Review Time:** ${report.trends.review_time}\n`;
     markdown += `- **Reviewer Activity:** ${report.trends.reviewer_activity}\n\n`;
@@ -214,7 +212,7 @@ class ReviewMonitor {
   }
 
   /**
-   * Run monitoring
+   * Runs the monitoring process and generates a report.
    */
   async run() {
     console.log('🚀 Starting review monitoring...');

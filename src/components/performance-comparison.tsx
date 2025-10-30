@@ -231,19 +231,19 @@ export function PerformanceComparison({
               <h4 className='font-medium'>Rendering Optimizations</h4>
               <ul className='space-y-2 text-sm'>
                 <li className='flex items-center gap-2'>
-                  <div className='w-2 h-2 bg-green-500 rounded-full'></div>
+                  <div className='w-2 h-2 bg-green-500 rounded-full' />
                   React.memo for activity items
                 </li>
                 <li className='flex items-center gap-2'>
-                  <div className='w-2 h-2 bg-green-500 rounded-full'></div>
+                  <div className='w-2 h-2 bg-green-500 rounded-full' />
                   Virtual scrolling for large lists
                 </li>
                 <li className='flex items-center gap-2'>
-                  <div className='w-2 h-2 bg-green-500 rounded-full'></div>
+                  <div className='w-2 h-2 bg-green-500 rounded-full' />
                   Memoized timestamp formatting
                 </li>
                 <li className='flex items-center gap-2'>
-                  <div className='w-2 h-2 bg-green-500 rounded-full'></div>
+                  <div className='w-2 h-2 bg-green-500 rounded-full' />
                   Optimized icon rendering
                 </li>
               </ul>
@@ -253,19 +253,19 @@ export function PerformanceComparison({
               <h4 className='font-medium'>User Experience</h4>
               <ul className='space-y-2 text-sm'>
                 <li className='flex items-center gap-2'>
-                  <div className='w-2 h-2 bg-blue-500 rounded-full'></div>
+                  <div className='w-2 h-2 bg-blue-500 rounded-full' />
                   Debounced search (300ms)
                 </li>
                 <li className='flex items-center gap-2'>
-                  <div className='w-2 h-2 bg-blue-500 rounded-full'></div>
+                  <div className='w-2 h-2 bg-blue-500 rounded-full' />
                   Infinite scroll pagination
                 </li>
                 <li className='flex items-center gap-2'>
-                  <div className='w-2 h-2 bg-blue-500 rounded-full'></div>
+                  <div className='w-2 h-2 bg-blue-500 rounded-full' />
                   Real-time filtering
                 </li>
                 <li className='flex items-center gap-2'>
-                  <div className='w-2 h-2 bg-blue-500 rounded-full'></div>
+                  <div className='w-2 h-2 bg-blue-500 rounded-full' />
                   Performance metrics display
                 </li>
               </ul>

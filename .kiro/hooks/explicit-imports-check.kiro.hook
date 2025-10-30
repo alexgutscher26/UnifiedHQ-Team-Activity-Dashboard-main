@@ -1,0 +1,22 @@
+{
+  "enabled": true,
+  "name": "Explicit Imports Enforcer",
+  "description": "Monitors TypeScript and JavaScript files for wildcard imports and suggests converting them to explicit imports for better code clarity and dependency tracking",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "src/**/*.js",
+      "src/**/*.jsx",
+      "scripts/**/*.js",
+      "*.ts",
+      "*.js"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the modified files for wildcard imports (import * from 'module'). For each wildcard import found:\n\n1. Identify if it's a legitimate case (like libraries that don't expose themselves as ES Modules)\n2. If legitimate, suggest adding a skipcq comment: // skipcq: JS-C1003 - [reason]\n3. If not legitimate, suggest converting to explicit imports by:\n   - Analyzing the usage of imported items in the file\n   - Providing the specific import statement with only the used items\n   - Explaining the benefits of explicit imports for code clarity\n\nFocus on TypeScript/JavaScript files in the src/ directory and scripts/ directory. Provide clear, actionable suggestions with examples of the recommended import statements."
+  }
+}

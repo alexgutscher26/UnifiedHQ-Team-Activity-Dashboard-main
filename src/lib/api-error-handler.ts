@@ -322,10 +322,7 @@ export const ApiErrors = {
   validation: (message: string, details?: any, requestId?: string) =>
     createApiError(ApiErrorType.VALIDATION_ERROR, message, details, requestId),
 
-  authentication: (
-    message: string = 'Authentication required',
-    requestId?: string
-  ) =>
+  authentication: (message = 'Authentication required', requestId?: string) =>
     createApiError(
       ApiErrorType.AUTHENTICATION_ERROR,
       message,
@@ -333,10 +330,7 @@ export const ApiErrors = {
       requestId
     ),
 
-  authorization: (
-    message: string = 'Insufficient permissions',
-    requestId?: string
-  ) =>
+  authorization: (message = 'Insufficient permissions', requestId?: string) =>
     createApiError(
       ApiErrorType.AUTHORIZATION_ERROR,
       message,
@@ -344,7 +338,7 @@ export const ApiErrors = {
       requestId
     ),
 
-  notFound: (resource: string = 'Resource', requestId?: string) =>
+  notFound: (resource = 'Resource', requestId?: string) =>
     createApiError(
       ApiErrorType.NOT_FOUND,
       `${resource} not found`,
@@ -355,7 +349,7 @@ export const ApiErrors = {
   conflict: (message: string, details?: any, requestId?: string) =>
     createApiError(ApiErrorType.CONFLICT, message, details, requestId),
 
-  rateLimit: (message: string = 'Rate limit exceeded', requestId?: string) =>
+  rateLimit: (message = 'Rate limit exceeded', requestId?: string) =>
     createApiError(
       ApiErrorType.RATE_LIMIT_ERROR,
       message,
@@ -372,7 +366,7 @@ export const ApiErrors = {
     ),
 
   internal: (
-    message: string = 'Internal server error',
+    message = 'Internal server error',
     details?: any,
     requestId?: string
   ) =>
@@ -423,9 +417,22 @@ export function validateRequest<T>(
 }
 
 // Rate limiting helper
+/**
+ * Checks if the rate limit for a given identifier has been exceeded.
+ *
+ * This function implements a simple in-memory rate limiter that tracks the number of requests made
+ * within a specified time window. It initializes a rate limit store if it doesn't exist, filters
+ * the requests to only include those within the defined time window, and checks if the number of
+ * recent requests exceeds the specified limit. If the limit is not exceeded, it records the current
+ * request timestamp.
+ *
+ * @param identifier - A unique identifier for the rate limit check.
+ * @param limit - The maximum number of requests allowed within the time window (default is 100).
+ * @param windowMs - The duration of the time window in milliseconds (default is 15 minutes).
+ */
 export function checkRateLimit(
   identifier: string,
-  limit: number = 100,
+  limit = 100,
   windowMs: number = 15 * 60 * 1000 // 15 minutes
 ): boolean {
   // This is a simple in-memory rate limiter
@@ -651,7 +658,7 @@ export async function requireApiKey(
 export function checkRateLimitWithUser(
   identifier: string,
   userId?: string,
-  limit: number = 100,
+  limit = 100,
   windowMs: number = 15 * 60 * 1000
 ): boolean {
   // Use user ID if available, otherwise fall back to identifier

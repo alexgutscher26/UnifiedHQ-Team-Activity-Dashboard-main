@@ -23,6 +23,20 @@ updates:
     labels:
       - 'dependencies'
       - 'javascript'
+      - 'automated'
+      - 'safe-to-merge'
+    # Group patch and minor updates for auto-merging
+    groups:
+      patch-updates:
+        patterns:
+          - '*'
+        update-types:
+          - 'patch'
+      minor-updates:
+        patterns:
+          - '*'
+        update-types:
+          - 'minor'
     ignore:
       # Ignore major version updates for stable packages
       - dependency-name: 'react'
@@ -56,6 +70,8 @@ updates:
     labels:
       - 'dependencies'
       - 'github-actions'
+      - 'automated'
+      - 'safe-to-merge'
 
   # Docker dependencies (if Dockerfile exists)
   - package-ecosystem: 'docker'
@@ -76,6 +92,8 @@ updates:
     labels:
       - 'dependencies'
       - 'docker'
+      - 'automated'
+      - 'safe-to-merge'
 
   # Bun dependencies (bun.lockb)
   - package-ecosystem: 'bundler'
@@ -96,3 +114,5 @@ updates:
     labels:
       - 'dependencies'
       - 'bun'
+      - 'automated'
+      - 'safe-to-merge'

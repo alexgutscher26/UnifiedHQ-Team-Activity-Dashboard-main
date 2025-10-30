@@ -1,0 +1,22 @@
+{
+  "enabled": true,
+  "name": "Undefined Variable Detection",
+  "description": "Monitors JavaScript and TypeScript files for potential undefined variable references that could throw ReferenceErrors at runtime. Helps catch misspellings, implicit globals, and undeclared variables before they cause issues.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.js",
+      "src/**/*.ts",
+      "src/**/*.jsx",
+      "src/**/*.tsx",
+      "scripts/**/*.js",
+      "*.js",
+      "*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the modified JavaScript/TypeScript files for potential undefined variable references. Look for:\n1. Variables that are accessed but not declared in scope\n2. Potential misspellings of variable names\n3. Missing variable declarations (like forgetting 'var', 'let', or 'const')\n4. Implicit globals that should be explicitly declared\n5. Variables that might be undefined at runtime\n\nCheck if variables are properly declared before use, imported correctly, or if they need to be added to global declarations. Suggest fixes for any undefined variable issues found."
+  }
+}

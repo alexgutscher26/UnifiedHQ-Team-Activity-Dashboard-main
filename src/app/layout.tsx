@@ -11,6 +11,10 @@ import { CustomThemeProvider } from '@/contexts/theme-context';
 import { ToastContainer } from '@/components/toast';
 import { RateLimitOverlay } from '@/components/rate-limit';
 import { LoadingSkeleton } from '@/components/ui/loading';
+import { ServiceWorkerProvider } from '@/components/service-worker-provider';
+import { NetworkStatusProvider } from '@/contexts/network-status-context';
+import { OfflineProvider } from '@/contexts/offline-context';
+import { OfflineBanner } from '@/components/offline-indicator';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -23,9 +27,9 @@ function LoadingScreen() {
     <div className='min-h-screen bg-background flex items-center justify-center'>
       <div className='flex flex-col items-center space-y-4'>
         <div className='flex space-x-2'>
-          <div className='w-3 h-3 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]'></div>
-          <div className='w-3 h-3 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]'></div>
-          <div className='w-3 h-3 bg-primary rounded-full animate-bounce'></div>
+          <div className='w-3 h-3 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]' />
+          <div className='w-3 h-3 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]' />
+          <div className='w-3 h-3 bg-primary rounded-full animate-bounce' />
         </div>
         <div className='text-center space-y-2'>
           <h2 className='text-lg font-semibold text-foreground'>
@@ -55,13 +59,20 @@ export default function RootLayout({
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
           <CustomThemeProvider>
-            <GlobalErrorBoundary>
-              <Suspense fallback={<LoadingScreen />}>{children}</Suspense>
-            </GlobalErrorBoundary>
-            <ToastContainer />
-            <RateLimitOverlay />
-            <Analytics />
-            <MemoryMonitor />
+            <ServiceWorkerProvider>
+              <NetworkStatusProvider>
+                <OfflineProvider>
+                  <OfflineBanner showWhenOnline={true} />
+                  <GlobalErrorBoundary>
+                    <Suspense fallback={<LoadingScreen />}>{children}</Suspense>
+                  </GlobalErrorBoundary>
+                  <ToastContainer />
+                  <RateLimitOverlay />
+                  <Analytics />
+                  <MemoryMonitor />
+                </OfflineProvider>
+              </NetworkStatusProvider>
+            </ServiceWorkerProvider>
           </CustomThemeProvider>
         </ThemeProvider>
       </body>

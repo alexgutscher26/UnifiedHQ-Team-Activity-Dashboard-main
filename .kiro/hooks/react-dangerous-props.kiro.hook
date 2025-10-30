@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "React Dangerous Properties Check",
+  "description": "Monitors React components for dangerous properties like dangerouslySetInnerHTML that can lead to XSS vulnerabilities. Suggests safer alternatives and reminds developers to add skipcq comments with explanations when dangerous properties are necessary.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.tsx",
+      "src/**/*.jsx",
+      "src/**/*.ts",
+      "src/**/*.js"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the changed React files for dangerous properties like dangerouslySetInnerHTML. Check if:\n1. Any dangerous properties are being used (dangerouslySetInnerHTML, etc.)\n2. If used, whether there's a skipcq comment with proper explanation\n3. If the usage could be replaced with safer React patterns\n4. Provide specific recommendations for safer alternatives\n\nFocus on security implications and suggest adding skipcq comments with explanations when dangerous properties are truly necessary. Reference the coding standards about XSS prevention."
+  }
+}

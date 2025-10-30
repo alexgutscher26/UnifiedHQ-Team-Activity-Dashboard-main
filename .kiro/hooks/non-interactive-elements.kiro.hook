@@ -1,0 +1,20 @@
+{
+  "enabled": true,
+  "name": "Non-Interactive Elements Checker",
+  "description": "Monitors React components and HTML files to detect non-interactive elements (main, area, h1-h6, p, img, li, ul, ol) and non-interactive ARIA roles (article, banner, complementary, img, listitem, main, region, tooltip) that incorrectly have event handlers attached",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/components/**/*.tsx",
+      "src/components/**/*.jsx",
+      "src/app/**/*.tsx",
+      "src/app/**/*.jsx",
+      "**/*.html"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the modified files for accessibility violations. Check for non-interactive HTML elements (main, area, h1, h2, h3, h4, h5, h6, p, img, li, ul, ol) and non-interactive ARIA roles (article, banner, complementary, img, listitem, main, region, tooltip) that have event handlers (onClick, onKeyDown, onMouseOver, etc.) attached. These elements should not support event handlers as they indicate content and containers, not interactive controls. Suggest accessible alternatives like using button elements or adding appropriate ARIA roles to make elements interactive when needed."
+  }
+}

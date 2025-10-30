@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "Interactive Element Accessibility",
+  "description": "Detects when interactive elements (with onClick, onKeyDown, etc.) are missing proper ARIA roles or semantic HTML elements, and suggests accessible alternatives",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.tsx",
+      "src/**/*.jsx",
+      "src/**/*.ts",
+      "src/**/*.js"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the modified files for interactive elements that lack proper semantic meaning. Look for:\n\n1. Elements with event handlers (onClick, onKeyDown, onMouseDown, etc.) that are semantically meaningless (div, span, a without href, etc.)\n2. Elements that should use semantic HTML instead (button, input, etc.)\n3. Elements that need ARIA role attributes for accessibility\n\nFor each violation found, provide:\n- The problematic code snippet\n- Why it's an accessibility issue\n- Recommended fix with proper semantic HTML or ARIA roles\n- Example of the corrected code\n\nFocus on ensuring all interactive elements are accessible to assistive technologies."
+  }
+}

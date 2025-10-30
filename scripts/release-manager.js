@@ -1,13 +1,15 @@
-#!/usr/bin/env node
-
 /**
  * Release Manager
  * Automated release process management
  */
 
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 class ReleaseManager {
   constructor() {
@@ -25,18 +27,50 @@ class ReleaseManager {
       'release-config.yml'
     );
     if (fs.existsSync(configPath)) {
-      // In a real implementation, you'd use a YAML parser
-      return {
-        versioning: 'semantic',
-        changelog: 'CHANGELOG.md',
-        release_notes: 'RELEASE_NOTES.md',
-        auto_bump: true,
-        create_tag: true,
-        environments: {
-          staging: 'develop',
-          production: 'main',
-        },
-      };
+      try {
+        // For now, return a comprehensive config based on the YAML file
+        // In production, you'd use js-yaml to parse the actual file
+        return {
+          versioning: {
+            strategy: 'semantic',
+            auto_bump: true,
+            bump_files: ['package.json', 'README.md'],
+          },
+          changelog: {
+            file: 'CHANGELOG.md',
+            format: 'keep-a-changelog',
+          },
+          release_notes: {
+            file: 'RELEASE_NOTES.md',
+          },
+          branches: {
+            main: 'main',
+            develop: 'develop',
+            release_prefix: 'release/',
+            hotfix_prefix: 'hotfix/',
+          },
+          environments: {
+            staging: {
+              branch: 'develop',
+              auto_deploy: true,
+              url: 'https://staging.unifiedhq.com',
+            },
+            production: {
+              branch: 'main',
+              auto_deploy: false,
+              url: 'https://unifiedhq.com',
+            },
+          },
+          artifacts: {
+            build_dir: '.next',
+            include: ['.next/', 'public/', 'package.json', 'bun.lock'],
+            exclude: ['node_modules/', '.git/', '.env*', '*.log'],
+          },
+        };
+      } catch (error) {
+        console.warn(`⚠️ Error loading config: ${error.message}`);
+        return this.getDefaultConfig();
+      }
     }
     return this.getDefaultConfig();
   }
@@ -46,14 +80,33 @@ class ReleaseManager {
    */
   getDefaultConfig() {
     return {
-      versioning: 'semantic',
-      changelog: 'CHANGELOG.md',
-      release_notes: 'RELEASE_NOTES.md',
-      auto_bump: true,
-      create_tag: true,
+      versioning: {
+        strategy: 'semantic',
+        auto_bump: true,
+        bump_files: ['package.json'],
+      },
+      changelog: {
+        file: 'CHANGELOG.md',
+        format: 'keep-a-changelog',
+      },
+      release_notes: {
+        file: 'RELEASE_NOTES.md',
+      },
+      branches: {
+        main: 'main',
+        develop: 'develop',
+        release_prefix: 'release/',
+        hotfix_prefix: 'hotfix/',
+      },
       environments: {
-        staging: 'develop',
-        production: 'main',
+        staging: {
+          branch: 'develop',
+          auto_deploy: true,
+        },
+        production: {
+          branch: 'main',
+          auto_deploy: false,
+        },
       },
     };
   }
@@ -121,6 +174,66 @@ class ReleaseManager {
         return `${major}.${minor}.${patch}-rc.1`;
       default:
         throw new Error(`Invalid version type: ${type}`);
+    }
+  }
+
+  /**
+   * Determine version bump type from conventional commits
+   */
+  determineVersionBumpFromCommits(fromVersion = null) {
+    console.log(
+      '🔍 Analyzing conventional commits to determine version bump...'
+    );
+
+    try {
+      const commits = this.getCommitsSinceVersion(fromVersion);
+      let hasBreaking = false;
+      let hasFeature = false;
+      let hasFix = false;
+
+      commits.forEach(commit => {
+        const message = commit.message.toLowerCase();
+
+        // Check for breaking changes
+        if (
+          message.includes('breaking change') ||
+          message.includes('!:') ||
+          message.match(
+            /^(feat|fix|refactor|perf|style|test|docs|build|ci|chore)!:/
+          )
+        ) {
+          hasBreaking = true;
+        }
+
+        // Check for features
+        if (message.startsWith('feat:') || message.startsWith('feature:')) {
+          hasFeature = true;
+        }
+
+        // Check for fixes
+        if (message.startsWith('fix:') || message.startsWith('bugfix:')) {
+          hasFix = true;
+        }
+      });
+
+      // Determine version bump based on conventional commit analysis
+      if (hasBreaking) {
+        console.log('📈 Breaking changes detected → MAJOR version bump');
+        return 'major';
+      } else if (hasFeature) {
+        console.log('✨ New features detected → MINOR version bump');
+        return 'minor';
+      } else if (hasFix) {
+        console.log('🐛 Bug fixes detected → PATCH version bump');
+        return 'patch';
+      } else {
+        console.log('🔄 Other changes detected → PATCH version bump');
+        return 'patch';
+      }
+    } catch (error) {
+      console.error(`❌ Error analyzing commits: ${error.message}`);
+      console.log('📈 Defaulting to PATCH version bump');
+      return 'patch';
     }
   }
 
@@ -240,7 +353,7 @@ class ReleaseManager {
   }
 
   /**
-   * Categorize changes by type
+   * Categorize changes by type using conventional commits
    */
   categorizeChanges(commits) {
     const changes = {
@@ -249,29 +362,184 @@ class ReleaseManager {
       breaking: [],
       docs: [],
       refactor: [],
+      performance: [],
+      style: [],
+      test: [],
+      build: [],
+      ci: [],
+      chore: [],
       other: [],
     };
 
     commits.forEach(commit => {
-      const message = commit.message.toLowerCase();
+      const message = commit.message;
+      const messageLower = message.toLowerCase();
       const hash = commit.hash;
-      const fullMessage = commit.message;
 
-      if (message.startsWith('feat:') || message.startsWith('feature:')) {
-        changes.features.push({ hash, message: fullMessage });
-      } else if (message.startsWith('fix:') || message.startsWith('bugfix:')) {
-        changes.fixes.push({ hash, message: fullMessage });
-      } else if (
-        message.includes('breaking change') ||
-        message.startsWith('feat!:')
-      ) {
-        changes.breaking.push({ hash, message: fullMessage });
-      } else if (message.startsWith('docs:') || message.startsWith('doc:')) {
-        changes.docs.push({ hash, message: fullMessage });
-      } else if (message.startsWith('refactor:')) {
-        changes.refactor.push({ hash, message: fullMessage });
+      // Parse conventional commit format: type(scope): description
+      const conventionalMatch = message.match(/^(\w+)(\(.+\))?(!)?:\s*(.+)$/);
+
+      if (conventionalMatch) {
+        const [, type, scope, breaking, description] = conventionalMatch;
+        const typeLower = type.toLowerCase();
+        const fullMessage = message;
+        const cleanMessage = breaking
+          ? `${type}${scope || ''}!: ${description}`
+          : `${type}${scope || ''}: ${description}`;
+
+        // Check for breaking changes (! suffix or BREAKING CHANGE in body)
+        if (breaking || messageLower.includes('breaking change')) {
+          changes.breaking.push({
+            hash,
+            message: fullMessage,
+            type: typeLower,
+            description: cleanMessage,
+          });
+          return;
+        }
+
+        // Categorize by conventional commit type
+        switch (typeLower) {
+          case 'feat':
+          case 'feature':
+            changes.features.push({
+              hash,
+              message: fullMessage,
+              type: typeLower,
+              description: cleanMessage,
+            });
+            break;
+          case 'fix':
+          case 'bugfix':
+            changes.fixes.push({
+              hash,
+              message: fullMessage,
+              type: typeLower,
+              description: cleanMessage,
+            });
+            break;
+          case 'docs':
+          case 'doc':
+            changes.docs.push({
+              hash,
+              message: fullMessage,
+              type: typeLower,
+              description: cleanMessage,
+            });
+            break;
+          case 'refactor':
+            changes.refactor.push({
+              hash,
+              message: fullMessage,
+              type: typeLower,
+              description: cleanMessage,
+            });
+            break;
+          case 'perf':
+          case 'performance':
+            changes.performance.push({
+              hash,
+              message: fullMessage,
+              type: typeLower,
+              description: cleanMessage,
+            });
+            break;
+          case 'style':
+            changes.style.push({
+              hash,
+              message: fullMessage,
+              type: typeLower,
+              description: cleanMessage,
+            });
+            break;
+          case 'test':
+            changes.test.push({
+              hash,
+              message: fullMessage,
+              type: typeLower,
+              description: cleanMessage,
+            });
+            break;
+          case 'build':
+            changes.build.push({
+              hash,
+              message: fullMessage,
+              type: typeLower,
+              description: cleanMessage,
+            });
+            break;
+          case 'ci':
+            changes.ci.push({
+              hash,
+              message: fullMessage,
+              type: typeLower,
+              description: cleanMessage,
+            });
+            break;
+          case 'chore':
+            changes.chore.push({
+              hash,
+              message: fullMessage,
+              type: typeLower,
+              description: cleanMessage,
+            });
+            break;
+          default:
+            changes.other.push({
+              hash,
+              message: fullMessage,
+              type: typeLower,
+              description: cleanMessage,
+            });
+            break;
+        }
       } else {
-        changes.other.push({ hash, message: fullMessage });
+        // Fallback for non-conventional commits
+        if (
+          messageLower.includes('breaking change') ||
+          messageLower.includes('breaking:')
+        ) {
+          changes.breaking.push({
+            hash,
+            message,
+            type: 'unknown',
+            description: message,
+          });
+        } else if (
+          messageLower.includes('feat') ||
+          messageLower.includes('feature')
+        ) {
+          changes.features.push({
+            hash,
+            message,
+            type: 'unknown',
+            description: message,
+          });
+        } else if (
+          messageLower.includes('fix') ||
+          messageLower.includes('bug')
+        ) {
+          changes.fixes.push({
+            hash,
+            message,
+            type: 'unknown',
+            description: message,
+          });
+        } else if (messageLower.includes('doc')) {
+          changes.docs.push({
+            hash,
+            message,
+            type: 'unknown',
+            description: message,
+          });
+        } else {
+          changes.other.push({
+            hash,
+            message,
+            type: 'unknown',
+            description: message,
+          });
+        }
       }
     });
 
@@ -279,56 +547,128 @@ class ReleaseManager {
   }
 
   /**
-   * Format changelog entry
+   * Format changelog entry with conventional commit formatting
    */
   formatChangelogEntry(version, changes) {
     const date = new Date().toISOString().split('T')[0];
     let entry = `## [${version}] - ${date}\n\n`;
 
+    // Breaking changes first (highest priority)
     if (changes.breaking.length > 0) {
       entry += '### ⚠️ Breaking Changes\n';
       changes.breaking.forEach(change => {
-        entry += `- ${change.message}\n`;
+        const description = change.description || change.message;
+        entry += `- ${description} ([${change.hash}](../../commit/${change.hash}))\n`;
       });
       entry += '\n';
     }
 
+    // New features
     if (changes.features.length > 0) {
       entry += '### ✨ New Features\n';
       changes.features.forEach(change => {
-        entry += `- ${change.message}\n`;
+        const description = change.description || change.message;
+        entry += `- ${description} ([${change.hash}](../../commit/${change.hash}))\n`;
       });
       entry += '\n';
     }
 
+    // Bug fixes
     if (changes.fixes.length > 0) {
       entry += '### 🐛 Bug Fixes\n';
       changes.fixes.forEach(change => {
-        entry += `- ${change.message}\n`;
+        const description = change.description || change.message;
+        entry += `- ${description} ([${change.hash}](../../commit/${change.hash}))\n`;
       });
       entry += '\n';
     }
 
+    // Performance improvements
+    if (changes.performance.length > 0) {
+      entry += '### ⚡ Performance Improvements\n';
+      changes.performance.forEach(change => {
+        const description = change.description || change.message;
+        entry += `- ${description} ([${change.hash}](../../commit/${change.hash}))\n`;
+      });
+      entry += '\n';
+    }
+
+    // Refactoring
     if (changes.refactor.length > 0) {
-      entry += '### 🔧 Refactoring\n';
+      entry += '### 🔧 Code Refactoring\n';
       changes.refactor.forEach(change => {
-        entry += `- ${change.message}\n`;
+        const description = change.description || change.message;
+        entry += `- ${description} ([${change.hash}](../../commit/${change.hash}))\n`;
       });
       entry += '\n';
     }
 
+    // Documentation
     if (changes.docs.length > 0) {
       entry += '### 📚 Documentation\n';
       changes.docs.forEach(change => {
-        entry += `- ${change.message}\n`;
+        const description = change.description || change.message;
+        entry += `- ${description} ([${change.hash}](../../commit/${change.hash}))\n`;
       });
       entry += '\n';
     }
 
+    // Tests
+    if (changes.test.length > 0) {
+      entry += '### 🧪 Tests\n';
+      changes.test.forEach(change => {
+        const description = change.description || change.message;
+        entry += `- ${description} ([${change.hash}](../../commit/${change.hash}))\n`;
+      });
+      entry += '\n';
+    }
+
+    // Build system
+    if (changes.build.length > 0) {
+      entry += '### 🏗️ Build System\n';
+      changes.build.forEach(change => {
+        const description = change.description || change.message;
+        entry += `- ${description} ([${change.hash}](../../commit/${change.hash}))\n`;
+      });
+      entry += '\n';
+    }
+
+    // CI/CD
+    if (changes.ci.length > 0) {
+      entry += '### 👷 Continuous Integration\n';
+      changes.ci.forEach(change => {
+        const description = change.description || change.message;
+        entry += `- ${description} ([${change.hash}](../../commit/${change.hash}))\n`;
+      });
+      entry += '\n';
+    }
+
+    // Styling
+    if (changes.style.length > 0) {
+      entry += '### 💄 Styles\n';
+      changes.style.forEach(change => {
+        const description = change.description || change.message;
+        entry += `- ${description} ([${change.hash}](../../commit/${change.hash}))\n`;
+      });
+      entry += '\n';
+    }
+
+    // Chores and maintenance
+    if (changes.chore.length > 0) {
+      entry += '### 🔄 Chores\n';
+      changes.chore.forEach(change => {
+        const description = change.description || change.message;
+        entry += `- ${description} ([${change.hash}](../../commit/${change.hash}))\n`;
+      });
+      entry += '\n';
+    }
+
+    // Other changes
     if (changes.other.length > 0) {
       entry += '### 🔄 Other Changes\n';
       changes.other.forEach(change => {
-        entry += `- ${change.message}\n`;
+        const description = change.description || change.message;
+        entry += `- ${description} ([${change.hash}](../../commit/${change.hash}))\n`;
       });
       entry += '\n';
     }
@@ -343,10 +683,13 @@ class ReleaseManager {
     console.log(`📋 Generating release notes for v${version}...`);
 
     try {
-      const changelogPath = path.join(this.projectRoot, this.config.changelog);
+      const changelogPath = path.join(
+        this.projectRoot,
+        this.config.changelog.file
+      );
       const releaseNotesPath = path.join(
         this.projectRoot,
-        this.config.release_notes
+        this.config.release_notes.file
       );
 
       if (!fs.existsSync(changelogPath)) {
@@ -372,6 +715,210 @@ class ReleaseManager {
     } catch (error) {
       console.error(`❌ Error generating release notes: ${error.message}`);
       return false;
+    }
+  }
+
+  /**
+   * Generate GitHub-compatible release notes
+   */
+  generateGitHubReleaseNotes(version, fromVersion = null) {
+    console.log(`📋 Generating GitHub release notes for v${version}...`);
+
+    try {
+      // Get commits since last version
+      const commits = this.getCommitsSinceVersion(fromVersion);
+      const changes = this.categorizeChanges(commits);
+
+      // Generate GitHub-style release notes
+      const releaseNotes = this.formatGitHubReleaseNotes(version, changes);
+
+      return releaseNotes;
+    } catch (error) {
+      console.error(
+        `❌ Error generating GitHub release notes: ${error.message}`
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Format GitHub release notes with conventional commit formatting
+   */
+  formatGitHubReleaseNotes(version, changes) {
+    const date = new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    let notes = `## What's Changed in v${version}\n\n`;
+
+    // Breaking changes (highest priority)
+    if (changes.breaking.length > 0) {
+      notes += '### ⚠️ Breaking Changes\n';
+      changes.breaking.forEach(change => {
+        const description = change.description || change.message;
+        notes += `- ${description} ([${change.hash}](../../commit/${change.hash}))\n`;
+      });
+      notes += '\n';
+    }
+
+    // New features
+    if (changes.features.length > 0) {
+      notes += '### ✨ New Features\n';
+      changes.features.forEach(change => {
+        const description = change.description || change.message;
+        notes += `- ${description} ([${change.hash}](../../commit/${change.hash}))\n`;
+      });
+      notes += '\n';
+    }
+
+    // Bug fixes
+    if (changes.fixes.length > 0) {
+      notes += '### 🐛 Bug Fixes\n';
+      changes.fixes.forEach(change => {
+        const description = change.description || change.message;
+        notes += `- ${description} ([${change.hash}](../../commit/${change.hash}))\n`;
+      });
+      notes += '\n';
+    }
+
+    // Performance improvements
+    if (changes.performance.length > 0) {
+      notes += '### ⚡ Performance Improvements\n';
+      changes.performance.forEach(change => {
+        const description = change.description || change.message;
+        notes += `- ${description} ([${change.hash}](../../commit/${change.hash}))\n`;
+      });
+      notes += '\n';
+    }
+
+    // Code refactoring
+    if (changes.refactor.length > 0) {
+      notes += '### 🔧 Code Refactoring\n';
+      changes.refactor.forEach(change => {
+        const description = change.description || change.message;
+        notes += `- ${description} ([${change.hash}](../../commit/${change.hash}))\n`;
+      });
+      notes += '\n';
+    }
+
+    // Documentation
+    if (changes.docs.length > 0) {
+      notes += '### 📚 Documentation\n';
+      changes.docs.forEach(change => {
+        const description = change.description || change.message;
+        notes += `- ${description} ([${change.hash}](../../commit/${change.hash}))\n`;
+      });
+      notes += '\n';
+    }
+
+    // Tests
+    if (changes.test.length > 0) {
+      notes += '### 🧪 Tests\n';
+      changes.test.forEach(change => {
+        const description = change.description || change.message;
+        notes += `- ${description} ([${change.hash}](../../commit/${change.hash}))\n`;
+      });
+      notes += '\n';
+    }
+
+    // Build system changes
+    if (changes.build.length > 0) {
+      notes += '### 🏗️ Build System\n';
+      changes.build.forEach(change => {
+        const description = change.description || change.message;
+        notes += `- ${description} ([${change.hash}](../../commit/${change.hash}))\n`;
+      });
+      notes += '\n';
+    }
+
+    // CI/CD changes
+    if (changes.ci.length > 0) {
+      notes += '### 👷 Continuous Integration\n';
+      changes.ci.forEach(change => {
+        const description = change.description || change.message;
+        notes += `- ${description} ([${change.hash}](../../commit/${change.hash}))\n`;
+      });
+      notes += '\n';
+    }
+
+    // Style changes
+    if (changes.style.length > 0) {
+      notes += '### 💄 Styles\n';
+      changes.style.forEach(change => {
+        const description = change.description || change.message;
+        notes += `- ${description} ([${change.hash}](../../commit/${change.hash}))\n`;
+      });
+      notes += '\n';
+    }
+
+    // Chores and maintenance
+    if (changes.chore.length > 0) {
+      notes += '### 🔄 Chores\n';
+      changes.chore.forEach(change => {
+        const description = change.description || change.message;
+        notes += `- ${description} ([${change.hash}](../../commit/${change.hash}))\n`;
+      });
+      notes += '\n';
+    }
+
+    // Other changes
+    if (changes.other.length > 0) {
+      notes += '### 🔄 Other Changes\n';
+      changes.other.forEach(change => {
+        const description = change.description || change.message;
+        notes += `- ${description} ([${change.hash}](../../commit/${change.hash}))\n`;
+      });
+      notes += '\n';
+    }
+
+    // Add installation instructions
+    notes += '## 🚀 Installation\n\n';
+    notes += '```bash\n';
+    notes += '# Using Bun (recommended)\n';
+    notes += 'bun install\n';
+    notes += 'bun run build\n';
+    notes += 'bun start\n\n';
+    notes += '# Using Docker\n';
+    notes += `docker pull ghcr.io/${this.getRepositoryName()}:${version}\n`;
+    notes += `docker run -p 3000:3000 ghcr.io/${this.getRepositoryName()}:${version}\n`;
+    notes += '```\n\n';
+
+    // Add upgrade instructions
+    notes += '## 📈 Upgrade Instructions\n\n';
+    notes += '1. Pull the latest changes: `git pull origin main`\n';
+    notes += '2. Install dependencies: `bun install`\n';
+    notes += '3. Run database migrations: `bunx prisma migrate deploy`\n';
+    notes += '4. Build the application: `bun run build`\n';
+    notes += '5. Restart the application: `bun start`\n\n';
+
+    // Add support information
+    notes += '## 🆘 Support\n\n';
+    notes += '- 📖 [Documentation](./docs/)\n';
+    notes += '- 🐛 [Report Issues](../../issues)\n';
+    notes += '- 💬 [Discussions](../../discussions)\n\n';
+
+    const previousVersion = this.getPreviousVersion(version);
+    notes += `**Full Changelog**: https://github.com/${this.getRepositoryName()}/compare/v${previousVersion}...v${version}`;
+
+    return notes;
+  }
+
+  /**
+   * Get repository name from git remote
+   */
+  getRepositoryName() {
+    try {
+      const remoteUrl = execSync('git config --get remote.origin.url', {
+        encoding: 'utf8',
+      }).trim();
+
+      // Extract repository name from various URL formats
+      const match = remoteUrl.match(/github\.com[:/](.+?)(?:\.git)?$/);
+      return match ? match[1] : 'owner/repo';
+    } catch (error) {
+      return 'owner/repo';
     }
   }
 
@@ -673,15 +1220,15 @@ Generated on ${new Date().toISOString()}
    */
   showHelp() {
     console.log(`
-🚀 Release Manager - Automated Release Process
+🚀 Release Manager - Automated Release Process with Conventional Commits
 
 Usage: node scripts/release-manager.js <command> [options]
 
 Commands:
-  bump <type>                    Bump version (major|minor|patch|prerelease)
+  bump <type|auto>               Bump version (major|minor|patch|prerelease|auto)
   create <version>               Create release branch
-  changelog <version> [from]     Generate changelog
-  notes <version>                Generate release notes
+  changelog <version> [from]     Generate changelog from conventional commits
+  notes <version> [--github] [--from=<version>]  Generate release notes
   tag <version> [message]        Create release tag
   merge-main <branch> <version>  Merge release to main
   merge-develop <branch> <version> Merge release back to develop
@@ -690,24 +1237,52 @@ Commands:
   help                          Show this help
 
 Examples:
+  # Automatic version bump based on conventional commits
+  node scripts/release-manager.js bump auto
+  
+  # Manual version bump
   node scripts/release-manager.js bump patch
-  node scripts/release-manager.js create v1.0.0
-  node scripts/release-manager.js changelog v1.0.0
-  node scripts/release-manager.js notes v1.0.0
-  node scripts/release-manager.js tag v1.0.0 "Release v1.0.0"
-  node scripts/release-manager.js release v1.0.0 patch
+  
+  # Generate GitHub-style release notes
+  node scripts/release-manager.js notes v1.0.0 --github --from=v0.9.0
+  
+  # Generate changelog from conventional commits
+  node scripts/release-manager.js changelog v1.0.0 v0.9.0
+  
+  # Complete release process
+  node scripts/release-manager.js release v1.0.0 auto
 
 Version Types:
   major      - Breaking changes (1.0.0 → 2.0.0)
   minor      - New features (1.0.0 → 1.1.0)
   patch      - Bug fixes (1.0.0 → 1.0.1)
   prerelease - Pre-release (1.0.0 → 1.0.0-rc.1)
+  auto       - Automatically determined from conventional commits
+
+Conventional Commit Types Supported:
+  feat:      - New features (minor version bump)
+  fix:       - Bug fixes (patch version bump)
+  feat!:     - Breaking changes (major version bump)
+  fix!:      - Breaking bug fixes (major version bump)
+  docs:      - Documentation changes
+  style:     - Code style changes
+  refactor:  - Code refactoring
+  perf:      - Performance improvements
+  test:      - Test changes
+  build:     - Build system changes
+  ci:        - CI/CD changes
+  chore:     - Maintenance tasks
+
+Breaking Change Detection:
+  - Commits with '!' suffix (e.g., feat!: breaking change)
+  - Commits containing 'BREAKING CHANGE' in the body
+  - Any commit type with '!' (e.g., fix!:, refactor!:)
 `);
   }
 }
 
 // CLI Interface
-if (require.main === module) {
+if (process.argv[1] && process.argv[1].endsWith('release-manager.js')) {
   const command = process.argv[2];
   const args = process.argv.slice(3);
 
@@ -716,10 +1291,21 @@ if (require.main === module) {
   switch (command) {
     case 'bump':
       if (args.length < 1) {
-        console.error('Usage: bump <type>');
+        console.error('Usage: bump <type|auto> [--from=<previous_version>]');
         process.exit(1);
       }
-      manager.bumpVersion(args[0]);
+
+      const bumpType = args[0];
+      const bumpFromArg = args.find(arg => arg.startsWith('--from='));
+      const bumpFromVersion = bumpFromArg ? bumpFromArg.split('=')[1] : null;
+
+      if (bumpType === 'auto') {
+        const determinedType =
+          manager.determineVersionBumpFromCommits(bumpFromVersion);
+        manager.bumpVersion(determinedType);
+      } else {
+        manager.bumpVersion(bumpType);
+      }
       break;
 
     case 'create':
@@ -740,10 +1326,27 @@ if (require.main === module) {
 
     case 'notes':
       if (args.length < 1) {
-        console.error('Usage: notes <version>');
+        console.error(
+          'Usage: notes <version> [--github] [--from=<previous_version>]'
+        );
         process.exit(1);
       }
-      manager.generateReleaseNotes(args[0]);
+
+      const version = args[0];
+      const isGitHub = args.includes('--github');
+      const fromArg = args.find(arg => arg.startsWith('--from='));
+      const fromVersion = fromArg ? fromArg.split('=')[1] : null;
+
+      if (isGitHub) {
+        const commits = manager.getCommitsSinceVersion(fromVersion);
+        const changes = manager.categorizeChanges(commits);
+        const notes = manager.formatGitHubReleaseNotes(version, changes);
+        if (notes) {
+          console.log(notes);
+        }
+      } else {
+        manager.generateReleaseNotes(version);
+      }
       break;
 
     case 'tag':
@@ -793,4 +1396,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = ReleaseManager;
+export default ReleaseManager;

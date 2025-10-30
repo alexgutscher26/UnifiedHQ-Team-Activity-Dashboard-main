@@ -1,0 +1,24 @@
+{
+  "enabled": true,
+  "name": "Duplicate Object Keys Detector",
+  "description": "Detects and flags object literals that have multiple properties with the same key, which can lead to unexpected behavior since only the last property value is used",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "src/**/*.js",
+      "src/**/*.jsx",
+      "scripts/**/*.js",
+      "*.ts",
+      "*.js",
+      "*.tsx",
+      "*.jsx"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the modified files for object literals that contain multiple properties with the same key. Look for patterns like:\n- Objects with duplicate property names\n- Configuration objects with repeated keys\n- API response objects with conflicting properties\n- Component props with duplicate keys\n\nWhen you find duplicate keys, explain:\n1. Which keys are duplicated and where\n2. What the actual behavior will be (only last value is used)\n3. Suggest how to fix it (rename keys, merge values, or remove duplicates)\n4. Check if this might indicate a copy-paste error or merge conflict\n\nFocus on JavaScript/TypeScript object literals, not JSON files or other data formats."
+  }
+}

@@ -173,7 +173,7 @@ export function useRetry<T = any>(
     reset,
     updateState,
     isRetrying: state.retrying,
-    canRetry: !!state.error && !state.loading,
+    canRetry: Boolean(state.error) && !state.loading,
   };
 }
 

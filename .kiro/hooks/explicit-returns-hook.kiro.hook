@@ -1,0 +1,20 @@
+{
+  "enabled": true,
+  "name": "Explicit Returns Enforcer",
+  "description": "Monitors TypeScript and JavaScript files to identify functions with implicit undefined returns and suggests replacing them with explicit return null statements for better error handling and code clarity",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "src/**/*.js",
+      "src/**/*.jsx",
+      "scripts/**/*.js"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the modified code for any functions that have code paths without explicit return statements. Look for functions that could implicitly return undefined and suggest replacing these with explicit 'return null;' statements where appropriate. Explain the distinction: undefined should signal logical errors, while null should signal incorrect input or 'not found' scenarios. Provide specific suggestions for each case found."
+  }
+}

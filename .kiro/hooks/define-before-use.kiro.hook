@@ -1,0 +1,21 @@
+{
+  "enabled": true,
+  "name": "Define Before Use",
+  "description": "Flags code snippets that use variables, functions, or types before they are defined. Ensures proper declaration order for better code readability and maintainability.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "scripts/**/*.js",
+      "*.ts",
+      "*.tsx",
+      "*.js"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the modified code for any variables, functions, or types that are used before they are defined. Check for:\n\n1. Variables used before declaration (especially const/let)\n2. Types/interfaces used in annotations before definition\n3. Functions called before declaration (excluding hoisted function declarations)\n4. Imported types or values used before import statements\n\nFor each violation found:\n- Identify the specific line where the variable/type/function is used\n- Identify where it's actually defined\n- Suggest reordering the code to define before use\n- Explain why this improves code readability\n\nFocus on TypeScript/JavaScript files and provide specific line-by-line feedback with recommended fixes."
+  }
+}

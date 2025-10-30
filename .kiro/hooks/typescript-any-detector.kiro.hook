@@ -1,0 +1,20 @@
+{
+  "enabled": true,
+  "name": "TypeScript Any Type Detector",
+  "description": "Detects usage of the 'any' type in TypeScript files and suggests using 'unknown' or 'never' types instead to maintain type safety",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "*.ts",
+      "*.tsx",
+      "scripts/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the TypeScript code changes and identify any usage of the 'any' type. For each occurrence, explain why using 'any' is problematic and suggest specific alternatives like 'unknown' for input types or 'never' for impossible states. Provide code examples showing how to refactor the any types to be more type-safe. Focus on variable declarations, function parameters, return types, and array/object type annotations."
+  }
+}

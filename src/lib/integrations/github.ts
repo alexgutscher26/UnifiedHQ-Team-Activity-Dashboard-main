@@ -348,7 +348,7 @@ export async function saveGithubActivities(
  */
 export async function getGithubActivities(
   userId: string,
-  limit: number = 10
+  limit = 10
 ): Promise<GitHubActivity[]> {
   // Get selected repositories
   const selectedRepos = await prisma.selectedRepository.findMany({
@@ -402,7 +402,7 @@ export async function isGithubConnected(userId: string): Promise<boolean> {
       type: 'github',
     },
   });
-  return !!connection;
+  return Boolean(connection);
 }
 
 /**

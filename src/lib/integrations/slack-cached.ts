@@ -1,113 +1,45 @@
 import { PrismaClient } from '@/generated/prisma';
+import { RedisCache, CacheKeyGenerator, TTLManager } from '@/lib/redis';
 
 const prisma = new PrismaClient();
 
-// In-memory cache for Slack API responses
-interface CacheEntry<T> {
-  data: T;
-  timestamp: number;
-  ttl: number;
-}
-
-class SlackCache {
-  private cache = new Map<string, CacheEntry<any>>();
-  private readonly defaultTTL = 5 * 60 * 1000; // 5 minutes
-
-  /**
-   * Stores data in the cache with a specified key and time-to-live.
-   */
-  set<T>(key: string, data: T, ttl: number = this.defaultTTL): void {
-    this.cache.set(key, {
-      data,
-      timestamp: Date.now(),
-      ttl,
-    });
-  }
-
-  get<T>(key: string): T | null {
-    const entry = this.cache.get(key);
-    if (!entry) return null;
-
-    const now = Date.now();
-    if (now - entry.timestamp > entry.ttl) {
-      this.cache.delete(key);
-      return null;
-    }
-
-    return entry.data as T;
-  }
-
-  /**
-   * Deletes a key from the cache.
-   */
-  delete(key: string): void {
-    this.cache.delete(key);
-  }
-
-  /**
-   * Clears the cache.
-   */
-  clear(): void {
-    this.cache.clear();
-  }
-
-  // Generate cache key for Slack API calls
-  /**
-   * Generates a key based on the operation and sorted parameters.
-   */
-  generateKey(operation: string, params: Record<string, any>): string {
-    const sortedParams = Object.keys(params)
-      .sort()
-      .map(key => `${key}:${params[key]}`)
-      .join('|');
-    return `slack:${operation}:${sortedParams}`;
-  }
-
-  // Get cache statistics
-  /**
-   * Retrieves statistics about cache entries, including total, valid, and expired entries.
-   */
-  getStats() {
-    const now = Date.now();
-    let validEntries = 0;
-    let expiredEntries = 0;
-
-    for (const [key, entry] of this.cache) {
-      if (now - entry.timestamp > entry.ttl) {
-        expiredEntries++;
-      } else {
-        validEntries++;
-      }
-    }
-
-    return {
-      totalEntries: this.cache.size,
-      validEntries,
-      expiredEntries,
-    };
-  }
-}
-
-// Global cache instance
-const slackCache = new SlackCache();
-
-// Cache configuration for different API operations
+// Enhanced cache configuration for different Slack data types with strategies
 const CACHE_CONFIG = {
-  // Channel data - cache for 30 minutes
+  // Channel data - cache for 30 minutes (moderate refresh rate)
   channels: {
-    list: 30 * 60 * 1000,
+    list: TTLManager.getTTL('SLACK_CHANNELS'),
+    strategy: 'stale-while-revalidate' as const,
+    priority: 'medium' as const,
   },
-  // Messages - cache for 5 minutes
+  // Messages - cache for 5 minutes (high refresh rate for real-time feel)
   messages: {
-    history: 5 * 60 * 1000,
+    history: TTLManager.getTTL('SLACK_MESSAGES'),
+    strategy: 'network-first' as const,
+    priority: 'high' as const,
   },
-  // Team info - cache for 1 hour
+  // Team info - cache for 1 hour (low refresh rate)
   team: {
-    info: 60 * 60 * 1000,
+    info: TTLManager.getTTL('SLACK_USERS'),
+    strategy: 'cache-first' as const,
+    priority: 'low' as const,
   },
-  // User data - cache for 1 hour
+  // User data - cache for 1 hour (low refresh rate)
   users: {
-    list: 60 * 60 * 1000,
+    list: TTLManager.getTTL('SLACK_USERS'),
+    strategy: 'cache-first' as const,
+    priority: 'low' as const,
+  },
+  // Activity data - cache for 5 minutes with background refresh
+  activity: {
+    fetch: TTLManager.getTTL('SLACK_MESSAGES'),
+    strategy: 'stale-while-revalidate' as const,
+    priority: 'high' as const,
+  },
+  // Stats data - cache for 10 minutes
+  stats: {
+    daily: TTLManager.getTTL('SLACK_MESSAGES') * 2, // 10 minutes
+    strategy: 'cache-first' as const,
+    priority: 'medium' as const,
   },
 };
 
@@ -186,58 +118,273 @@ export class CachedSlackClient {
   }
 
   /**
-   * Get cached or fetch fresh data from Slack API.
+   * Enhanced cached request with strategy-based caching and real-time invalidation support
    */
   private async cachedRequest<T>(
     operation: string,
     params: Record<string, any>,
-    ttl: number,
+    config: {
+      ttl: number;
+      strategy: 'cache-first' | 'network-first' | 'stale-while-revalidate';
+      priority: 'high' | 'medium' | 'low';
+    },
     fetcher: () => Promise<T>
   ): Promise<T> {
-    const cacheKey = slackCache.generateKey(
-      `${this.userId}:${operation}`,
-      params
+    // Generate Redis cache key with enhanced structure
+    const sortedParams = Object.keys(params)
+      .sort()
+      .map(key => `${key}:${params[key]}`)
+      .join('|');
+    const cacheKey = CacheKeyGenerator.slack(
+      this.userId,
+      operation,
+      sortedParams
     );
 
-    // Try to get from cache first
-    const cached = slackCache.get<T>(cacheKey);
+    // Add tags for cache invalidation
+    const tags = ['slack', operation, this.userId];
+    if (params.channelId) {
+      tags.push(`channel:${params.channelId}`);
+    }
+
+    try {
+      // Apply caching strategy
+      switch (config.strategy) {
+        case 'cache-first':
+          return await this.cacheFirstStrategy(
+            cacheKey,
+            config.ttl,
+            fetcher,
+            tags
+          );
+
+        case 'network-first':
+          return await this.networkFirstStrategy(
+            cacheKey,
+            config.ttl,
+            fetcher,
+            tags
+          );
+
+        case 'stale-while-revalidate':
+          return await this.staleWhileRevalidateStrategy(
+            cacheKey,
+            config.ttl,
+            fetcher,
+            tags
+          );
+
+        default:
+          return await this.cacheFirstStrategy(
+            cacheKey,
+            config.ttl,
+            fetcher,
+            tags
+          );
+      }
+    } catch (error: any) {
+      // Enhanced error handling with fallback strategies
+      return await this.handleCacheError(error, cacheKey, operation, fetcher);
+    }
+  }
+
+  /**
+   * Cache-first strategy: Check cache first, fetch if miss
+   */
+  private async cacheFirstStrategy<T>(
+    cacheKey: string,
+    ttl: number,
+    fetcher: () => Promise<T>,
+    tags: string[]
+  ): Promise<T> {
+    const cached = await RedisCache.get<T>(cacheKey);
     if (cached) {
-      console.log(`[Slack Cache] Cache hit for ${operation}`);
+      console.log(`[Slack Cache] Cache hit (cache-first): ${cacheKey}`);
       return cached;
     }
 
-    console.log(`[Slack Cache] Cache miss for ${operation}, fetching from API`);
+    console.log(`[Slack Cache] Cache miss (cache-first): ${cacheKey}`);
+    const data = await fetcher();
+    await this.setCacheWithTags(cacheKey, data, ttl, tags);
+    return data;
+  }
 
+  /**
+   * Network-first strategy: Try network first, fallback to cache
+   */
+  private async networkFirstStrategy<T>(
+    cacheKey: string,
+    ttl: number,
+    fetcher: () => Promise<T>,
+    tags: string[]
+  ): Promise<T> {
     try {
+      console.log(`[Slack Cache] Network-first fetch: ${cacheKey}`);
       const data = await fetcher();
-
-      // Store in cache
-      slackCache.set(cacheKey, data, ttl);
-
+      await this.setCacheWithTags(cacheKey, data, ttl, tags);
       return data;
-    } catch (error: any) {
-      // If it's a rate limit error, try to get cached data even if expired
-      if (error.status === 429 || error.message?.includes('rate limit')) {
-        console.warn(
-          `[Slack Cache] Rate limit hit for ${operation}, trying expired cache`
-        );
-        const expiredCache = slackCache.get<T>(cacheKey);
-        if (expiredCache) {
-          return expiredCache;
-        }
+    } catch (error) {
+      console.warn(`[Slack Cache] Network failed, trying cache: ${cacheKey}`);
+      const cached = await RedisCache.get<T>(cacheKey);
+      if (cached) {
+        console.log(`[Slack Cache] Cache fallback success: ${cacheKey}`);
+        return cached;
       }
       throw error;
     }
   }
 
   /**
-   * Retrieves the workspace channels with caching.
+   * Stale-while-revalidate strategy: Return cache immediately, update in background
+   */
+  private async staleWhileRevalidateStrategy<T>(
+    cacheKey: string,
+    ttl: number,
+    fetcher: () => Promise<T>,
+    tags: string[]
+  ): Promise<T> {
+    const cached = await RedisCache.get<T>(cacheKey);
+
+    if (cached) {
+      console.log(`[Slack Cache] Stale cache hit: ${cacheKey}`);
+
+      // Check if cache is stale (older than half TTL)
+      const cacheAge = await RedisCache.ttl(cacheKey);
+      const isStale = cacheAge < ttl / 2;
+
+      if (isStale) {
+        // Background revalidation
+        console.log(`[Slack Cache] Background revalidation: ${cacheKey}`);
+        setImmediate(async () => {
+          try {
+            const freshData = await fetcher();
+            await this.setCacheWithTags(cacheKey, freshData, ttl, tags);
+            console.log(
+              `[Slack Cache] Background update completed: ${cacheKey}`
+            );
+          } catch (error) {
+            console.warn(
+              `[Slack Cache] Background update failed: ${cacheKey}`,
+              error
+            );
+          }
+        });
+      }
+
+      return cached;
+    }
+
+    // No cache, fetch immediately
+    console.log(`[Slack Cache] No cache, fetching: ${cacheKey}`);
+    const data = await fetcher();
+    await this.setCacheWithTags(cacheKey, data, ttl, tags);
+    return data;
+  }
+
+  /**
+   * Set cache with tags for invalidation
+   */
+  private async setCacheWithTags<T>(
+    cacheKey: string,
+    data: T,
+    ttl: number,
+    tags: string[]
+  ): Promise<void> {
+    await RedisCache.set(cacheKey, data, ttl);
+
+    // Store tag associations for cache invalidation
+    for (const tag of tags) {
+      const tagKey = `tag:${tag}:${cacheKey}`;
+      await RedisCache.set(tagKey, true, ttl + 60); // Tags live slightly longer
+    }
+  }
+
+  /**
+   * Enhanced error handling with fallback strategies
+   */
+  private async handleCacheError<T>(
+    error: any,
+    cacheKey: string,
+    operation: string,
+    fetcher: () => Promise<T>
+  ): Promise<T> {
+    // Rate limit handling
+    if (error.status === 429 || error.message?.includes('rate limit')) {
+      console.warn(
+        `[Slack Cache] Rate limit hit for ${operation}, trying expired cache`
+      );
+
+      // Try to get any cached data, even if expired
+      const expiredCache = await RedisCache.get<T>(cacheKey);
+      if (expiredCache) {
+        console.log(
+          `[Slack Cache] Using expired cache due to rate limit: ${cacheKey}`
+        );
+        return expiredCache;
+      }
+
+      // If no cache available, wait and retry once
+      console.log(
+        `[Slack Cache] No expired cache, waiting before retry: ${operation}`
+      );
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      try {
+        const data = await fetcher();
+        await RedisCache.set(cacheKey, data, CACHE_CONFIG.messages.history);
+        return data;
+      } catch (retryError) {
+        console.error(
+          `[Slack Cache] Retry failed for ${operation}:`,
+          retryError
+        );
+        throw new Error(
+          `Slack API rate limited and no cached data available for ${operation}`
+        );
+      }
+    }
+
+    // Token expiration handling
+    if (
+      error.message?.includes('invalid_auth') ||
+      error.message?.includes('token_revoked')
+    ) {
+      console.error(
+        `[Slack Cache] Authentication error for ${operation}:`,
+        error.message
+      );
+      throw new Error(
+        'Slack token expired or invalid. Please reconnect your Slack account.'
+      );
+    }
+
+    // Network or other errors
+    console.error(`[Slack Cache] Error for ${operation}:`, error);
+
+    // Try to return cached data as fallback
+    const fallbackCache = await RedisCache.get<T>(cacheKey);
+    if (fallbackCache) {
+      console.log(
+        `[Slack Cache] Using fallback cache due to error: ${cacheKey}`
+      );
+      return fallbackCache;
+    }
+
+    throw error;
+  }
+
+  /**
+   * Retrieves the workspace channels with enhanced caching.
    */
   async getChannels(): Promise<SlackChannel[]> {
     return this.cachedRequest(
       'channels.list',
       { userId: this.userId },
-      CACHE_CONFIG.channels.list,
+      {
+        ttl: CACHE_CONFIG.channels.list,
+        strategy: CACHE_CONFIG.channels.strategy,
+        priority: CACHE_CONFIG.channels.priority,
+      },
       async () => {
         const response = await fetch(
           'https://slack.com/api/conversations.list',
@@ -288,16 +435,20 @@ export class CachedSlackClient {
   }
 
   /**
-   * Get channel message history with caching
+   * Get channel message history with enhanced caching and real-time invalidation support
    */
   async getChannelHistory(
     channelId: string,
-    limit: number = 20
+    limit = 20
   ): Promise<SlackMessage[]> {
     return this.cachedRequest(
       'messages.history',
       { channelId, limit },
-      CACHE_CONFIG.messages.history,
+      {
+        ttl: CACHE_CONFIG.messages.history,
+        strategy: CACHE_CONFIG.messages.strategy,
+        priority: CACHE_CONFIG.messages.priority,
+      },
       async () => {
         // Use bot token if available for better channel access
         const token = this.botToken || this.accessToken;
@@ -327,13 +478,17 @@ export class CachedSlackClient {
   }
 
   /**
-   * Get team/workspace information with caching
+   * Get team/workspace information with enhanced caching
    */
   async getTeamInfo(): Promise<any> {
     return this.cachedRequest(
       'team.info',
       { userId: this.userId },
-      CACHE_CONFIG.team.info,
+      {
+        ttl: CACHE_CONFIG.team.info,
+        strategy: CACHE_CONFIG.team.strategy,
+        priority: CACHE_CONFIG.team.priority,
+      },
       async () => {
         const response = await fetch('https://slack.com/api/team.info', {
           headers: {
@@ -358,13 +513,17 @@ export class CachedSlackClient {
   }
 
   /**
-   * Get workspace users with caching
+   * Get workspace users with enhanced caching
    */
   async getUsers(): Promise<SlackUser[]> {
     return this.cachedRequest(
       'users.list',
       { userId: this.userId },
-      CACHE_CONFIG.users.list,
+      {
+        ttl: CACHE_CONFIG.users.list,
+        strategy: CACHE_CONFIG.users.strategy,
+        priority: CACHE_CONFIG.users.priority,
+      },
       async () => {
         const response = await fetch('https://slack.com/api/users.list', {
           headers: {
@@ -498,7 +657,7 @@ class DatabaseCache {
  */
 export async function fetchSlackActivity(
   userId: string,
-  bypassCache: boolean = false
+  bypassCache = false
 ): Promise<SlackActivity[]> {
   console.log(`[Slack Sync] Starting cached sync for user: ${userId}`);
 
@@ -694,7 +853,7 @@ export async function saveSlackActivities(
  */
 export async function getSlackActivities(
   userId: string,
-  limit: number = 10
+  limit = 10
 ): Promise<SlackActivity[]> {
   // Get selected channels
   const selectedChannels = await prisma.selectedChannel.findMany({
@@ -749,7 +908,7 @@ export async function isSlackConnected(userId: string): Promise<boolean> {
       type: 'slack',
     },
   });
-  return !!connection;
+  return Boolean(connection);
 }
 
 /**
@@ -799,14 +958,57 @@ export async function disconnectSlack(userId: string): Promise<void> {
  */
 export const SlackCacheManager = {
   /**
-   * Get cache statistics
+   * Get cache statistics (Redis-based)
    */
-  getStats: () => slackCache.getStats(),
+  getStats: async (userId?: string) => {
+    try {
+      const pattern = userId
+        ? CacheKeyGenerator.slack(userId, '*', '*')
+        : CacheKeyGenerator.slack('*', '*', '*');
+
+      const keys = await RedisCache.getKeysByPattern(pattern);
+      let validEntries = 0;
+      let expiredEntries = 0;
+
+      // Check TTL for each key to determine if it's valid or expired
+      for (const key of keys) {
+        const ttl = await RedisCache.ttl(key);
+        if (ttl > 0) {
+          validEntries++;
+        } else if (ttl === -1) {
+          // Key exists but has no expiration
+          validEntries++;
+        } else {
+          expiredEntries++;
+        }
+      }
+
+      return {
+        totalEntries: keys.length,
+        validEntries,
+        expiredEntries,
+        hitRate: validEntries / Math.max(keys.length, 1),
+      };
+    } catch (error) {
+      console.error('Failed to get Slack cache stats:', error);
+      return {
+        totalEntries: 0,
+        validEntries: 0,
+        expiredEntries: 0,
+        hitRate: 0,
+      };
+    }
+  },
 
   /**
-   * Clear in-memory cache
+   * Clear Redis cache for Slack data
    */
-  clearMemoryCache: () => slackCache.clear(),
+  clearRedisCache: async (userId?: string) => {
+    const pattern = userId
+      ? CacheKeyGenerator.slack(userId, '*')
+      : CacheKeyGenerator.slack('*', '*');
+    await RedisCache.deleteByPattern(pattern);
+  },
 
   /**
    * Clear database cache
@@ -816,17 +1018,184 @@ export const SlackCacheManager = {
   /**
    * Clear all cache for a user
    */
-  clearUserCache: (userId: string) => DatabaseCache.clearUserCache(userId),
+  clearUserCache: async (userId: string) => {
+    await Promise.all([
+      RedisCache.deleteByPattern(CacheKeyGenerator.slack(userId, '*')),
+      DatabaseCache.clearUserCache(userId),
+    ]);
+  },
 
   /**
    * Clear all caches
    */
   clearAllCaches: async (userId?: string) => {
-    slackCache.clear();
     if (userId) {
-      await DatabaseCache.clearUserCache(userId);
+      await SlackCacheManager.clearUserCache(userId);
     } else {
-      await DatabaseCache.clearExpiredCache();
+      await Promise.all([
+        RedisCache.deleteByPattern(CacheKeyGenerator.slack('*', '*')),
+        DatabaseCache.clearExpiredCache(),
+      ]);
     }
+  },
+
+  /**
+   * Warm cache for frequently accessed Slack data
+   */
+  warmCache: async (userId: string) => {
+    try {
+      console.log(`Starting cache warming for user: ${userId}`);
+
+      const connection = await prisma.connection.findFirst({
+        where: {
+          userId,
+          type: 'slack',
+        },
+      });
+
+      if (!connection) {
+        console.log(`No Slack connection found for user: ${userId}`);
+        return;
+      }
+
+      const client = new CachedSlackClient(
+        connection.accessToken,
+        userId,
+        connection.botToken || undefined
+      );
+
+      // Warm essential caches in parallel
+      const warmingPromises = [
+        // Warm channels list
+        client
+          .getChannels()
+          .catch(error =>
+            console.warn(`Failed to warm channels cache for ${userId}:`, error)
+          ),
+
+        // Warm users list
+        client
+          .getUsers()
+          .catch(error =>
+            console.warn(`Failed to warm users cache for ${userId}:`, error)
+          ),
+
+        // Warm team info
+        client
+          .getTeamInfo()
+          .catch(error =>
+            console.warn(`Failed to warm team info cache for ${userId}:`, error)
+          ),
+      ];
+
+      // Get selected channels and warm their message history
+      const selectedChannels = await prisma.selectedChannel.findMany({
+        where: { userId },
+        take: 5, // Limit to top 5 channels to avoid overwhelming the API
+      });
+
+      for (const channel of selectedChannels) {
+        warmingPromises.push(
+          client
+            .getChannelHistory(channel.channelId, 10)
+            .catch(error =>
+              console.warn(
+                `Failed to warm messages cache for channel ${channel.channelId}:`,
+                error
+              )
+            )
+        );
+      }
+
+      await Promise.allSettled(warmingPromises);
+      console.log(`Cache warming completed for user: ${userId}`);
+    } catch (error) {
+      console.error(`Cache warming failed for user ${userId}:`, error);
+    }
+  },
+
+  /**
+   * Scheduled cache warming for active users
+   */
+  scheduledCacheWarming: async () => {
+    try {
+      console.log('Starting scheduled cache warming for active Slack users');
+
+      // Get users who have been active in the last 24 hours
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+      const activeUsers = await prisma.activity.findMany({
+        where: {
+          source: 'slack',
+          timestamp: {
+            gte: twentyFourHoursAgo,
+          },
+        },
+        select: {
+          userId: true,
+        },
+        distinct: ['userId'],
+        take: 20, // Limit to prevent overwhelming the system
+      });
+
+      console.log(
+        `Found ${activeUsers.length} active Slack users for cache warming`
+      );
+
+      // Warm cache for active users in batches to avoid rate limits
+      const batchSize = 5;
+      for (let i = 0; i < activeUsers.length; i += batchSize) {
+        const batch = activeUsers.slice(i, i + batchSize);
+
+        await Promise.allSettled(
+          batch.map(user => SlackCacheManager.warmCache(user.userId))
+        );
+
+        // Wait between batches to respect rate limits
+        if (i + batchSize < activeUsers.length) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+
+      console.log('Scheduled cache warming completed');
+    } catch (error) {
+      console.error('Scheduled cache warming failed:', error);
+    }
+  },
+
+  /**
+   * Invalidate specific Slack data types
+   */
+  invalidateChannels: async (userId: string) => {
+    const pattern = CacheKeyGenerator.slack(userId, 'channels.list', '*');
+    await RedisCache.deleteByPattern(pattern);
+  },
+
+  /**
+   * Invalidate message history for a channel
+   */
+  invalidateChannelMessages: async (userId: string, channelId: string) => {
+    const pattern = CacheKeyGenerator.slack(
+      userId,
+      'messages.history',
+      `*channelId:${channelId}*`
+    );
+    await RedisCache.deleteByPattern(pattern);
+
+    // Also invalidate activity cache that includes this channel
+    const activityPattern = CacheKeyGenerator.slack(userId, 'activity', '*');
+    await RedisCache.deleteByPattern(activityPattern);
+
+    // Invalidate stats cache as message counts may have changed
+    const statsPattern = CacheKeyGenerator.slack(userId, 'stats', '*');
+    await RedisCache.deleteByPattern(statsPattern);
+  },
+
+  /**
+   * Invalidate user data
+   */
+  invalidateUsers: async (userId: string) => {
+    const pattern = CacheKeyGenerator.slack(userId, 'users.list', '*');
+    await RedisCache.deleteByPattern(pattern);
   },
 };
