@@ -491,15 +491,18 @@ class CacheInfrastructureDeployment {
    */
   async runScript (scriptName, args = []) {
     const scriptPath = path.join(__dirname, scriptName)
-    return this.runCommand(`node ${scriptPath} ${args.join(' ')}`)
+    return this.runCommand('node', [scriptPath, ...args])
   }
 
   /**
    * Executes a command and returns the result as a promise.
+   * @param {string} file - The program to execute.
+   * @param {string[]} [args] - Arguments to pass to the program.
    */
-  async runCommand (command) {
+  async runCommand (file, args = []) {
     return new Promise((resolve, reject) => {
-      exec(command, (error, stdout, stderr) => {
+      // Use execFile, safe against shell injection.
+      require('child_process').execFile(file, args, (error, stdout, stderr) => {
         resolve({
           exitCode: error ? error.code : 0,
           stdout: stdout.trim(),
