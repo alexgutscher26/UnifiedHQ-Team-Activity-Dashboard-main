@@ -3,8 +3,15 @@
  */
 
 /**
- * Sanitizes a value for safe logging by removing potentially dangerous content
- * and limiting the size of logged data
+ * Sanitizes a value for safe logging by removing potentially dangerous content and limiting the size of logged data.
+ *
+ * The function checks if the input value is null or undefined, converting it to a string if so.
+ * If the value is a string, it is used as is. For objects, it attempts to remove sensitive fields using
+ * the removeSensitiveFields function before stringifying the object. Control characters are removed,
+ * newlines, carriage returns, and tabs are escaped, and the final string is truncated to a maximum length
+ * of 1000 characters to prevent log flooding.
+ *
+ * @param {any} value - The value to sanitize for logging.
  */
 function sanitizeForLogging(value) {
     if (value === null || value === undefined) {
@@ -43,7 +50,14 @@ function sanitizeForLogging(value) {
 }
 
 /**
- * Removes potentially sensitive fields from an object before logging
+ * Removes potentially sensitive fields from an object before logging.
+ *
+ * The function checks if the input is an object or an array and recursively processes its properties.
+ * It identifies sensitive fields based on a predefined list of keys and replaces their values with '[REDACTED]'.
+ * Non-sensitive fields are retained, and the function handles nested objects and arrays appropriately.
+ *
+ * @param obj - The object or array to be sanitized.
+ * @returns A new object or array with sensitive fields redacted.
  */
 function removeSensitiveFields(obj) {
     if (obj === null || typeof obj !== 'object') {
@@ -140,7 +154,7 @@ function sanitizeError(error) {
 }
 
 /**
- * Creates a safe logging context with a prefix
+ * Creates a safe logging context with a sanitized prefix.
  */
 function createSafeLogger(prefix) {
     const sanitizedPrefix = sanitizeForLogging(prefix);
