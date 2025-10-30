@@ -201,7 +201,7 @@ jobs:
     if: needs.determine-notification-context.outputs.should-notify == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Prepare notification payload
         id: payload

@@ -27,7 +27,7 @@ jobs:
       should-deploy: ${{ steps.changes.outputs.should-deploy }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 2
 
@@ -59,7 +59,7 @@ jobs:
     if: needs.changes.outputs.should-deploy == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -131,7 +131,7 @@ jobs:
       url: ${{ steps.deploy.outputs.preview-url }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
