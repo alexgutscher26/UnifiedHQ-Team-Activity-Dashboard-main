@@ -282,6 +282,9 @@ jobs:
   security-summary:
     name: Security Summary
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
     needs: [codeql-analysis, dependency-vulnerability-scan, secret-scanning]
     if: always()
     steps:
