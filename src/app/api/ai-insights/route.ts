@@ -162,7 +162,14 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Generate AI insights from activity data
+ * Generate AI insights from activity data.
+ *
+ * This function analyzes activity patterns, productivity, collaboration, trends, code quality, and time-based insights from the provided activities. It calculates averages, ratios, and identifies key insights based on the activity data within the specified date range. The insights are categorized and returned as an array of AIInsight objects.
+ *
+ * @param activities - An array of activity data to analyze.
+ * @param startDate - The start date for the analysis period.
+ * @param endDate - The end date for the analysis period.
+ * @returns An array of AIInsight objects containing generated insights based on the activity data.
  */
 async function generateInsightsFromActivities(
   activities: any[],
