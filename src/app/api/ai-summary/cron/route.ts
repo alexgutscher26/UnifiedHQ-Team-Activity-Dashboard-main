@@ -5,6 +5,17 @@ import { Activity } from '@/types/components';
 
 const prisma = new PrismaClient();
 
+/**
+ * Handles the POST request for automated AI summary generation.
+ *
+ * This function verifies the request as a cron job, checks authentication, and validates the connection to the AI service.
+ * It retrieves users with recent activity but no recent summaries, processes each user to generate summaries,
+ * and logs the results. It also handles monitoring data storage and error management throughout the process.
+ *
+ * @param request - The NextRequest object containing the request data.
+ * @returns A JSON response indicating the success of the operation along with results and summary data.
+ * @throws Error If there is an issue during the summary generation or monitoring data storage.
+ */
 export async function POST(request: NextRequest) {
   // Verify this is a cron job request
   const authHeader = request.headers.get('authorization');
