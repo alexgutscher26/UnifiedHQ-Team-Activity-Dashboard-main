@@ -8,11 +8,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import {
-  IconDatabase,
-  IconWifi,
-  IconAlertTriangle,
-} from '@tabler/icons-react';
+import { IconDatabase, IconWifi, IconAlertTriangle } from '@tabler/icons-react';
 import { cn } from '@/lib/utils';
 
 interface CacheTimestampIndicatorProps {

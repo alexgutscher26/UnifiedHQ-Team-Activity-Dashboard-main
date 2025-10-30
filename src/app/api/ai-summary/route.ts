@@ -7,15 +7,7 @@ import { Activity } from '@/types/components';
 const prisma = new PrismaClient();
 
 /**
- * Generate an intelligent mock summary based on actual activity data.
- *
- * This function processes user activity data to create a summary that includes a title based on activity levels, key highlights, action items, and insights. It calculates the breakdown of activity sources, counts repositories and channels, and generates a structured summary that is saved to the database. The function also evaluates the activity trend and provides recommendations based on the user's engagement across different platforms.
- *
- * @param userId - The ID of the user for whom the summary is generated.
- * @param activities - An array of activity objects related to the user.
- * @param startDate - The start date for the activity period.
- * @param endDate - The end date for the activity period.
- * @returns An object containing the generated summary details including id, title, keyHighlights, actionItems, insights, generatedAt, timeRange, and metadata.
+ * Generate an intelligent mock summary based on actual activity data
  */
 async function generateIntelligentMockSummary(
   userId: string,
@@ -42,7 +34,7 @@ async function generateIntelligentMockSummary(
   const totalActivities = activities.length;
   const sources = Object.keys(sourceBreakdown);
   const primarySource = Object.entries(sourceBreakdown).sort(
-    ([, a], [, b]) => b - a
+    ([, a], [, b]) => (b as number) - (a as number)
   )[0];
 
   // Generate title based on activity level
@@ -171,13 +163,7 @@ async function generateIntelligentMockSummary(
 }
 
 /**
- * Calculate how activities are spread throughout the day.
- *
- * This function analyzes an array of activities, extracting the hour from each activity's timestamp.
- * It determines the distribution of activities based on the number of unique hours in which they occur.
- * Depending on the count of unique hours, it categorizes the spread as either distributed, concentrated, or focused.
- *
- * @param {any[]} activities - An array of activity objects, each containing a timestamp.
+ * Calculate how activities are spread throughout the day
  */
 function calculateTimeSpread(activities: any[]): string {
   if (activities.length === 0) return 'No activity';

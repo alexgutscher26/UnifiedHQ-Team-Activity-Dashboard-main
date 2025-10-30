@@ -25,17 +25,11 @@ export default function SignUpPage() {
   const [success, setSuccess] = useState('');
   const router = useRouter();
 
-  const {
-    data,
-    errors,
-    updateField,
-    validateForm,
-    getFieldError,
-    isFormValid,
-  } = useFormValidation(
-    { name: '', email: '', password: '', confirmPassword: '' },
-    validationSchemas.signUp
-  );
+  const { data, updateField, validateForm, getFieldError, isFormValid } =
+    useFormValidation(
+      { name: '', email: '', password: '', confirmPassword: '' },
+      validationSchemas.signUp
+    );
 
   /**
    * Handles the email sign-up process for a user.
@@ -65,23 +59,6 @@ export default function SignUpPage() {
     setSuccess('');
 
     try {
-      const { data: authData, error } = await authClient.signUp.email(
-        {
-          email: data.email,
-          password: data.password,
-          name: data.name,
-          callbackURL: '/dashboard',
-        },
-        {
-          onSuccess: () => {
-            setSuccess('Account created successfully! Redirecting...');
-            setTimeout(() => router.push('/dashboard'), 2000);
-          },
-          onError: ctx => {
-            setError(ctx.error.message);
-          },
-        }
-      );
     } catch (err) {
       setError('An unexpected error occurred');
     } finally {

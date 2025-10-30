@@ -28,8 +28,6 @@ export function PerformanceComparison() {
     optimized: { renderTime: 0, memoryUsage: 0, itemCount: 0 },
   });
 
-
-
   const getPerformanceImprovement = () => {
     const original = performanceMetrics.original;
     const optimized = performanceMetrics.optimized;

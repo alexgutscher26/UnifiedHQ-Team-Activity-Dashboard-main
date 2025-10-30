@@ -2,9 +2,6 @@ name: Deploy to Production
 permissions:
   contents: read
 
-permissions:
-  contents: read
-
 on:
   release:
     types: [published]
@@ -300,13 +297,10 @@ jobs:
     name: Post-deployment Tasks
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       deployments: write
     needs: [validate, deploy]
     if: success()
-    permissions:
-      contents: write
-      deployments: write
     steps:
       - name: Update release status
         uses: actions/github-script@v7

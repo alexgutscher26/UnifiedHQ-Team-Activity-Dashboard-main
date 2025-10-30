@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
- * Handles GET requests and returns mock Slack stats or an error response.
+ * Simple Slack stats endpoint that returns mock data to prevent 500 errors.
+ * This is a temporary solution until the full Slack integration is properly configured.
  */
 export async function GET(request: NextRequest) {
   try {

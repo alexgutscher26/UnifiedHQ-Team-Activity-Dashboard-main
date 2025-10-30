@@ -22,7 +22,7 @@ async function warmSlackCache(request: NextRequest): Promise<NextResponse> {
     console.log(`Starting cache warming for user: ${userId}`);
 
     if (scheduled) {
-      // Trigger scheduled warming for all active users (admin only)
+      // TODO: Trigger scheduled warming for all active users (admin only)
       // In a real app, you'd want to check admin permissions here
       await SlackCacheManager.scheduledCacheWarming();
 

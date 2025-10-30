@@ -6,8 +6,8 @@
  * into a single comprehensive testing suite.
  */
 
-import { execSync, spawn } from 'child_process';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { execSync } from 'child_process';
+import { writeFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { program } from 'commander';

@@ -57,21 +57,6 @@ export default function SignInPage() {
     setError('');
 
     try {
-      const { data: authData, error } = await authClient.signIn.email(
-        {
-          email: data.email,
-          password: data.password,
-          callbackURL: '/dashboard',
-        },
-        {
-          onSuccess: () => {
-            router.push('/dashboard');
-          },
-          onError: ctx => {
-            setError(ctx.error.message);
-          },
-        }
-      );
     } catch (err) {
       setError('An unexpected error occurred');
     } finally {

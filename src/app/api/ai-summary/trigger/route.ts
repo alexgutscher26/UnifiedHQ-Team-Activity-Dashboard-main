@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
- * Manual trigger for AI summary generation.
- *
- * This function initiates a manual trigger for the AI summary generation by calling the internal cron endpoint. It handles the response, logging success or failure, and returns a JSON response indicating the result of the operation. If an error occurs during the process, it captures and logs the error details.
- *
- * @param request - The NextRequest object containing the request information.
- * @returns A JSON response indicating the success or failure of the AI summary generation trigger.
- * @throws Error If an error occurs during the fetch operation or response handling.
+ * Manual trigger for AI summary generation
+ * This endpoint can be called to manually trigger the cron job
  */
 export async function POST(request: NextRequest) {
   try {

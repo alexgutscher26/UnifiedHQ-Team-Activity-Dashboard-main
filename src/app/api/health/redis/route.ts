@@ -26,8 +26,14 @@ export async function GET() {
       }
     });
 
-    // Get memory usage
-    const memoryInfo = await redis.memory('USAGE');
+    // Get memory usage (using sendCommand for MEMORY USAGE)
+    let memoryInfo = 'unknown';
+    try {
+      memoryInfo = await redis.sendCommand(['MEMORY', 'USAGE']);
+    } catch (memoryError) {
+      console.warn('Redis MEMORY command not available:', memoryError);
+      memoryInfo = 'not_available';
+    }
 
     // Test basic operations
     const testKey = 'health_check_test';

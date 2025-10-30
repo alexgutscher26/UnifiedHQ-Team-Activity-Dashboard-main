@@ -2,9 +2,6 @@ name: Release Management
 permissions:
   contents: read
 
-permissions:
-  contents: read
-
 on:
   push:
     tags:
