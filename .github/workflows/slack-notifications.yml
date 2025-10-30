@@ -1,4 +1,6 @@
 name: Slack Notifications
+permissions:
+  contents: read
 
 on:
   workflow_run:
