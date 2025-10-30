@@ -94,7 +94,7 @@ export class TimerCleanupFixGenerator {
 
     // Check if timer is assigned to a variable
     const variableName = this.extractVariableName(node);
-    const isAssigned = !!variableName;
+    const isAssigned = Boolean(variableName);
 
     // Analyze context
     const containingFunction = this.findContainingFunction(node);

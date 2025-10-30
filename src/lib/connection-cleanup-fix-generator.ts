@@ -108,7 +108,7 @@ export class ConnectionCleanupFixGenerator {
 
     // Check if assigned to variable
     const variableName = this.extractVariableName(node);
-    const isAssigned = !!variableName;
+    const isAssigned = Boolean(variableName);
 
     // Analyze context
     const containingFunction = this.findContainingFunction(node);
@@ -143,7 +143,7 @@ export class ConnectionCleanupFixGenerator {
 
     // Check if assigned to variable (for unsubscribe function)
     const variableName = this.extractVariableName(node);
-    const isAssigned = !!variableName;
+    const isAssigned = Boolean(variableName);
 
     // Analyze context
     const containingFunction = this.findContainingFunction(node);

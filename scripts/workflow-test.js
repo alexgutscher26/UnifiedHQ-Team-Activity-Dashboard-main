@@ -245,7 +245,7 @@ class WorkflowTester {
         )
       }
 
-      const hasConcurrency = !!content.concurrency
+      const hasConcurrency = Boolean(content.concurrency)
       if (!hasConcurrency) {
         warnings.push(
           'No concurrency control - consider adding to prevent duplicate runs'
