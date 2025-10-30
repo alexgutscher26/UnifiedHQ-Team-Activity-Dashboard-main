@@ -18,7 +18,7 @@ class WorkflowDashboard {
   }
 
   /**
-   * Load workflow metrics data
+   * Load workflow metrics data from a specified path.
    */
   loadData (dataPath) {
     try {
@@ -33,7 +33,7 @@ class WorkflowDashboard {
   }
 
   /**
-   * Generate HTML dashboard
+   * Generate HTML dashboard from the template and data.
    */
   generateDashboard () {
     if (!this.data) {
@@ -56,7 +56,7 @@ class WorkflowDashboard {
   }
 
   /**
-   * Generate dashboard title
+   * Generates the dashboard title based on the repository data.
    */
   generateTitle () {
     if (this.data.repository) {
@@ -227,7 +227,13 @@ class WorkflowDashboard {
   }
 
   /**
-   * Generate alerts section HTML
+   * Generate alerts section HTML.
+   *
+   * This function constructs an HTML string representing the alerts section based on the current alerts data.
+   * It categorizes alerts into critical, warning, and info levels, generating corresponding HTML for each category.
+   * If no alerts are present, it returns a message indicating that all workflows are performing within acceptable parameters.
+   *
+   * @returns A string containing the HTML for the alerts section.
    */
   generateAlertsSection () {
     const alerts = this.data.alerts || []
@@ -305,7 +311,12 @@ class WorkflowDashboard {
   }
 
   /**
-   * Generate recommendations section HTML
+   * Generate recommendations section HTML.
+   *
+   * This function constructs an HTML string for a recommendations section based on the data provided.
+   * If there are no recommendations, it returns a message indicating that workflows are optimized.
+   * Otherwise, it iterates through the recommendations, creating HTML for each one, including priority icons,
+   * titles, categories, descriptions, actions, and affected workflows if available.
    */
   generateRecommendationsSection () {
     const recommendations = this.data.recommendations || []
@@ -365,7 +376,7 @@ class WorkflowDashboard {
   }
 
   /**
-   * Generate trends section HTML
+   * Generate trends section HTML.
    */
   generateTrendsSection () {
     return `
@@ -390,7 +401,14 @@ class WorkflowDashboard {
   }
 
   /**
-   * Helper methods
+   * Determines the success rate class based on the provided rate.
+   *
+   * This function parses the input rate and categorizes it into three classes:
+   * 'success' for rates 95 and above, 'warning' for rates between 80 and 94,
+   * and 'error' for rates below 80. It ensures that the rate is a valid number
+   * by using parseFloat, defaulting to 0 if the input is falsy.
+   *
+   * @param {string|number} rate - The success rate to evaluate, can be a string or number.
    */
   getSuccessRateClass (rate) {
     const successRate = parseFloat(rate || 0)
@@ -399,6 +417,18 @@ class WorkflowDashboard {
     return 'error'
   }
 
+  /**
+   * Formats a duration given in seconds into a human-readable string.
+   *
+   * The function calculates the number of hours, minutes, and seconds from the
+   * total seconds provided. If the `long` parameter is true and there are hours,
+   * it returns a string formatted with hours and minutes. If there are no hours
+   * but there are minutes, it returns a string with minutes and seconds.
+   * Otherwise, it returns just the seconds.
+   *
+   * @param {number} seconds - The total duration in seconds to format.
+   * @param {boolean} [long=false] - Indicates whether to include hours in the output.
+   */
   formatDuration (seconds, long = false) {
     const hours = Math.floor(seconds / 3600)
     const minutes = Math.floor((seconds % 3600) / 60)
@@ -420,6 +450,17 @@ class WorkflowDashboard {
     return 'neutral'
   }
 
+  /**
+   * Determines the trend icon based on the success rate change.
+   *
+   * The function evaluates the `trend` object to return a specific icon representing the trend.
+   * If the `trend` is not provided, it defaults to a neutral icon.
+   * It checks the `successRateChange` property to determine if the trend is positive or negative,
+   * returning corresponding icons for significant changes.
+   *
+   * @param {Object} trend - The trend object containing successRateChange.
+   * @param {number} trend.successRateChange - The change in success rate.
+   */
   getTrendIcon (trend) {
     if (!trend) return '➖'
     if (trend.successRateChange > 5) return '📈'
@@ -436,7 +477,7 @@ class WorkflowDashboard {
   }
 
   /**
-   * HTML template for the dashboard
+   * Returns the HTML template for the dashboard.
    */
   getHTMLTemplate () {
     return `
@@ -933,7 +974,7 @@ class WorkflowDashboard {
   }
 
   /**
-   * Save dashboard to file
+   * Saves the dashboard to a specified file.
    */
   saveDashboard (outputPath) {
     const html = this.generateDashboard()
@@ -944,6 +985,17 @@ class WorkflowDashboard {
 }
 
 // CLI interface
+/**
+ * Main function to execute the workflow dashboard generation.
+ *
+ * This function parses command line arguments to retrieve input and output file options, validates the input file,
+ * and utilizes the WorkflowDashboard class to load data and save the generated dashboard. It also handles help
+ * messages and error reporting for missing or invalid input files.
+ *
+ * @param {string[]} args - Command line arguments passed to the script.
+ * @returns {Promise<void>} A promise that resolves when the dashboard generation is complete.
+ * @throws Error If the --input option is missing or the specified input file does not exist.
+ */
 async function main () {
   const args = process.argv.slice(2)
   let inputFile = null

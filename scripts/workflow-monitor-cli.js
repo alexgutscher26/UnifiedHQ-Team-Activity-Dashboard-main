@@ -24,7 +24,9 @@ class WorkflowMonitorCLI {
   }
 
   /**
-   * Load configuration
+   * Load configuration from a specified path.
+   *
+   * This function checks if a configuration file exists at the given path. If it does, the file is read and parsed as JSON. In case of an error during this process, a warning is logged, and default configuration values are returned. The default configuration includes monitoring settings and thresholds for success rate and duration.
    */
   loadConfig () {
     try {
@@ -82,7 +84,7 @@ class WorkflowMonitorCLI {
   }
 
   /**
-   * Generate dashboard
+   * Generates a dashboard from the specified input file and saves it to the output file.
    */
   generateDashboard (inputFile, outputFile) {
     console.log('📊 Generating dashboard...')
@@ -135,7 +137,14 @@ class WorkflowMonitorCLI {
   }
 
   /**
-   * Generate executive summary
+   * Generate executive summary from an analytics report.
+   *
+   * This function reads an analytics report from the specified path, parses the JSON data, and constructs a summary object.
+   * It retrieves the overall status and generates a status message based on the summary data. The returned object includes
+   * metrics such as total runs, success rate, total failures, and counts of critical and warning alerts.
+   *
+   * @param analyticsReportPath - The file path to the analytics report in JSON format.
+   * @returns An object containing the overall status, status message, and relevant metrics.
    */
   generateSummary (analyticsReportPath) {
     const data = JSON.parse(fs.readFileSync(analyticsReportPath, 'utf8'))
@@ -161,7 +170,13 @@ class WorkflowMonitorCLI {
   }
 
   /**
-   * Determine overall status
+   * Determine the overall status based on the success rate.
+   *
+   * This function evaluates the overall success rate from the provided summary and compares it against defined critical and warning thresholds.
+   * It returns 'critical' if the success rate is below the critical threshold, 'warning' if it is below the warning threshold, and 'healthy' otherwise.
+   *
+   * @param summary - An object containing the overall success rate.
+   * @returns A string indicating the overall status: 'critical', 'warning', or 'healthy'.
    */
   getOverallStatus (summary) {
     const successRate = summary.overallSuccessRate || 0
@@ -230,7 +245,13 @@ class WorkflowMonitorCLI {
   }
 
   /**
-   * List recent reports
+   * List recent reports.
+   *
+   * This function retrieves and displays the most recent workflow reports from the specified directory.
+   * It filters the files to include only those that start with 'workflow-' and end with either '.json' or '.html',
+   * sorts them in reverse order, and limits the output to the latest 10 reports. If no reports are found,
+   * a message is logged to prompt the user to run analytics first. Any errors encountered during the process
+   * are caught and logged to the console.
    */
   listReports () {
     console.log('📋 Recent workflow reports:')
@@ -298,7 +319,7 @@ class WorkflowMonitorCLI {
   }
 
   /**
-   * Show configuration
+   * Displays the current configuration.
    */
   showConfig () {
     console.log('⚙️ Current configuration:')
@@ -307,6 +328,14 @@ class WorkflowMonitorCLI {
 
   /**
    * Update configuration
+   *
+   * This function updates a nested configuration object based on a provided key and value.
+   * It splits the key by dots to navigate through the object structure, creating any necessary
+   * intermediate objects. The value is attempted to be parsed as JSON; if that fails, it falls
+   * back to using the value as a string. Finally, the updated configuration is written to a file.
+   *
+   * @param {string} key - The key representing the configuration path to update.
+   * @param {string} value - The new value to set at the specified configuration path.
    */
   updateConfig (key, value) {
     console.log(`⚙️ Updating configuration: ${key} = ${value}`)
@@ -338,7 +367,7 @@ class WorkflowMonitorCLI {
   }
 
   /**
-   * Show help
+   * Show help information for the Workflow Monitor CLI.
    */
   showHelp () {
     console.log(`
@@ -382,6 +411,18 @@ Environment Variables:
 }
 
 // CLI entry point
+/**
+ * Main entry point for the WorkflowMonitorCLI application.
+ *
+ * This function processes command-line arguments to execute various commands related to workflow monitoring.
+ * It handles options for repository details, authentication tokens, and output specifications.
+ * Depending on the command provided, it invokes corresponding methods on the WorkflowMonitorCLI instance,
+ * ensuring required options are validated and errors are handled appropriately.
+ *
+ * @param {string[]} args - The command-line arguments passed to the application.
+ * @returns {Promise<void>} A promise that resolves when the command execution is complete.
+ * @throws {Error} If an unknown command is provided or required options are missing.
+ */
 async function main () {
   const cli = new WorkflowMonitorCLI()
   const args = process.argv.slice(2)

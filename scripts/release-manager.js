@@ -18,7 +18,12 @@ class ReleaseManager {
   }
 
   /**
-   * Load release configuration
+   * Load release configuration.
+   *
+   * This function constructs the path to the release configuration YAML file and checks if it exists.
+   * If the file is found, it attempts to return a comprehensive configuration object with versioning,
+   * changelog, release notes, branches, environments, and artifacts settings. In case of an error during
+   * loading, it logs a warning and falls back to a default configuration.
    */
   loadConfig () {
     const configPath = path.join(
@@ -76,7 +81,7 @@ class ReleaseManager {
   }
 
   /**
-   * Get default configuration
+   * Returns the default configuration object.
    */
   getDefaultConfig () {
     return {
@@ -112,7 +117,7 @@ class ReleaseManager {
   }
 
   /**
-   * Get current version from package.json
+   * Retrieves the current version from package.json.
    */
   getCurrentVersion () {
     try {
@@ -126,7 +131,14 @@ class ReleaseManager {
   }
 
   /**
-   * Bump version number
+   * Bump version number.
+   *
+   * This function increments the version number based on the specified type ('patch' by default).
+   * It retrieves the current version using `getCurrentVersion`, calculates the new version with
+   * `calculateNewVersion`, and updates the `package.json` file accordingly. If any errors occur
+   * during this process, an error message is logged, and the function returns null.
+   *
+   * @param {string} [type='patch'] - The type of version bump (e.g., 'patch', 'minor', 'major').
    */
   bumpVersion (type = 'patch') {
     console.log(`📈 Bumping version (${type})...`)
@@ -178,7 +190,15 @@ class ReleaseManager {
   }
 
   /**
-   * Determine version bump type from conventional commits
+   * Determine version bump type from conventional commits.
+   *
+   * This function analyzes the commits since a specified version to identify the type of version bump required.
+   * It checks for breaking changes, new features, and bug fixes in the commit messages to determine whether to
+   * return 'major', 'minor', or 'patch'. If an error occurs during the analysis, it defaults to returning 'patch'.
+   *
+   * @param fromVersion - The version from which to analyze commits. Defaults to null.
+   * @returns The type of version bump: 'major', 'minor', or 'patch'.
+   * @throws Error If there is an issue retrieving or analyzing the commits.
    */
   determineVersionBumpFromCommits (fromVersion = null) {
     console.log(
@@ -239,6 +259,12 @@ class ReleaseManager {
 
   /**
    * Create release branch
+   *
+   * This function creates a new release branch based on the provided version. It first checks if the branch already exists, and if so, throws an error.
+   * If the branch does not exist, it attempts to switch to the develop branch and pull the latest changes. If the develop branch is not found, it falls back to the main branch.
+   * Finally, it creates the release branch and pushes it to the remote repository.
+   *
+   * @param {string} version - The version number for the release branch.
    */
   createReleaseBranch (version) {
     console.log(`🚀 Creating release branch for v${version}...`)
@@ -274,7 +300,7 @@ class ReleaseManager {
   }
 
   /**
-   * Check if branch exists
+   * Check if a Git branch exists.
    */
   branchExists (branchName) {
     try {
@@ -289,6 +315,15 @@ class ReleaseManager {
 
   /**
    * Generate changelog
+   *
+   * This function generates a changelog entry for a specified version by reading the existing changelog,
+   * retrieving commits since the last version using `getCommitsSinceVersion`, and categorizing those changes
+   * with `categorizeChanges`. It then formats the new entry with `formatChangelogEntry`, inserts it into the
+   * existing changelog, and writes the updated content back to the file. Error handling is included to manage
+   * any issues during the process.
+   *
+   * @param {string} version - The version for which the changelog is being generated.
+   * @param {string|null} [fromVersion=null] - The version from which to retrieve commits; defaults to null.
    */
   generateChangelog (version, fromVersion = null) {
     console.log(`📝 Generating changelog for v${version}...`)
@@ -326,7 +361,14 @@ class ReleaseManager {
   }
 
   /**
-   * Get commits since last version
+   * Get commits since last version.
+   *
+   * This function retrieves a list of commits from a specified version to the current HEAD.
+   * It constructs a range for the `git log` command based on the provided `fromVersion`.
+   * The commits are processed to extract their hash and message, returning an array of commit objects.
+   * In case of an error during execution, it logs the error and returns an empty array.
+   *
+   * @param {string} fromVersion - The version from which to retrieve commits. If not provided, defaults to HEAD.
    */
   getCommitsSinceVersion (fromVersion) {
     try {
@@ -353,7 +395,12 @@ class ReleaseManager {
   }
 
   /**
-   * Categorize changes by type using conventional commits
+   * Categorize changes by type using conventional commits.
+   *
+   * This function processes an array of commit objects, extracting the commit message and categorizing each commit into predefined types such as features, fixes, breaking changes, and others based on the conventional commit format. It handles both conventional and non-conventional commit messages, ensuring that breaking changes are identified and categorized appropriately.
+   *
+   * @param commits - An array of commit objects, each containing a message and a hash.
+   * @returns An object categorizing the commits into various types of changes.
    */
   categorizeChanges (commits) {
     const changes = {
@@ -547,7 +594,13 @@ class ReleaseManager {
   }
 
   /**
-   * Format changelog entry with conventional commit formatting
+   * Format changelog entry with conventional commit formatting.
+   *
+   * This function constructs a formatted changelog entry based on the provided version and changes. It prioritizes breaking changes, followed by new features, bug fixes, performance improvements, refactoring, documentation updates, tests, build system changes, CI/CD updates, styling, chores, and other changes. Each change type is appended to the entry with its description and associated commit hash.
+   *
+   * @param version - The version number for the changelog entry.
+   * @param changes - An object containing categorized changes, including breaking, features, fixes, performance, refactor, docs, test, build, ci, style, chore, and other changes.
+   * @returns The formatted changelog entry as a string.
    */
   formatChangelogEntry (version, changes) {
     const date = new Date().toISOString().split('T')[0]
@@ -677,7 +730,14 @@ class ReleaseManager {
   }
 
   /**
-   * Generate release notes
+   * Generate release notes.
+   *
+   * This function generates release notes for a specified version by reading the changelog file,
+   * extracting the relevant version entry, formatting the release notes, and writing them to a
+   * designated file. It handles errors such as missing changelog or version entry gracefully,
+   * logging appropriate messages to the console.
+   *
+   * @param {string} version - The version for which to generate release notes.
    */
   generateReleaseNotes (version) {
     console.log(`📋 Generating release notes for v${version}...`)
@@ -719,7 +779,10 @@ class ReleaseManager {
   }
 
   /**
-   * Generate GitHub-compatible release notes
+   * Generate GitHub-compatible release notes.
+   * @param {string} version - The version for which to generate release notes.
+   * @param {string|null} [fromVersion=null] - The previous version to compare changes from.
+   * @returns {string|null} The formatted release notes or null if an error occurs.
    */
   generateGitHubReleaseNotes (version, fromVersion = null) {
     console.log(`📋 Generating GitHub release notes for v${version}...`)
@@ -742,7 +805,17 @@ class ReleaseManager {
   }
 
   /**
-   * Format GitHub release notes with conventional commit formatting
+   * Format GitHub release notes with conventional commit formatting.
+   *
+   * This function generates a formatted string of release notes based on the provided version and changes.
+   * It categorizes changes into breaking changes, new features, bug fixes, performance improvements,
+   * code refactoring, documentation updates, tests, build system changes, CI/CD changes, style changes,
+   * chores, and other changes. Additionally, it includes installation and upgrade instructions,
+   * support information, and a link to the full changelog.
+   *
+   * @param version - The version number of the release.
+   * @param changes - An object containing categorized changes for the release.
+   * @returns A formatted string of release notes.
    */
   formatGitHubReleaseNotes (version, changes) {
     const date = new Date().toLocaleDateString('en-US', {
@@ -906,7 +979,12 @@ class ReleaseManager {
   }
 
   /**
-   * Get repository name from git remote
+   * Get repository name from git remote.
+   *
+   * This function attempts to retrieve the remote URL of the git repository using the command
+   * 'git config --get remote.origin.url'. It then extracts the repository name from the URL,
+   * handling different formats. If the extraction fails or an error occurs, it defaults to
+   * returning 'owner/repo'.
    */
   getRepositoryName () {
     try {
@@ -923,7 +1001,12 @@ class ReleaseManager {
   }
 
   /**
-   * Extract version entry from changelog
+   * Extract version entry from changelog.
+   *
+   * This function takes a changelog string and a version identifier, and extracts the section of the changelog that corresponds to the specified version. It first splits the changelog into lines and finds the index of the line containing the version. If found, it then looks for the next version entry to determine the end of the current version section. Finally, it returns the relevant lines as a single string.
+   *
+   * @param {string} changelog - The changelog text containing version entries.
+   * @param {string} version - The version identifier to extract from the changelog.
    */
   extractVersionEntry (changelog, version) {
     const lines = changelog.split('\n')
@@ -942,7 +1025,7 @@ class ReleaseManager {
   }
 
   /**
-   * Format release notes
+   * Formats release notes with version and changelog entry.
    */
   formatReleaseNotes (version, changelogEntry) {
     const date = new Date().toLocaleDateString('en-US', {
@@ -990,7 +1073,14 @@ Generated on ${new Date().toISOString()}
   }
 
   /**
-   * Get previous version
+   * Get previous version.
+   *
+   * This function calculates the previous version based on the provided currentVersion string, which is expected to be in the format "major.minor.patch".
+   * It first splits the version into its components and converts them to numbers.
+   * If the patch version is greater than zero, it decrements the patch. If the patch is zero but the minor version is greater than zero, it decrements the minor version and resets the patch to zero.
+   * If both patch and minor are zero, it decrements the major version and resets minor and patch to zero.
+   *
+   * @param {string} currentVersion - The current version in "major.minor.patch" format.
    */
   getPreviousVersion (currentVersion) {
     const [major, minor, patch] = currentVersion.split('.').map(Number)
@@ -1005,6 +1095,11 @@ Generated on ${new Date().toISOString()}
 
   /**
    * Create release tag
+   *
+   * This function creates a Git tag for a specified version and an optional message. It constructs the tag name and message, then executes the necessary Git commands to create and push the tag to the remote repository. If an error occurs during the process, it logs the error message and returns null.
+   *
+   * @param {string} version - The version number for the release tag.
+   * @param {string} [message=''] - An optional message for the release tag.
    */
   createReleaseTag (version, message = '') {
     console.log(`🏷️ Creating release tag v${version}...`)
@@ -1026,7 +1121,7 @@ Generated on ${new Date().toISOString()}
   }
 
   /**
-   * Merge release to main
+   * Merges a release branch into the main branch.
    */
   mergeReleaseToMain (releaseBranch, version) {
     console.log(`🔀 Merging release ${releaseBranch} to main...`)
@@ -1053,7 +1148,7 @@ Generated on ${new Date().toISOString()}
   }
 
   /**
-   * Merge release back to develop
+   * Merges a release branch back to the develop branch.
    */
   mergeReleaseToDevelop (releaseBranch, version) {
     console.log(`🔀 Merging release ${releaseBranch} back to develop...`)
@@ -1216,7 +1311,7 @@ Generated on ${new Date().toISOString()}
   }
 
   /**
-   * Show help information
+   * Show help information for the release manager commands.
    */
   showHelp () {
     console.log(`

@@ -28,7 +28,14 @@ class WorkflowAnalytics {
   }
 
   /**
-   * Collect workflow metrics for analysis
+   * Collect workflow metrics for analysis.
+   *
+   * This function retrieves workflow runs from a specified repository for the last
+   * given number of days. It calculates the start and end dates, fetches the workflow
+   * runs using the Octokit API, and processes each run. After processing, it calculates
+   * trends, generates alerts, and recommendations based on the collected metrics.
+   *
+   * @param {number} [days=30] - The number of days to look back for workflow runs.
    */
   async collectMetrics (days = 30) {
     console.log(`📊 Collecting workflow metrics for the last ${days} days...`)
@@ -207,7 +214,12 @@ class WorkflowAnalytics {
   }
 
   /**
-   * Identify patterns in workflow behavior
+   * Identify patterns in workflow behavior.
+   *
+   * This function analyzes the runs of a workflow to detect time-based and branch-specific failure patterns. It calculates hourly and daily failure rates, identifying peak failure hours and branches with high failure rates. Recommendations are provided for addressing identified issues based on the analysis.
+   *
+   * @param workflow - An object containing the workflow runs to analyze.
+   * @returns An array of identified patterns, including temporal and branch-specific failure insights.
    */
   identifyPatterns (workflow) {
     const patterns = []
@@ -287,7 +299,11 @@ class WorkflowAnalytics {
   }
 
   /**
-   * Generate performance alerts
+   * Generate performance alerts.
+   *
+   * This function evaluates the success rates and performance trends of workflows to generate alerts based on predefined thresholds.
+   * It checks for critical and warning success rates, performance degradation, and long average durations, pushing relevant alerts
+   * into the metrics.alerts array with detailed messages, impacts, and recommended actions for each workflow.
    */
   generateAlerts () {
     console.log('🚨 Generating performance alerts...')
@@ -346,7 +362,11 @@ class WorkflowAnalytics {
   }
 
   /**
-   * Generate optimization recommendations
+   * Generate optimization recommendations based on workflow metrics.
+   *
+   * This function evaluates all workflows to provide recommendations for improving overall reliability, optimizing slow workflows, and addressing identified failure patterns. It calculates the overall success rate and generates high-priority recommendations if the rate is below 95%. Additionally, it identifies slow workflows and patterns to suggest specific actions for improvement.
+   *
+   * @returns {void}
    */
   generateRecommendations () {
     console.log('💡 Generating optimization recommendations...')
@@ -438,7 +458,11 @@ class WorkflowAnalytics {
   }
 
   /**
-   * Generate executive summary
+   * Generate executive summary.
+   *
+   * This function aggregates metrics from all workflows, calculating total runs, failures, and durations. It computes the overall success rate and average duration, while also counting alerts by level. Additionally, it identifies the top five failing workflows based on their failure rates.
+   *
+   * @returns An object containing the total number of workflows, total runs, overall success rate, total failures, average duration, total compute time, alert counts by level, and the top five failing workflows.
    */
   generateSummary () {
     const allWorkflows = Object.values(this.metrics.workflows)
@@ -480,7 +504,7 @@ class WorkflowAnalytics {
   }
 
   /**
-   * Save report to file
+   * Save report to a specified file or generate a default filename.
    */
   saveReport (filename) {
     const report = this.generateReport()
@@ -500,7 +524,9 @@ class WorkflowAnalytics {
   }
 
   /**
-   * Print summary to console
+   * Print a detailed summary of workflow analytics to the console.
+   *
+   * This function generates a summary using the generateSummary method and logs various metrics including total workflows, total runs, overall success rate, total failures, average duration, and total compute time. It also checks for alerts and top failing workflows, displaying them if present, along with key recommendations based on metrics.
    */
   printSummary () {
     const summary = this.generateSummary()
@@ -563,6 +589,15 @@ class WorkflowAnalytics {
 }
 
 // CLI interface
+/**
+ * Main function to execute the workflow analytics process.
+ *
+ * This function parses command line arguments to configure options for the analysis, including the GitHub token, repository details, days to analyze, and output file. It validates the required options and initializes the WorkflowAnalytics class to collect metrics, print a summary, and save the report. Errors during execution are caught and logged, terminating the process with an appropriate message.
+ *
+ * @param {string[]} args - Command line arguments passed to the script.
+ * @returns {Promise<void>} A promise that resolves when the analysis is complete.
+ * @throws Error If required options are missing or if an error occurs during analytics processing.
+ */
 async function main () {
   const args = process.argv.slice(2)
   const options = {}
