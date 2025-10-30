@@ -91,8 +91,8 @@ export function OfflineFirstDashboardContent() {
     <div className='flex flex-1 flex-col'>
       {/* Offline indicator banner */}
       <OfflineIndicator
-        showWhenOnline={true}
-        autoHide={true}
+        showWhenOnline
+        autoHide
         autoHideDelay={3000}
         variant='banner'
         position='top'
