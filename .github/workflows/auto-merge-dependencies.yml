@@ -1,4 +1,9 @@
 name: Auto-merge Dependencies
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  statuses: write
 'on':
   pull_request:
     types:
