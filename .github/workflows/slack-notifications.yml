@@ -386,6 +386,9 @@ jobs:
 
   send-security-alert:
     name: Send Security Alert
+    permissions:
+      issues: write
+      contents: read
     runs-on: ubuntu-latest
     needs: determine-notification-context
     if: |
