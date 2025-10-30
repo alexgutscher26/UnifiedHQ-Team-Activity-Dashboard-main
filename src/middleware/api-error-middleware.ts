@@ -4,6 +4,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ApiErrorType, createApiError } from '@/lib/api-error-handler';
 
 // Global error handler for API routes
+/**
+ * Handle API errors and return appropriate responses.
+ *
+ * This function logs the error details and determines the type of error based on the error message.
+ * It creates a structured API error response for various error types such as authentication, authorization,
+ * not found, validation, and generic server errors. If the error is unknown, a default internal server error
+ * response is generated.
+ *
+ * @param error - The error object that occurred during the API request.
+ * @param req - The NextRequest object representing the incoming request.
+ * @returns A NextResponse object containing the error details and appropriate HTTP status code.
+ */
 export function handleApiError(error: unknown, req: NextRequest): NextResponse {
   console.error('[API Middleware Error]', {
     error,
@@ -90,6 +102,9 @@ export function handleApiError(error: unknown, req: NextRequest): NextResponse {
 }
 
 // Request logging middleware
+/**
+ * Logs API request details in development mode.
+ */
 export function logApiRequest(req: NextRequest): void {
   if (process.env.NODE_ENV === 'development') {
     console.log('[API Request]', {
@@ -114,6 +129,16 @@ export function logApiResponse(res: NextResponse, req: NextRequest): void {
 }
 
 // Rate limiting middleware
+/**
+ * Checks if the API rate limit has been exceeded for a given request.
+ *
+ * This function implements a simple in-memory rate limiting mechanism based on the client's IP address.
+ * It retrieves the IP from the request headers, maintains a record of request timestamps, and enforces a limit
+ * of 100 requests within a 15-minute window. If the limit is reached, it returns false; otherwise, it updates
+ * the request log and returns true.
+ *
+ * @param req - The NextRequest object representing the incoming request.
+ */
 export function checkApiRateLimit(req: NextRequest): boolean {
   // Simple rate limiting based on IP
   const ip =
@@ -148,6 +173,15 @@ export function checkApiRateLimit(req: NextRequest): boolean {
 }
 
 // CORS middleware
+/**
+ * Handles CORS (Cross-Origin Resource Sharing) for incoming requests.
+ *
+ * This function checks the 'origin' header of the request against a list of allowed origins.
+ * If the origin is not in the allowed list, it returns a JSON response indicating a CORS policy violation with a 403 status.
+ * If the origin is valid or not present, it returns null, allowing the request to proceed.
+ *
+ * @param req - The incoming request of type NextRequest.
+ */
 export function handleCors(req: NextRequest): NextResponse | null {
   const origin = req.headers.get('origin');
   const allowedOrigins = [
@@ -166,6 +200,9 @@ export function handleCors(req: NextRequest): NextResponse | null {
 }
 
 // Security headers middleware
+/**
+ * Adds security headers to the response.
+ */
 export function addSecurityHeaders(res: NextResponse): NextResponse {
   res.headers.set('X-Content-Type-Options', 'nosniff');
   res.headers.set('X-Frame-Options', 'DENY');
@@ -183,6 +220,9 @@ export function addSecurityHeaders(res: NextResponse): NextResponse {
 }
 
 // Request ID middleware
+/**
+ * Adds a unique request ID to the response headers.
+ */
 export function addRequestId(res: NextResponse): NextResponse {
   const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   res.headers.set('X-Request-ID', requestId);
