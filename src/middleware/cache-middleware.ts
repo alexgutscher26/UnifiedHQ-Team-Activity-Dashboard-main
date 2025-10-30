@@ -201,7 +201,7 @@ function getCacheConfig(req: NextRequest): CacheConfig {
   // Check for content-type specific configuration
   const acceptHeader = req.headers.get('accept') || '';
   for (const [contentType, config] of Object.entries(DEFAULT_CACHE_CONFIGS)) {
-    if (acceptHeader.includes(contentType.replace('*', ''))) {
+    if (acceptHeader.includes(contentType.replace(/\*/g, ''))) {
       return config;
     }
   }
