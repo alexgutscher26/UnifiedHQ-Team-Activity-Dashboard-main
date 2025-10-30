@@ -788,6 +788,10 @@ jobs:
     if: failure() && needs.deploy-production.result == 'failure'
     runs-on: ubuntu-latest
     needs: [build-production-artifacts, deploy-production]
+    permissions:
+      contents: read
+      actions: write
+      issues: write
     environment:
       name: production-rollback
     steps:
