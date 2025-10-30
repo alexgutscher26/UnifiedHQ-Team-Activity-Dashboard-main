@@ -268,7 +268,7 @@ export class EdgeConfig {
   /**
    * Check if path should be cached
    */
-  static shouldCache(pathname: string, method: string = 'GET'): boolean {
+  static shouldCache(pathname: string, method = 'GET'): boolean {
     // Only cache GET requests
     if (method !== 'GET') {
       return false;
