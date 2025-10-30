@@ -35,7 +35,16 @@ class WorkflowTestRunner {
   }
 
   /**
-   * Run a script and capture output
+   * Run a script and capture output.
+   *
+   * This function constructs the full path of the script using the provided scriptName and the scriptsDir.
+   * It checks if the script exists, throwing an error if not. Upon execution, it logs the script name and
+   * arguments, then attempts to run the script using execSync. The output and any errors are captured and
+   * returned in a structured format, indicating success or failure.
+   *
+   * @param {string} scriptName - The name of the script to run.
+   * @param {Array} [args=[]] - The arguments to pass to the script.
+   * @param {Object} [options={}] - Options for script execution, including silent mode.
    */
   async runScript (scriptName, args = [], options = {}) {
     const scriptPath = join(this.scriptsDir, scriptName)
@@ -70,7 +79,9 @@ class WorkflowTestRunner {
   }
 
   /**
-   * Run workflow syntax validation
+   * Run workflow syntax validation.
+   *
+   * This function initiates the syntax validation process for workflows by executing the 'workflow-validate.js' script with specific arguments. It logs the results of the validation, including the total, valid, and invalid workflows. If the validation is successful, it updates the testResults with the validation data; otherwise, it logs an error message. The function handles JSON parsing of the validation output and returns a boolean indicating whether there are any invalid workflows.
    */
   async runSyntaxValidation () {
     console.log('\n📋 Step 1: Workflow Syntax Validation')
@@ -104,7 +115,9 @@ class WorkflowTestRunner {
   }
 
   /**
-   * Run requirements validation
+   * Run requirements validation.
+   *
+   * This function executes a script to validate workflow requirements and logs the results. It first runs the 'workflow-requirements-validator.js' script with specific arguments. If the script executes successfully, it parses the JSON output and updates the testResults with the validation data. The function checks if the pass rate meets a threshold of 80% and logs relevant information about the validation process.
    */
   async runRequirementsValidation () {
     console.log('\n📋 Step 2: Requirements Validation')
@@ -142,7 +155,12 @@ class WorkflowTestRunner {
   }
 
   /**
-   * Run workflow configuration tests
+   * Run workflow configuration tests.
+   *
+   * This function executes the workflow configuration tests by running a script named 'workflow-test.js' with specific arguments.
+   * It processes the results, logging the status of the tests and storing the configuration test results.
+   * If the tests are successful, it checks the validity of the workflows and returns a boolean indicating if there are any invalid workflows.
+   * In case of errors during execution or parsing, appropriate error messages are logged.
    */
   async runConfigurationTests () {
     console.log('\n📋 Step 3: Workflow Configuration Tests')
@@ -255,7 +273,11 @@ class WorkflowTestRunner {
   }
 
   /**
-   * Generate comprehensive test report
+   * Generate comprehensive test report.
+   *
+   * This function constructs a detailed report based on the results of various test validations. It calculates the number of passed steps by evaluating the results of syntax validation, requirements validation, configuration tests, and local tests. Additionally, it generates recommendations based on the outcomes of these tests to guide improvements.
+   *
+   * @returns An object containing the report with a timestamp, summary of test results, and recommendations for improvements.
    */
   generateReport () {
     const report = {
@@ -323,7 +345,7 @@ class WorkflowTestRunner {
   }
 
   /**
-   * Save report to file
+   * Saves a report to a specified file.
    */
   saveReport (report, filename = 'comprehensive-workflow-test-report.json') {
     this.ensureReportsDir()
@@ -340,7 +362,11 @@ class WorkflowTestRunner {
   }
 
   /**
-   * Print summary results
+   * Print summary results of the test report.
+   *
+   * This function logs a detailed summary of the test results, including overall success, steps passed, and recommendations if available. It also evaluates and displays the status of syntax validation, requirements validation, configuration tests, and local tests, providing visual indicators for each status.
+   *
+   * @param report - The test report object containing summary and test results.
    */
   printSummary (report) {
     console.log('\n🎯 Test Summary')

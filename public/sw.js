@@ -145,6 +145,16 @@ self.addEventListener('fetch', (event) => {
 })
 
 // Handle fetch requests with appropriate caching strategy
+/**
+ * Handle fetch requests with different strategies based on the request type.
+ *
+ * The function determines the type of request (API, static asset, or dynamic content) and applies the appropriate caching strategy.
+ * It utilizes the handleCachedRequest function to manage the requests and handles errors by returning an offline page for navigation requests or a network error response.
+ *
+ * @param request - The fetch request object containing the URL and other request details.
+ * @returns A Response object based on the request type and caching strategy.
+ * @throws Error If there is an issue during the fetch process.
+ */
 async function handleFetch (request) {
   const url = new URL(request.url)
 
@@ -192,6 +202,18 @@ async function handleCachedRequest (request, config) {
 }
 
 // Network First Strategy - Try network, fallback to cache
+/**
+ * Implements a network-first strategy for handling requests.
+ *
+ * The function attempts to fetch a response from the network, applying a timeout to avoid long waits.
+ * If the network request fails, it checks the cache for a valid response. If a cached response is found
+ * and is not expired, it returns that response; otherwise, it throws the original error.
+ *
+ * @param request - The request object to be fetched from the network.
+ * @param config - Configuration object containing cache name and network timeout settings.
+ * @returns The network response or a cached response if the network request fails.
+ * @throws Error If the network request fails and no valid cached response is available.
+ */
 async function networkFirstStrategy (request, config) {
   const cache = await caches.open(config.name)
   const timeoutMs = (config.networkTimeoutSeconds || 5) * 1000
@@ -272,6 +294,17 @@ async function staleWhileRevalidateStrategy (request, config) {
 }
 
 // Cache Only Strategy - Only return cached responses
+/**
+ * Retrieves a cached response for a given request using the specified configuration.
+ *
+ * This function opens a cache with the name provided in the config, then attempts to match
+ * the request against the cached responses. If a valid cached response is found and it is not
+ * expired (as determined by the isExpired function), that response is returned. If no valid
+ * cached response is available, an error is thrown.
+ *
+ * @param {Request} request - The request object to match against the cache.
+ * @param {Object} config - The configuration object containing cache settings.
+ */
 async function cacheOnlyStrategy (request, config) {
   const cache = await caches.open(config.name)
   const cachedResponse = await cache.match(request)
@@ -302,6 +335,9 @@ self.addEventListener('sync', (event) => {
 })
 
 // Handle background sync for offline actions
+/**
+ * Handles background synchronization for offline actions.
+ */
 async function handleBackgroundSync () {
   try {
     console.log('[SW] Starting background sync for offline actions')
@@ -410,6 +446,14 @@ self.addEventListener('message', (event) => {
 })
 
 // Clear specific cache or all caches
+/**
+ * Clears the specified cache or all caches if no name is provided.
+ *
+ * The function checks if a cacheName is provided. If it is, it deletes the specific cache associated with that name.
+ * If no cacheName is given, it retrieves all cache names and deletes each one using Promise.all to handle the deletions concurrently.
+ *
+ * @param {string} cacheName - The name of the cache to be deleted. If not provided, all caches will be cleared.
+ */
 async function clearCache (cacheName) {
   if (cacheName) {
     return await caches.delete(cacheName)
@@ -422,6 +466,15 @@ async function clearCache (cacheName) {
 }
 
 // Get cache statistics
+/**
+ * Retrieve statistics for all caches defined in CACHE_CONFIGS.
+ *
+ * The function iterates over each cache configuration, opens the corresponding cache, and calculates the total size of all cached responses.
+ * It collects the cache name, total size, number of entries, and configuration details into an array.
+ * Errors during cache access are logged to the console but do not interrupt the process for other caches.
+ *
+ * @returns An array of objects containing cache statistics, including name, size, entries, and config.
+ */
 async function getCacheStats () {
   const stats = []
 
@@ -456,6 +509,16 @@ async function getCacheStats () {
 // Cache management utilities
 
 // Put response in cache with timestamp and cleanup
+/**
+ * Caches a successful response with a timestamp for expiration tracking.
+ *
+ * This function checks if the response is successful before caching it. If successful, it creates a new response object that includes a timestamp header. The response is then stored in the cache using the provided request. Finally, it calls the cleanupCache function to remove old entries based on the provided config.
+ *
+ * @param {Cache} cache - The cache object where the response will be stored.
+ * @param {Request} request - The request object associated with the response.
+ * @param {Response} response - The response object to be cached.
+ * @param {Object} config - Configuration object for cache cleanup.
+ */
 async function putInCache (cache, request, response, config) {
   // Don't cache non-successful responses
   if (!response.ok) {
@@ -479,6 +542,16 @@ async function putInCache (cache, request, response, config) {
 }
 
 // Check if cached response is expired
+/**
+ * Checks if a cached response has expired based on the provided configuration.
+ *
+ * The function first verifies if a maximum age is specified in the config. If not, it assumes the response is not expired.
+ * It then retrieves the cached timestamp from the response headers. If the timestamp is absent, the function assumes the response is expired.
+ * Finally, it calculates the age of the cache and compares it to the maximum age to determine if the response is expired.
+ *
+ * @param {Response} response - The response object containing headers to check for cache information.
+ * @param {Object} config - Configuration object containing the maxAgeSeconds property.
+ */
 function isExpired (response, config) {
   if (!config.maxAgeSeconds) {
     return false
@@ -494,6 +567,14 @@ function isExpired (response, config) {
 }
 
 // Cleanup cache based on size and age limits
+/**
+ * Cleans up the cache by removing expired entries and oldest entries if limits are exceeded.
+ *
+ * The function first checks if there are any constraints on max entries or max age. If so, it retrieves all cache keys and removes entries that are expired based on the provided configuration. If the number of remaining entries exceeds the maxEntries limit, it sorts the entries by their timestamp and deletes the oldest ones until the limit is met.
+ *
+ * @param cache - The cache object to be cleaned up.
+ * @param config - Configuration object containing maxEntries and maxAgeSeconds.
+ */
 async function cleanupCache (cache, config) {
   if (!config.maxEntries && !config.maxAgeSeconds) {
     return
@@ -538,6 +619,13 @@ async function cleanupCache (cache, config) {
 }
 
 // Get storage quota information
+/**
+ * Retrieves storage information from the browser's storage API.
+ *
+ * This function checks if the browser supports the storage API and if the estimate method is available.
+ * If so, it retrieves the storage estimate, returning an object containing the quota, usage, and available space.
+ * If the storage API is not supported, it returns an object with all values set to zero.
+ */
 async function getStorageInfo () {
   if ('storage' in navigator && 'estimate' in navigator.storage) {
     const estimate = await navigator.storage.estimate()
