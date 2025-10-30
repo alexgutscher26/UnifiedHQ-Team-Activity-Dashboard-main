@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { WifiOff, RefreshCw, Home, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { safeLogger, sanitizeError } from '@/lib/safe-logger';
 
 export default function OfflinePage() {
   const [lastUpdated, setLastUpdated] = useState<string>('');
@@ -37,7 +38,7 @@ export default function OfflinePage() {
       }
     } catch (error) {
       // Still offline or fetch failed
-      console.log('Connection check failed:', error);
+      safeLogger.log('Connection check failed:', sanitizeError(error));
     } finally {
       setIsCheckingConnection(false);
     }
@@ -65,7 +66,8 @@ export default function OfflinePage() {
     return () => {
       window.removeEventListener('online', handleOnline);
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array is intentional - we only want this to run once
 
   return (
     <div className='min-h-screen bg-background flex items-center justify-center p-4'>
@@ -136,52 +138,7 @@ export default function OfflinePage() {
         </div>
       </div>
 
-      {/* Auto-refresh script */}
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            // Update last updated time
-            function updateLastUpdated() {
-              const element = document.getElementById('last-updated');
-              if (element) {
-                element.textContent = new Date().toLocaleString();
-              }
-            }
-            
-            // Check connection periodically
-            function checkConnection() {
-              if (navigator.onLine) {
-                // Try to fetch a small resource to verify connectivity
-                fetch('/api/health', { 
-                  method: 'HEAD',
-                  cache: 'no-cache'
-                })
-                .then(() => {
-                  // Connection restored, redirect to home
-                  window.location.href = '/';
-                })
-                .catch(() => {
-                  // Still offline, continue checking
-                  setTimeout(checkConnection, 5000);
-                });
-              } else {
-                setTimeout(checkConnection, 5000);
-              }
-            }
-            
-            // Initialize
-            updateLastUpdated();
-            checkConnection();
-            
-            // Listen for online events
-            window.addEventListener('online', () => {
-              setTimeout(() => {
-                window.location.href = '/';
-              }, 1000);
-            });
-          `,
-        }}
-      />
+
     </div>
   );
 }
