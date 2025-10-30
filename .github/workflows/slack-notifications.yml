@@ -108,7 +108,9 @@ jobs:
                   echo "notification-emoji=❌" >> $GITHUB_OUTPUT
                   echo "notification-priority=high" >> $GITHUB_OUTPUT
                   echo "should-notify=true" >> $GITHUB_OUTPUT
-                elif [[ "$WORKFLOW_CONCLUSION" == "success" && "${{ github.event.workflow_run.head_branch }}" == "main" ]]; then
+                # Assign head_branch to shell variable to prevent code injection
+                HEAD_BRANCH="${{ github.event.workflow_run.head_branch }}"
+                elif [[ "$WORKFLOW_CONCLUSION" == "success" && "$HEAD_BRANCH" == "main" ]]; then
                   echo "notification-channel=dev-notifications" >> $GITHUB_OUTPUT
                   echo "notification-color=good" >> $GITHUB_OUTPUT
                   echo "notification-emoji=✅" >> $GITHUB_OUTPUT
