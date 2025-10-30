@@ -129,7 +129,7 @@ class CacheDeploymentMonitor {
   /**
    * Analyze check results and generate alerts.
    *
-   * This function evaluates the checkResult object for various conditions, including request success, response time, overall health status, and individual service health. Based on these evaluations, it generates alerts with appropriate severity levels and messages, which are then logged and stored in the alerts collection.
+   * This function evaluates the checkResult object for various conditions, including request success, response time, overall health status, and individual service health. Based on these evaluations, it generates alerts with appropriate severity levels and messages, which are then logged and stored in the alerts collection. Alerts are created for errors, performance issues, and unhealthy services, and are displayed immediately.
    *
    * @param checkResult - An object containing the results of the health check, including success status, response time, and health data.
    */
