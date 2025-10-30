@@ -32,7 +32,7 @@ export class MemoryMeasurement {
   }
 
   /**
-   * Record current memory usage
+   * Records the current memory usage.
    */
   recordMeasurement(): void {
     const memory = process.memoryUsage();
@@ -44,7 +44,7 @@ export class MemoryMeasurement {
   }
 
   /**
-   * Get current memory usage in MB
+   * Get current memory usage in MB.
    */
   getCurrentMemoryUsage(): number {
     const memory = process.memoryUsage();
@@ -52,7 +52,7 @@ export class MemoryMeasurement {
   }
 
   /**
-   * Get memory usage difference from start
+   * Get memory usage difference in megabytes from the start.
    */
   getMemoryDifference(): number {
     const current = process.memoryUsage();
@@ -74,7 +74,7 @@ export class MemoryMeasurement {
   }
 
   /**
-   * Get all measurements
+   * Retrieves all measurements.
    */
   getMeasurements(): Array<{
     timestamp: number;
@@ -85,7 +85,7 @@ export class MemoryMeasurement {
   }
 
   /**
-   * Reset measurements
+   * Resets measurements and records a new measurement.
    */
   reset(): void {
     this.startTime = performance.now();
@@ -95,7 +95,7 @@ export class MemoryMeasurement {
   }
 
   /**
-   * Force garbage collection if available
+   * Forces garbage collection if available.
    */
   forceGC(): void {
     if (global.gc) {
@@ -114,7 +114,7 @@ export class MemoryLeakSimulator {
   private leakCounter = 0;
 
   /**
-   * Simulate event listener leak
+   * Simulate event listener leak.
    */
 <<<<<<< HEAD
   simulateEventListenerLeak(count: number = 1): string {
@@ -143,7 +143,7 @@ export class MemoryLeakSimulator {
   }
 
   /**
-   * Simulate interval leak
+   * Simulate interval leak by creating multiple intervals that accumulate memory.
    */
 <<<<<<< HEAD
   simulateIntervalLeak(intervalMs: number = 1000, count: number = 1): string {
@@ -167,7 +167,7 @@ export class MemoryLeakSimulator {
   }
 
   /**
-   * Simulate timeout leak
+   * Simulate a timeout leak by creating multiple timeouts.
    */
 <<<<<<< HEAD
   simulateTimeoutLeak(timeoutMs: number = 5000, count: number = 1): string {
@@ -192,7 +192,7 @@ export class MemoryLeakSimulator {
   }
 
   /**
-   * Simulate subscription leak
+   * Simulate subscription leak.
    */
 <<<<<<< HEAD
   simulateSubscriptionLeak(count: number = 1): string {
@@ -225,7 +225,7 @@ export class MemoryLeakSimulator {
   }
 
   /**
-   * Simulate memory accumulation leak
+   * Simulate a memory accumulation leak and return its identifier.
    */
 <<<<<<< HEAD
   simulateMemoryAccumulation(sizeKB: number = 1024): string {
@@ -240,7 +240,7 @@ export class MemoryLeakSimulator {
   }
 
   /**
-   * Simulate circular reference leak
+   * Simulates a circular reference leak and returns a unique leak identifier.
    */
   simulateCircularReference(): string {
     const leakId = `circular-${++this.leakCounter}`;
@@ -261,7 +261,12 @@ export class MemoryLeakSimulator {
   }
 
   /**
-   * Clean up a specific leak
+   * Clean up a specific leak identified by its ID.
+   *
+   * The function retrieves the leak from activeLeaks using the provided leakId. Depending on the type of leak, it performs various cleanup operations such as removing event listeners, clearing intervals and timeouts, unsubscribing from subscriptions, and breaking circular references. After cleanup, the leak is removed from activeLeaks. If an error occurs during the process, it logs the error and returns false.
+   *
+   * @param leakId - The identifier of the leak to be cleaned up.
+   * @returns A boolean indicating whether the cleanup was successful.
    */
   cleanupLeak(leakId: string): boolean {
     const leak = this.activeLeaks.get(leakId);
@@ -307,7 +312,7 @@ export class MemoryLeakSimulator {
   }
 
   /**
-   * Clean up all active leaks
+   * Cleans up all active leaks.
    */
   cleanupAllLeaks(): void {
     const leakIds = Array.from(this.activeLeaks.keys());
@@ -322,7 +327,7 @@ export class MemoryLeakSimulator {
   }
 
   /**
-   * Get active leak types
+   * Retrieves the count of active leak types.
    */
   getActiveLeakTypes(): Record<string, number> {
     const types: Record<string, number> = {};
@@ -344,7 +349,12 @@ export class MemoryLeakValidator {
   }
 
   /**
-   * Validate detection accuracy against known leaks
+   * Validate detection accuracy against known leaks.
+   *
+   * This function processes an array of test cases, writing each test case's code to a temporary file, and then uses a detector to scan the file for leaks. It calculates true positives, false positives, and false negatives based on the expected and detected leaks, accumulating results for each test case. Finally, it computes the overall accuracy and returns the metrics along with the detailed results.
+   *
+   * @param testCases - An array of test cases, each containing the code, expected leaks, and file name.
+   * @returns An object containing accuracy metrics, including true positives, false positives, false negatives, and detailed results for each test case.
    */
   async validateDetectionAccuracy(
     testCases: Array<{
@@ -433,7 +443,18 @@ export class MemoryLeakValidator {
   }
 
   /**
-   * Validate fix effectiveness
+   * Validate the effectiveness of code fixes by scanning for leaks.
+   *
+   * This function writes the original code to a temporary file, scans for leaks, applies the provided fixes,
+   * and then scans the fixed code for remaining leaks. It calculates the effectiveness of the fixes
+   * based on the number of leaks fixed and checks for any new issues introduced. Finally, it cleans up
+   * the temporary files created during the process.
+   *
+   * @param originalCode - The original code as a string to be validated.
+   * @param fixes - An array of Fix objects containing original and fixed code snippets.
+   * @param fileName - The name of the file being processed, used for temporary file creation.
+   * @returns A promise that resolves to an object containing the number of fixes applied,
+   *          remaining leaks, new issues introduced, and the effectiveness ratio.
    */
   async validateFixEffectiveness(
     originalCode: string,
@@ -576,7 +597,14 @@ export class MemoryLeakValidator {
 // Test helper utilities
 export class TestHelpers {
   /**
-   * Create a test component with known memory leaks
+   * Create a test component with known memory leaks.
+   *
+   * This function generates a React component that demonstrates various types of memory leaks based on the provided leakTypes.
+   * It constructs the component body by adding specific leak patterns, such as missing cleanup for useEffect, uncleaned event listeners,
+   * and unclosed resources. The final component is returned as a string, ready for export.
+   *
+   * @param leakTypes - An array of LeakType indicating the types of memory leaks to include in the component.
+   * @returns A string representation of the LeakyComponent with the specified memory leaks.
    */
   static createLeakyComponent(leakTypes: LeakType[]): string {
     const imports = `import React, { useEffect, useState } from 'react';`;
@@ -696,14 +724,23 @@ export default CleanComponent;
   }
 
   /**
-   * Wait for a specified duration
+   * Wait for a specified duration.
    */
   static async wait(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   /**
-   * Run a function multiple times and collect results
+   * Run a function multiple times and collect results.
+   *
+   * This method executes the provided asynchronous function `fn` a specified number of times,
+   * optionally introducing a delay between each execution. The results of each execution are
+   * collected in an array and returned. If a delay is specified, it will only be applied
+   * after the first execution.
+   *
+   * @param fn - The asynchronous function to be executed.
+   * @param times - The number of times to execute the function.
+   * @param delayMs - The delay in milliseconds between executions (default is 0).
    */
   static async runMultipleTimes<T>(
     fn: () => Promise<T>,
@@ -727,7 +764,13 @@ export default CleanComponent;
   }
 
   /**
-   * Calculate statistics from an array of numbers
+   * Calculate statistics from an array of numbers.
+   *
+   * This function computes the minimum, maximum, mean, median, and standard deviation of the provided array of numbers.
+   * It first checks if the array is empty and returns default values if so. Then, it sorts the array to determine the min, max, and median values.
+   * The mean is calculated using the reduce method, and the standard deviation is derived from the variance of the values.
+   *
+   * @param values - An array of numbers for which statistics are to be calculated.
    */
   static calculateStats(values: number[]): {
     min: number;
