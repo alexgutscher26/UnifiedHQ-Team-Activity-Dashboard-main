@@ -60,10 +60,10 @@ const inputGroupAddonVariants = cva(
 );
 
 /**
- * Renders an input group addon component.
+ * Renders an input group addon component with optional click handling.
  *
  * This component creates an accessible addon for input groups, allowing for alignment and additional props.
- * It can optionally handle click events to focus on the nearest input element unless the click originated from a button within the group.
+ * It handles click events to focus on the nearest input element unless the click originated from a button within the group.
  * The alignment can be customized through the `align` prop, and additional class names can be provided via `className`.
  *
  * @param {Object} props - The properties for the component.
@@ -88,6 +88,15 @@ function InputGroupAddon({
     e.currentTarget.parentElement?.querySelector('input')?.focus();
   };
 
+  /**
+   * Handles the key down event for a div element.
+   *
+   * This function checks if the pressed key is either 'Enter' or ' '. If so, it prevents the default action.
+   * It then verifies if the event target is a button; if it is, the function exits early.
+   * Otherwise, it focuses on the first input element found within the parent of the current target.
+   *
+   * @param e - The keyboard event triggered by the user.
+   */
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
