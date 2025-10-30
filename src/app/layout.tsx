@@ -15,6 +15,7 @@ import { ServiceWorkerProvider } from '@/components/service-worker-provider';
 import { NetworkStatusProvider } from '@/contexts/network-status-context';
 import { OfflineProvider } from '@/contexts/offline-context';
 import { OfflineBanner } from '@/components/offline-indicator';
+import { CacheChecker } from '@/components/cache-checker';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -68,6 +69,7 @@ export default function RootLayout({
             <ServiceWorkerProvider>
               <NetworkStatusProvider>
                 <OfflineProvider>
+                  <CacheChecker />
                   <OfflineBanner showWhenOnline />
                   <GlobalErrorBoundary>
                     <Suspense fallback={<LoadingScreen />}>{children}</Suspense>

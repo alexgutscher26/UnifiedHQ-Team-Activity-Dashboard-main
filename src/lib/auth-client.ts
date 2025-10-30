@@ -138,7 +138,7 @@ class ToastManager {
   ) {
     if (this.isDestroyed) return '';
 
-    const id = `toast_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = `toast_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
     const toast = { id, message, type, duration };
 
     this.toasts.push(toast);
@@ -226,7 +226,7 @@ if (typeof window !== 'undefined') {
 export const authClient = createAuthClient({
   baseURL:
     process.env.NODE_ENV === 'production'
-      ? 'https://your-domain.com'
+      ? 'https://unififedhq.com'
       : 'http://localhost:3000',
   plugins: [multiSessionClient(), lastLoginMethodClient()],
   fetchOptions: {

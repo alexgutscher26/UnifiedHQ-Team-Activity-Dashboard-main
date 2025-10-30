@@ -1,7 +1,7 @@
 // Tests for Cache Configuration System
 // Validates environment-specific cache configurations
 
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { CacheConfig } from '../cache-config';
 
 describe('CacheConfig', () => {
@@ -15,16 +15,16 @@ describe('CacheConfig', () => {
 
   afterEach(() => {
     if (originalEnv !== undefined) {
-      process.env.NODE_ENV = originalEnv;
+      (process.env as any).NODE_ENV = originalEnv;
     } else {
-      delete process.env.NODE_ENV;
+      delete (process.env as any).NODE_ENV;
     }
     CacheConfig.resetConfig();
   });
 
   describe('Environment Configuration', () => {
     it('should load development configuration', () => {
-      process.env.NODE_ENV = 'development';
+      (process.env as any).NODE_ENV = 'development';
 
       const config = CacheConfig.getConfig();
 
@@ -35,7 +35,7 @@ describe('CacheConfig', () => {
     });
 
     it('should load production configuration', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
 
       const config = CacheConfig.getConfig();
 
@@ -46,7 +46,7 @@ describe('CacheConfig', () => {
     });
 
     it('should load staging configuration', () => {
-      process.env.NODE_ENV = 'staging';
+      (process.env as any).NODE_ENV = 'staging';
 
       const config = CacheConfig.getConfig();
 
@@ -57,7 +57,7 @@ describe('CacheConfig', () => {
     });
 
     it('should load test configuration', () => {
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       const config = CacheConfig.getConfig();
 
@@ -68,7 +68,7 @@ describe('CacheConfig', () => {
     });
 
     it('should default to development for unknown environment', () => {
-      process.env.NODE_ENV = 'unknown';
+      (process.env as any).NODE_ENV = 'unknown';
 
       const config = CacheConfig.getConfig();
 
@@ -80,7 +80,7 @@ describe('CacheConfig', () => {
   describe('Redis Configuration', () => {
     it('should use environment variable for Redis URL', () => {
       process.env.REDIS_URL = 'redis://custom:6379';
-      process.env.NODE_ENV = 'development';
+      (process.env as any).NODE_ENV = 'development';
 
       const redisConfig = CacheConfig.getRedisConfig();
 
@@ -107,7 +107,7 @@ describe('CacheConfig', () => {
 
   describe('CDN Configuration', () => {
     it('should enable CDN in production', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
 
       const cdnConfig = CacheConfig.getCDNConfig();
 
@@ -117,7 +117,7 @@ describe('CacheConfig', () => {
     });
 
     it('should disable CDN in development', () => {
-      process.env.NODE_ENV = 'development';
+      (process.env as any).NODE_ENV = 'development';
 
       const cdnConfig = CacheConfig.getCDNConfig();
 
@@ -125,7 +125,7 @@ describe('CacheConfig', () => {
     });
 
     it('should include global regions in production', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
 
       const cdnConfig = CacheConfig.getCDNConfig();
 
@@ -193,7 +193,7 @@ describe('CacheConfig', () => {
     });
 
     it('should enable conflict resolution when background sync is enabled', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
 
       const featureFlags = CacheConfig.getFeatureFlags();
 
@@ -224,10 +224,10 @@ describe('CacheConfig', () => {
     });
 
     it('should adjust TTL based on environment', () => {
-      process.env.NODE_ENV = 'development';
+      (process.env as any).NODE_ENV = 'development';
       const devTTL = CacheConfig.getCacheTTL();
 
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
       CacheConfig.resetConfig();
       const prodTTL = CacheConfig.getCacheTTL();
 
@@ -238,7 +238,7 @@ describe('CacheConfig', () => {
 
   describe('Configuration Validation', () => {
     it('should validate valid configuration', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
       process.env.REDIS_URL = 'redis://localhost:6379';
 
       const validation = CacheConfig.validateConfig();
@@ -278,7 +278,7 @@ describe('CacheConfig', () => {
 
   describe('Environment Variable Integration', () => {
     it('should respect REDIS_CLUSTER_ENABLED environment variable', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
       process.env.REDIS_CLUSTER_ENABLED = 'true';
       process.env.REDIS_CLUSTER_NODES = 'node1:6379,node2:6379';
 
@@ -290,7 +290,7 @@ describe('CacheConfig', () => {
     });
 
     it('should respect feature flag environment variables', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
       process.env.ENABLE_CACHE_WARMING = 'false';
 
       CacheConfig.resetConfig();

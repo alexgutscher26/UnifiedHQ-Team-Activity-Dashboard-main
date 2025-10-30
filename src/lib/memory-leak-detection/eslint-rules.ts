@@ -15,7 +15,6 @@ export const useEffectCleanupRule = ESLintUtils.RuleCreator(
     docs: {
       description:
         'Require cleanup functions in useEffect hooks that add event listeners, intervals, or subscriptions',
-      recommended: 'error',
     },
     fixable: 'code',
     schema: [
@@ -60,7 +59,7 @@ export const useEffectCleanupRule = ESLintUtils.RuleCreator(
       );
     }
 
-    function hasCleanupFunction(effectCallback: TSESTree.Function): boolean {
+    function hasCleanupFunction(effectCallback: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression): boolean {
       if (effectCallback.body.type !== 'BlockStatement') {
         return false;
       }
@@ -72,7 +71,7 @@ export const useEffectCleanupRule = ESLintUtils.RuleCreator(
       );
     }
 
-    function findSideEffects(effectCallback: TSESTree.Function): Array<{
+    function findSideEffects(effectCallback: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression): Array<{
       type: 'interval' | 'timeout' | 'eventListener' | 'subscription';
       node: TSESTree.Node;
     }> {
@@ -259,7 +258,6 @@ export const eventListenerCleanupRule = ESLintUtils.RuleCreator(
     docs: {
       description:
         'Require removeEventListener for every addEventListener call',
-      recommended: 'error',
     },
     fixable: 'code',
     schema: [],
@@ -313,7 +311,6 @@ export const intervalTimeoutCleanupRule = ESLintUtils.RuleCreator(
     docs: {
       description:
         'Require clearInterval/clearTimeout for every setInterval/setTimeout call',
-      recommended: 'error',
     },
     fixable: 'code',
     schema: [],
@@ -380,7 +377,6 @@ export const subscriptionCleanupRule = ESLintUtils.RuleCreator(
     docs: {
       description:
         'Require unsubscribe/close for subscriptions and connections',
-      recommended: 'error',
     },
     fixable: 'code',
     schema: [],

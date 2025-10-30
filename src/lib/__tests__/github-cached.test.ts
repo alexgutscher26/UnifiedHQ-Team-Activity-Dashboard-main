@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, test, expect } from '@jest/globals';
 
 describe('GitHub Cache Integration', () => {
   test('should import GitHubCacheManager without errors', async () => {

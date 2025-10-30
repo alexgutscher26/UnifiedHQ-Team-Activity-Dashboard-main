@@ -3,11 +3,11 @@
  * Monitors cache system health and performance during and after deployment
  */
 
-const fs = require('fs')
-const path = require('path')
+const fs = require('fs');
+const path = require('path');
 
 class CacheDeploymentMonitor {
-  constructor (options = {}) {
+  constructor(options = {}) {
     this.config = {
       healthEndpoint: options.healthEndpoint || '/api/health/cache',
       baseUrl:
@@ -19,14 +19,14 @@ class CacheDeploymentMonitor {
       alertThresholds: {
         responseTime: options.responseTimeThreshold || 2000, // 2 seconds
         errorRate: options.errorRateThreshold || 5, // 5%
-        unhealthyServices: options.unhealthyServicesThreshold || 1
+        unhealthyServices: options.unhealthyServicesThreshold || 1,
       },
-      ...options
-    }
+      ...options,
+    };
 
-    this.checks = []
-    this.alerts = []
-    this.isRunning = false
+    this.checks = [];
+    this.alerts = [];
+    this.isRunning = false;
   }
 
   /**
@@ -34,50 +34,50 @@ class CacheDeploymentMonitor {
    *
    * This function initiates the monitoring process for cache deployment by logging the monitoring details, including the endpoint and check interval. It enters a loop that performs health checks up to a maximum number of checks defined in the configuration. After each check, it analyzes the results, displays the current status, and waits for the specified interval before the next check. Once monitoring is complete, it generates and logs a final report.
    */
-  async startMonitoring () {
-    console.log('🚀 Starting cache deployment monitoring...')
+  async startMonitoring() {
+    console.log('🚀 Starting cache deployment monitoring...');
     console.log(
       `📊 Monitoring endpoint: ${this.config.baseUrl}${this.config.healthEndpoint}`
-    )
-    console.log(`⏱️  Check interval: ${this.config.checkInterval / 1000}s`)
-    console.log(`🔄 Max checks: ${this.config.maxChecks}`)
-    console.log('')
+    );
+    console.log(`⏱️  Check interval: ${this.config.checkInterval / 1000}s`);
+    console.log(`🔄 Max checks: ${this.config.maxChecks}`);
+    console.log('');
 
-    this.isRunning = true
-    let checkCount = 0
+    this.isRunning = true;
+    let checkCount = 0;
 
     while (this.isRunning && checkCount < this.config.maxChecks) {
-      checkCount++
-      console.log(`🔍 Health check ${checkCount}/${this.config.maxChecks}...`)
+      checkCount++;
+      console.log(`🔍 Health check ${checkCount}/${this.config.maxChecks}...`);
 
-      const checkResult = await this.performHealthCheck()
-      this.checks.push(checkResult)
+      const checkResult = await this.performHealthCheck();
+      this.checks.push(checkResult);
 
       // Analyze results and generate alerts
-      this.analyzeResults(checkResult)
+      this.analyzeResults(checkResult);
 
       // Display current status
-      this.displayStatus(checkResult, checkCount)
+      this.displayStatus(checkResult, checkCount);
 
       // Wait for next check (unless it's the last one)
       if (checkCount < this.config.maxChecks && this.isRunning) {
-        await this.sleep(this.config.checkInterval)
+        await this.sleep(this.config.checkInterval);
       }
     }
 
     // Generate final report
-    const report = this.generateReport()
-    console.log('\n📋 Monitoring complete. Generating report...')
+    const report = this.generateReport();
+    console.log('\n📋 Monitoring complete. Generating report...');
 
-    return report
+    return report;
   }
 
   /**
    * Stop monitoring
    */
-  stopMonitoring () {
-    console.log('\n⏹️  Stopping monitoring...')
-    this.isRunning = false
+  stopMonitoring() {
+    console.log('\n⏹️  Stopping monitoring...');
+    this.isRunning = false;
   }
 
   /**
@@ -88,8 +88,8 @@ class CacheDeploymentMonitor {
    * response time, HTTP status code, response data, and any error message if the request fails.
    * The function handles both successful and failed requests, ensuring that relevant information is captured.
    */
-  async performHealthCheck () {
-    const startTime = Date.now()
+  async performHealthCheck() {
+    const startTime = Date.now();
 
     try {
       const response = await fetch(
@@ -97,14 +97,14 @@ class CacheDeploymentMonitor {
         {
           method: 'GET',
           headers: {
-            'User-Agent': 'UnifiedHQ-DeploymentMonitor/1.0'
+            'User-Agent': 'UnifiedHQ-DeploymentMonitor/1.0',
           },
-          timeout: 10000 // 10 second timeout
+          timeout: 10000, // 10 second timeout
         }
-      )
+      );
 
-      const responseTime = Date.now() - startTime
-      const data = await response.json()
+      const responseTime = Date.now() - startTime;
+      const data = await response.json();
 
       return {
         timestamp: new Date().toISOString(),
@@ -112,8 +112,8 @@ class CacheDeploymentMonitor {
         responseTime,
         statusCode: response.status,
         data,
-        error: null
-      }
+        error: null,
+      };
     } catch (error) {
       return {
         timestamp: new Date().toISOString(),
@@ -121,8 +121,8 @@ class CacheDeploymentMonitor {
         responseTime: Date.now() - startTime,
         statusCode: null,
         data: null,
-        error: error.message
-      }
+        error: error.message,
+      };
     }
   }
 
@@ -133,8 +133,8 @@ class CacheDeploymentMonitor {
    *
    * @param checkResult - An object containing the results of the health check, including success status, response time, and health data.
    */
-  analyzeResults (checkResult) {
-    const alerts = []
+  analyzeResults(checkResult) {
+    const alerts = [];
 
     // Check if request failed
     if (!checkResult.success) {
@@ -142,8 +142,8 @@ class CacheDeploymentMonitor {
         type: 'error',
         severity: 'high',
         message: `Health check failed: ${checkResult.error}`,
-        timestamp: checkResult.timestamp
-      })
+        timestamp: checkResult.timestamp,
+      });
     }
 
     // Check response time
@@ -152,8 +152,8 @@ class CacheDeploymentMonitor {
         type: 'performance',
         severity: 'medium',
         message: `Slow response time: ${checkResult.responseTime}ms (threshold: ${this.config.alertThresholds.responseTime}ms)`,
-        timestamp: checkResult.timestamp
-      })
+        timestamp: checkResult.timestamp,
+      });
     }
 
     // Check overall health status
@@ -162,15 +162,15 @@ class CacheDeploymentMonitor {
         type: 'health',
         severity: checkResult.data.overall === 'unhealthy' ? 'high' : 'medium',
         message: `System health is ${checkResult.data.overall}`,
-        timestamp: checkResult.timestamp
-      })
+        timestamp: checkResult.timestamp,
+      });
     }
 
     // Check individual service health
     if (checkResult.data?.checks) {
       const unhealthyServices = checkResult.data.checks.filter(
         c => c.status === 'unhealthy'
-      )
+      );
       if (
         unhealthyServices.length >=
         this.config.alertThresholds.unhealthyServices
@@ -179,13 +179,13 @@ class CacheDeploymentMonitor {
           type: 'service',
           severity: 'high',
           message: `${unhealthyServices.length} unhealthy services: ${unhealthyServices.map(s => s.service).join(', ')}`,
-          timestamp: checkResult.timestamp
-        })
+          timestamp: checkResult.timestamp,
+        });
       }
     }
 
     // Add alerts to collection
-    this.alerts.push(...alerts)
+    this.alerts.push(...alerts);
 
     // Display alerts immediately
     alerts.forEach(alert => {
@@ -194,9 +194,9 @@ class CacheDeploymentMonitor {
           ? '🚨'
           : alert.severity === 'medium'
             ? '⚠️'
-            : 'ℹ️'
-      console.log(`   ${icon} ${alert.type.toUpperCase()}: ${alert.message}`)
-    })
+            : 'ℹ️';
+      console.log(`   ${icon} ${alert.type.toUpperCase()}: ${alert.message}`);
+    });
   }
 
   /**
@@ -210,52 +210,52 @@ class CacheDeploymentMonitor {
    * @param {Object} checkResult - The result of the health check containing success status, data, and response time.
    * @param {number} checkCount - The count of checks performed.
    */
-  displayStatus (checkResult, checkCount) {
+  displayStatus(checkResult, checkCount) {
     if (checkResult.success) {
-      const status = checkResult.data?.overall || 'unknown'
-      const responseTime = checkResult.responseTime
+      const status = checkResult.data?.overall || 'unknown';
+      const responseTime = checkResult.responseTime;
       const statusIcon =
-        status === 'healthy' ? '✅' : status === 'degraded' ? '⚠️' : '❌'
+        status === 'healthy' ? '✅' : status === 'degraded' ? '⚠️' : '❌';
 
-      console.log(`   ${statusIcon} Status: ${status} (${responseTime}ms)`)
+      console.log(`   ${statusIcon} Status: ${status} (${responseTime}ms)`);
 
       if (checkResult.data?.summary) {
         const { healthy, degraded, unhealthy, total } =
-          checkResult.data.summary
+          checkResult.data.summary;
         console.log(
           `   📊 Services: ${healthy} healthy, ${degraded} degraded, ${unhealthy} unhealthy (${total} total)`
-        )
+        );
       }
     } else {
-      console.log(`   ❌ Check failed: ${checkResult.error}`)
+      console.log(`   ❌ Check failed: ${checkResult.error}`);
     }
 
-    console.log('')
+    console.log('');
   }
 
   /**
    * Calculate the error rate from recent checks.
    */
-  calculateErrorRate (recentChecks = 5) {
-    const recent = this.checks.slice(-recentChecks)
-    if (recent.length === 0) return 0
+  calculateErrorRate(recentChecks = 5) {
+    const recent = this.checks.slice(-recentChecks);
+    if (recent.length === 0) return 0;
 
-    const errors = recent.filter(check => !check.success).length
-    return (errors / recent.length) * 100
+    const errors = recent.filter(check => !check.success).length;
+    return (errors / recent.length) * 100;
   }
 
   /**
    * Calculates the average response time from the most recent checks.
    */
-  calculateAverageResponseTime (recentChecks = 5) {
-    const recent = this.checks.slice(-recentChecks)
-    if (recent.length === 0) return 0
+  calculateAverageResponseTime(recentChecks = 5) {
+    const recent = this.checks.slice(-recentChecks);
+    if (recent.length === 0) return 0;
 
     const totalTime = recent.reduce(
       (sum, check) => sum + check.responseTime,
       0
-    )
-    return Math.round(totalTime / recent.length)
+    );
+    return Math.round(totalTime / recent.length);
   }
 
   /**
@@ -266,21 +266,21 @@ class CacheDeploymentMonitor {
    * categorizes alerts by severity and includes the last 10 alerts. The report is then saved to a file
    * and a summary is displayed. The overall status is determined using the `determineOverallStatus` method.
    */
-  generateReport () {
-    const totalChecks = this.checks.length
-    const successfulChecks = this.checks.filter(c => c.success).length
-    const failedChecks = totalChecks - successfulChecks
+  generateReport() {
+    const totalChecks = this.checks.length;
+    const successfulChecks = this.checks.filter(c => c.success).length;
+    const failedChecks = totalChecks - successfulChecks;
     const successRate =
-      totalChecks > 0 ? (successfulChecks / totalChecks) * 100 : 0
+      totalChecks > 0 ? (successfulChecks / totalChecks) * 100 : 0;
 
-    const avgResponseTime = this.calculateAverageResponseTime(totalChecks)
-    const recentErrorRate = this.calculateErrorRate(5)
+    const avgResponseTime = this.calculateAverageResponseTime(totalChecks);
+    const recentErrorRate = this.calculateErrorRate(5);
 
     const alertsBySeverity = {
       high: this.alerts.filter(a => a.severity === 'high').length,
       medium: this.alerts.filter(a => a.severity === 'medium').length,
-      low: this.alerts.filter(a => a.severity === 'low').length
-    }
+      low: this.alerts.filter(a => a.severity === 'low').length,
+    };
 
     const report = {
       summary: {
@@ -290,26 +290,26 @@ class CacheDeploymentMonitor {
         failedChecks,
         successRate: Math.round(successRate * 100) / 100,
         avgResponseTime,
-        recentErrorRate: Math.round(recentErrorRate * 100) / 100
+        recentErrorRate: Math.round(recentErrorRate * 100) / 100,
       },
       alerts: {
         total: this.alerts.length,
         bySeverity: alertsBySeverity,
-        recent: this.alerts.slice(-10) // Last 10 alerts
+        recent: this.alerts.slice(-10), // Last 10 alerts
       },
       checks: this.checks,
       config: this.config,
       timestamp: new Date().toISOString(),
-      status: this.determineOverallStatus()
-    }
+      status: this.determineOverallStatus(),
+    };
 
     // Save report to file
-    this.saveReport(report)
+    this.saveReport(report);
 
     // Display summary
-    this.displaySummary(report)
+    this.displaySummary(report);
 
-    return report
+    return report;
   }
 
   /**
@@ -319,44 +319,44 @@ class CacheDeploymentMonitor {
    * It also counts the number of high severity alerts. Based on these metrics, it returns a status
    * of 'critical', 'warning', or 'healthy' depending on the defined thresholds and conditions.
    */
-  determineOverallStatus () {
-    const recentErrorRate = this.calculateErrorRate(5)
-    const avgResponseTime = this.calculateAverageResponseTime(5)
+  determineOverallStatus() {
+    const recentErrorRate = this.calculateErrorRate(5);
+    const avgResponseTime = this.calculateAverageResponseTime(5);
     const highSeverityAlerts = this.alerts.filter(
       a => a.severity === 'high'
-    ).length
+    ).length;
 
     if (highSeverityAlerts > 0 || recentErrorRate > 20) {
-      return 'critical'
+      return 'critical';
     } else if (
       recentErrorRate > 5 ||
       avgResponseTime > this.config.alertThresholds.responseTime
     ) {
-      return 'warning'
+      return 'warning';
     } else {
-      return 'healthy'
+      return 'healthy';
     }
   }
 
   /**
    * Saves the report to a JSON file in the reports directory.
    */
-  saveReport (report) {
-    const reportsDir = path.join(process.cwd(), 'reports')
+  saveReport(report) {
+    const reportsDir = path.join(process.cwd(), 'reports');
 
     // Ensure reports directory exists
     if (!fs.existsSync(reportsDir)) {
-      fs.mkdirSync(reportsDir, { recursive: true })
+      fs.mkdirSync(reportsDir, { recursive: true });
     }
 
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const reportPath = path.join(
       reportsDir,
       `cache-deployment-monitor-${timestamp}.json`
-    )
+    );
 
-    fs.writeFileSync(reportPath, JSON.stringify(report, null, 2))
-    console.log(`📄 Report saved to: ${reportPath}`)
+    fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
+    console.log(`📄 Report saved to: ${reportPath}`);
   }
 
   /**
@@ -366,91 +366,91 @@ class CacheDeploymentMonitor {
    *
    * @param {Object} report - The monitoring report containing summary and alerts information.
    */
-  displaySummary (report) {
-    console.log('\n📊 MONITORING SUMMARY')
-    console.log('='.repeat(50))
-    console.log(`Duration: ${report.summary.monitoringDuration}s`)
-    console.log(`Total checks: ${report.summary.totalChecks}`)
-    console.log(`Success rate: ${report.summary.successRate}%`)
-    console.log(`Average response time: ${report.summary.avgResponseTime}ms`)
-    console.log(`Recent error rate: ${report.summary.recentErrorRate}%`)
-    console.log(`Total alerts: ${report.alerts.total}`)
-    console.log(`  - High severity: ${report.alerts.bySeverity.high}`)
-    console.log(`  - Medium severity: ${report.alerts.bySeverity.medium}`)
-    console.log(`  - Low severity: ${report.alerts.bySeverity.low}`)
+  displaySummary(report) {
+    console.log('\n📊 MONITORING SUMMARY');
+    console.log('='.repeat(50));
+    console.log(`Duration: ${report.summary.monitoringDuration}s`);
+    console.log(`Total checks: ${report.summary.totalChecks}`);
+    console.log(`Success rate: ${report.summary.successRate}%`);
+    console.log(`Average response time: ${report.summary.avgResponseTime}ms`);
+    console.log(`Recent error rate: ${report.summary.recentErrorRate}%`);
+    console.log(`Total alerts: ${report.alerts.total}`);
+    console.log(`  - High severity: ${report.alerts.bySeverity.high}`);
+    console.log(`  - Medium severity: ${report.alerts.bySeverity.medium}`);
+    console.log(`  - Low severity: ${report.alerts.bySeverity.low}`);
 
     const statusIcon =
       report.status === 'healthy'
         ? '✅'
         : report.status === 'warning'
           ? '⚠️'
-          : '🚨'
+          : '🚨';
     console.log(
       `\n${statusIcon} Overall Status: ${report.status.toUpperCase()}`
-    )
+    );
 
     if (report.status !== 'healthy') {
-      console.log('\n🔍 Recent Issues:')
+      console.log('\n🔍 Recent Issues:');
       report.alerts.recent.forEach(alert => {
-        const icon = alert.severity === 'high' ? '🚨' : '⚠️'
-        console.log(`   ${icon} ${alert.message}`)
-      })
+        const icon = alert.severity === 'high' ? '🚨' : '⚠️';
+        console.log(`   ${icon} ${alert.message}`);
+      });
     }
   }
 
   /**
    * Returns a promise that resolves after a specified number of milliseconds.
    */
-  sleep (ms) {
-    return new Promise(resolve => setTimeout(resolve, ms))
+  sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
 
 // CLI execution
 if (require.main === module) {
-  const args = process.argv.slice(2)
-  const options = {}
+  const args = process.argv.slice(2);
+  const options = {};
 
   // Parse command line arguments
   for (let i = 0; i < args.length; i += 2) {
-    const key = args[i]?.replace('--', '')
-    const value = args[i + 1]
+    const key = args[i]?.replace('--', '');
+    const value = args[i + 1];
 
     if (key && value) {
       switch (key) {
         case 'url':
-          options.baseUrl = value
-          break
+          options.baseUrl = value;
+          break;
         case 'interval':
-          options.checkInterval = parseInt(value) * 1000
-          break
+          options.checkInterval = parseInt(value) * 1000;
+          break;
         case 'max-checks':
-          options.maxChecks = parseInt(value)
-          break
+          options.maxChecks = parseInt(value);
+          break;
         case 'response-time-threshold':
-          options.responseTimeThreshold = parseInt(value)
-          break
+          options.responseTimeThreshold = parseInt(value);
+          break;
       }
     }
   }
 
-  const monitor = new CacheDeploymentMonitor(options)
+  const monitor = new CacheDeploymentMonitor(options);
 
   // Handle graceful shutdown
   process.on('SIGINT', () => {
-    monitor.stopMonitoring()
-    process.exit(0)
-  })
+    monitor.stopMonitoring();
+    process.exit(0);
+  });
 
   process.on('SIGTERM', () => {
-    monitor.stopMonitoring()
-    process.exit(0)
-  })
+    monitor.stopMonitoring();
+    process.exit(0);
+  });
 
   monitor.startMonitoring().catch(error => {
-    console.error('❌ Monitoring failed:', error)
-    process.exit(1)
-  })
+    console.error('❌ Monitoring failed:', error);
+    process.exit(1);
+  });
 }
 
-module.exports = CacheDeploymentMonitor
+module.exports = CacheDeploymentMonitor;

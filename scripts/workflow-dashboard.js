@@ -4,40 +4,40 @@
  * Integrates with GitHub Actions workflow monitoring system
  */
 
-import fs from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 class WorkflowDashboard {
-  constructor () {
-    this.data = null
-    this.template = this.getHTMLTemplate()
+  constructor() {
+    this.data = null;
+    this.template = this.getHTMLTemplate();
   }
 
   /**
    * Load workflow metrics data from a specified path.
    */
-  loadData (dataPath) {
+  loadData(dataPath) {
     try {
-      const rawData = fs.readFileSync(dataPath, 'utf8')
-      this.data = JSON.parse(rawData)
-      console.log(`📊 Loaded workflow data from: ${dataPath}`)
-      return true
+      const rawData = fs.readFileSync(dataPath, 'utf8');
+      this.data = JSON.parse(rawData);
+      console.log(`📊 Loaded workflow data from: ${dataPath}`);
+      return true;
     } catch (error) {
-      console.error(`❌ Error loading data from ${dataPath}:`, error.message)
-      return false
+      console.error(`❌ Error loading data from ${dataPath}:`, error.message);
+      return false;
     }
   }
 
   /**
    * Generate HTML dashboard from the template and data.
    */
-  generateDashboard () {
+  generateDashboard() {
     if (!this.data) {
-      throw new Error('No data loaded. Call loadData() first.')
+      throw new Error('No data loaded. Call loadData() first.');
     }
 
     const html = this.template
@@ -50,26 +50,26 @@ class WorkflowDashboard {
         '{{RECOMMENDATIONS_SECTION}}',
         this.generateRecommendationsSection()
       )
-      .replace('{{TRENDS_SECTION}}', this.generateTrendsSection())
+      .replace('{{TRENDS_SECTION}}', this.generateTrendsSection());
 
-    return html
+    return html;
   }
 
   /**
    * Generates the dashboard title based on the repository data.
    */
-  generateTitle () {
+  generateTitle() {
     if (this.data.repository) {
-      return `Workflow Dashboard - ${this.data.repository}`
+      return `Workflow Dashboard - ${this.data.repository}`;
     }
-    return 'Workflow Monitoring Dashboard'
+    return 'Workflow Monitoring Dashboard';
   }
 
   /**
    * Generate summary cards HTML
    */
-  generateSummaryCards () {
-    const summary = this.data.summary || {}
+  generateSummaryCards() {
+    const summary = this.data.summary || {};
 
     return `
       <div class="summary-cards">
@@ -118,22 +118,22 @@ class WorkflowDashboard {
           <div class="card-subtitle">Compute time used</div>
         </div>
       </div>
-    `
+    `;
   }
 
   /**
    * Generate workflow table HTML
    */
-  generateWorkflowTable () {
-    const workflows = this.data.workflows || {}
+  generateWorkflowTable() {
+    const workflows = this.data.workflows || {};
 
-    let tableRows = ''
+    let tableRows = '';
     for (const [name, workflow] of Object.entries(workflows)) {
-      const successRate = parseFloat(workflow.success_rate || 0)
+      const successRate = parseFloat(workflow.success_rate || 0);
       const statusIcon =
-        successRate >= 95 ? '✅' : successRate >= 80 ? '⚠️' : '❌'
+        successRate >= 95 ? '✅' : successRate >= 80 ? '⚠️' : '❌';
       const statusClass =
-        successRate >= 95 ? 'success' : successRate >= 80 ? 'warning' : 'error'
+        successRate >= 95 ? 'success' : successRate >= 80 ? 'warning' : 'error';
 
       tableRows += `
         <tr class="${statusClass}">
@@ -161,7 +161,7 @@ class WorkflowDashboard {
             </div>
           </td>
         </tr>
-      `
+      `;
     }
 
     return `
@@ -182,40 +182,40 @@ class WorkflowDashboard {
           </tbody>
         </table>
       </div>
-    `
+    `;
   }
 
   /**
    * Generate charts data for JavaScript
    */
-  generateChartsData () {
-    const workflows = this.data.workflows || {}
-    const trends = this.data.trends || {}
+  generateChartsData() {
+    const workflows = this.data.workflows || {};
+    const trends = this.data.trends || {};
 
     // Success rate chart data
     const successRateData = Object.entries(workflows).map(
       ([name, workflow]) => ({
         name: name.length > 20 ? name.substring(0, 20) + '...' : name,
-        value: parseFloat(workflow.success_rate || 0)
+        value: parseFloat(workflow.success_rate || 0),
       })
-    )
+    );
 
     // Duration chart data
     const durationData = Object.entries(workflows).map(([name, workflow]) => ({
       name: name.length > 20 ? name.substring(0, 20) + '...' : name,
-      value: parseFloat(workflow.average_duration || 0) / 60 // Convert to minutes
-    }))
+      value: parseFloat(workflow.average_duration || 0) / 60, // Convert to minutes
+    }));
 
     // Daily trends data
-    const dailyTrends = trends.daily_runs || {}
+    const dailyTrends = trends.daily_runs || {};
     const dailyTrendsData = Object.entries(dailyTrends)
       .map(([date, stats]) => ({
         date,
         total: stats.total || 0,
         success: stats.success || 0,
-        failure: stats.failure || 0
+        failure: stats.failure || 0,
       }))
-      .sort((a, b) => new Date(a.date) - new Date(b.date))
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
 
     return `
       const chartsData = {
@@ -223,7 +223,7 @@ class WorkflowDashboard {
         duration: ${JSON.stringify(durationData)},
         dailyTrends: ${JSON.stringify(dailyTrendsData)}
       };
-    `
+    `;
   }
 
   /**
@@ -235,8 +235,8 @@ class WorkflowDashboard {
    *
    * @returns A string containing the HTML for the alerts section.
    */
-  generateAlertsSection () {
-    const alerts = this.data.alerts || []
+  generateAlertsSection() {
+    const alerts = this.data.alerts || [];
 
     if (alerts.length === 0) {
       return `
@@ -244,18 +244,18 @@ class WorkflowDashboard {
           <h2>🟢 No Active Alerts</h2>
           <p>All workflows are performing within acceptable parameters.</p>
         </div>
-      `
+      `;
     }
 
-    let alertsHTML = '<div class="alerts-section"><h2>🚨 Active Alerts</h2>'
+    let alertsHTML = '<div class="alerts-section"><h2>🚨 Active Alerts</h2>';
 
-    const criticalAlerts = alerts.filter(a => a.level === 'critical')
-    const warningAlerts = alerts.filter(a => a.level === 'warning')
-    const infoAlerts = alerts.filter(a => a.level === 'info')
+    const criticalAlerts = alerts.filter(a => a.level === 'critical');
+    const warningAlerts = alerts.filter(a => a.level === 'warning');
+    const infoAlerts = alerts.filter(a => a.level === 'info');
 
     if (criticalAlerts.length > 0) {
       alertsHTML +=
-        '<div class="alert-group critical"><h3>🔴 Critical Alerts</h3>'
+        '<div class="alert-group critical"><h3>🔴 Critical Alerts</h3>';
       criticalAlerts.forEach(alert => {
         alertsHTML += `
           <div class="alert critical">
@@ -266,14 +266,14 @@ class WorkflowDashboard {
             <div class="alert-message">${alert.message}</div>
             <div class="alert-action">Action: ${alert.action}</div>
           </div>
-        `
-      })
-      alertsHTML += '</div>'
+        `;
+      });
+      alertsHTML += '</div>';
     }
 
     if (warningAlerts.length > 0) {
       alertsHTML +=
-        '<div class="alert-group warning"><h3>🟡 Warning Alerts</h3>'
+        '<div class="alert-group warning"><h3>🟡 Warning Alerts</h3>';
       warningAlerts.forEach(alert => {
         alertsHTML += `
           <div class="alert warning">
@@ -284,13 +284,13 @@ class WorkflowDashboard {
             <div class="alert-message">${alert.message}</div>
             <div class="alert-action">Action: ${alert.action}</div>
           </div>
-        `
-      })
-      alertsHTML += '</div>'
+        `;
+      });
+      alertsHTML += '</div>';
     }
 
     if (infoAlerts.length > 0) {
-      alertsHTML += '<div class="alert-group info"><h3>🔵 Info Alerts</h3>'
+      alertsHTML += '<div class="alert-group info"><h3>🔵 Info Alerts</h3>';
       infoAlerts.forEach(alert => {
         alertsHTML += `
           <div class="alert info">
@@ -301,13 +301,13 @@ class WorkflowDashboard {
             <div class="alert-message">${alert.message}</div>
             <div class="alert-action">Action: ${alert.action}</div>
           </div>
-        `
-      })
-      alertsHTML += '</div>'
+        `;
+      });
+      alertsHTML += '</div>';
     }
 
-    alertsHTML += '</div>'
-    return alertsHTML
+    alertsHTML += '</div>';
+    return alertsHTML;
   }
 
   /**
@@ -318,8 +318,8 @@ class WorkflowDashboard {
    * Otherwise, it iterates through the recommendations, creating HTML for each one, including priority icons,
    * titles, categories, descriptions, actions, and affected workflows if available.
    */
-  generateRecommendationsSection () {
-    const recommendations = this.data.recommendations || []
+  generateRecommendationsSection() {
+    const recommendations = this.data.recommendations || [];
 
     if (recommendations.length === 0) {
       return `
@@ -327,11 +327,11 @@ class WorkflowDashboard {
           <h2>💡 No Recommendations</h2>
           <p>Your workflows are optimized and performing well.</p>
         </div>
-      `
+      `;
     }
 
     let recHTML =
-      '<div class="recommendations-section"><h2>💡 Optimization Recommendations</h2>'
+      '<div class="recommendations-section"><h2>💡 Optimization Recommendations</h2>';
 
     recommendations.forEach((rec, index) => {
       const priorityIcon =
@@ -339,7 +339,7 @@ class WorkflowDashboard {
           ? '🔴'
           : rec.priority === 'medium'
             ? '🟡'
-            : '🟢'
+            : '🟢';
 
       recHTML += `
         <div class="recommendation ${rec.priority}">
@@ -368,17 +368,17 @@ class WorkflowDashboard {
               : ''
           }
         </div>
-      `
-    })
+      `;
+    });
 
-    recHTML += '</div>'
-    return recHTML
+    recHTML += '</div>';
+    return recHTML;
   }
 
   /**
    * Generate trends section HTML.
    */
-  generateTrendsSection () {
+  generateTrendsSection() {
     return `
       <div class="trends-section">
         <h2>📈 Performance Trends</h2>
@@ -397,7 +397,7 @@ class WorkflowDashboard {
           </div>
         </div>
       </div>
-    `
+    `;
   }
 
   /**
@@ -410,11 +410,11 @@ class WorkflowDashboard {
    *
    * @param {string|number} rate - The success rate to evaluate, can be a string or number.
    */
-  getSuccessRateClass (rate) {
-    const successRate = parseFloat(rate || 0)
-    if (successRate >= 95) return 'success'
-    if (successRate >= 80) return 'warning'
-    return 'error'
+  getSuccessRateClass(rate) {
+    const successRate = parseFloat(rate || 0);
+    if (successRate >= 95) return 'success';
+    if (successRate >= 80) return 'warning';
+    return 'error';
   }
 
   /**
@@ -429,25 +429,25 @@ class WorkflowDashboard {
    * @param {number} seconds - The total duration in seconds to format.
    * @param {boolean} [long=false] - Indicates whether to include hours in the output.
    */
-  formatDuration (seconds, long = false) {
-    const hours = Math.floor(seconds / 3600)
-    const minutes = Math.floor((seconds % 3600) / 60)
-    const secs = Math.floor(seconds % 60)
+  formatDuration(seconds, long = false) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
 
     if (long && hours > 0) {
-      return `${hours}h ${minutes}m`
+      return `${hours}h ${minutes}m`;
     } else if (minutes > 0) {
-      return `${minutes}m ${secs}s`
+      return `${minutes}m ${secs}s`;
     } else {
-      return `${secs}s`
+      return `${secs}s`;
     }
   }
 
-  getTrendClass (trend) {
-    if (!trend) return ''
-    if (trend.successRateChange > 5) return 'positive'
-    if (trend.successRateChange < -5) return 'negative'
-    return 'neutral'
+  getTrendClass(trend) {
+    if (!trend) return '';
+    if (trend.successRateChange > 5) return 'positive';
+    if (trend.successRateChange < -5) return 'negative';
+    return 'neutral';
   }
 
   /**
@@ -461,25 +461,25 @@ class WorkflowDashboard {
    * @param {Object} trend - The trend object containing successRateChange.
    * @param {number} trend.successRateChange - The change in success rate.
    */
-  getTrendIcon (trend) {
-    if (!trend) return '➖'
-    if (trend.successRateChange > 5) return '📈'
-    if (trend.successRateChange < -5) return '📉'
-    return '➖'
+  getTrendIcon(trend) {
+    if (!trend) return '➖';
+    if (trend.successRateChange > 5) return '📈';
+    if (trend.successRateChange < -5) return '📉';
+    return '➖';
   }
 
-  getTrendText (trend) {
-    if (!trend) return 'No trend data'
-    const change = Math.abs(trend.successRateChange).toFixed(1)
-    if (trend.successRateChange > 5) return `+${change}%`
-    if (trend.successRateChange < -5) return `-${change}%`
-    return 'Stable'
+  getTrendText(trend) {
+    if (!trend) return 'No trend data';
+    const change = Math.abs(trend.successRateChange).toFixed(1);
+    if (trend.successRateChange > 5) return `+${change}%`;
+    if (trend.successRateChange < -5) return `-${change}%`;
+    return 'Stable';
   }
 
   /**
    * Returns the HTML template for the dashboard.
    */
-  getHTMLTemplate () {
+  getHTMLTemplate() {
     return `
 <!DOCTYPE html>
 <html lang="en">
@@ -970,17 +970,17 @@ class WorkflowDashboard {
     </script>
 </body>
 </html>
-    `
+    `;
   }
 
   /**
    * Saves the dashboard to a specified file.
    */
-  saveDashboard (outputPath) {
-    const html = this.generateDashboard()
-    fs.writeFileSync(outputPath, html)
-    console.log(`📄 Dashboard saved to: ${outputPath}`)
-    return outputPath
+  saveDashboard(outputPath) {
+    const html = this.generateDashboard();
+    fs.writeFileSync(outputPath, html);
+    console.log(`📄 Dashboard saved to: ${outputPath}`);
+    return outputPath;
   }
 }
 
@@ -996,20 +996,20 @@ class WorkflowDashboard {
  * @returns {Promise<void>} A promise that resolves when the dashboard generation is complete.
  * @throws Error If the --input option is missing or the specified input file does not exist.
  */
-async function main () {
-  const args = process.argv.slice(2)
-  let inputFile = null
-  let outputFile = null
+async function main() {
+  const args = process.argv.slice(2);
+  let inputFile = null;
+  let outputFile = null;
 
   // Parse command line arguments
   for (let i = 0; i < args.length; i++) {
     switch (args[i]) {
       case '--input':
-        inputFile = args[++i]
-        break
+        inputFile = args[++i];
+        break;
       case '--output':
-        outputFile = args[++i]
-        break
+        outputFile = args[++i];
+        break;
       case '--help':
         console.log(`
 Usage: node workflow-dashboard.js [options]
@@ -1022,38 +1022,38 @@ Options:
 Examples:
   node workflow-dashboard.js --input workflow-metrics.json
   node workflow-dashboard.js --input data.json --output custom-dashboard.html
-        `)
-        process.exit(0)
+        `);
+        process.exit(0);
     }
   }
 
   // Validate required options
   if (!inputFile) {
-    console.error('❌ Error: --input option is required')
-    process.exit(1)
+    console.error('❌ Error: --input option is required');
+    process.exit(1);
   }
 
   if (!fs.existsSync(inputFile)) {
-    console.error(`❌ Error: Input file ${inputFile} does not exist`)
-    process.exit(1)
+    console.error(`❌ Error: Input file ${inputFile} does not exist`);
+    process.exit(1);
   }
 
-  const dashboard = new WorkflowDashboard()
+  const dashboard = new WorkflowDashboard();
 
   if (!dashboard.loadData(inputFile)) {
-    process.exit(1)
+    process.exit(1);
   }
 
-  const output = outputFile || 'workflow-dashboard.html'
-  dashboard.saveDashboard(output)
+  const output = outputFile || 'workflow-dashboard.html';
+  dashboard.saveDashboard(output);
 
-  console.log('✅ Dashboard generated successfully!')
-  console.log(`📂 Open ${output} in your browser to view the dashboard`)
+  console.log('✅ Dashboard generated successfully!');
+  console.log(`📂 Open ${output} in your browser to view the dashboard`);
 }
 
 // Run CLI if this script is executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch(console.error)
+  main().catch(console.error);
 }
 
-export default WorkflowDashboard
+export default WorkflowDashboard;

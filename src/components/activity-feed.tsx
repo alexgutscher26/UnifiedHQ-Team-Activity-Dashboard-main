@@ -155,7 +155,11 @@ export function ActivityFeed() {
 
   useEffect(() => {
     fetchActivities();
-    connectToLiveUpdates();
+
+    // Delay SSE connection to allow authentication to initialize
+    const sseTimeout = setTimeout(() => {
+      connectToLiveUpdates();
+    }, 3000); // Wait 3 seconds before attempting SSE connection
 
     // Set up auto-refresh every 60 seconds
     const interval = setInterval(() => {
@@ -174,7 +178,8 @@ export function ActivityFeed() {
         return null;
       });
 
-      // Clean up refresh interval
+      // Clean up timeouts and intervals
+      clearTimeout(sseTimeout);
       if (interval) {
         clearInterval(interval);
       }
@@ -236,20 +241,17 @@ export function ActivityFeed() {
         console.log('✅ Connected to live updates');
       };
 
-      // Add connection timeout
+      // Add connection timeout with longer delay
       const connectionTimeout = setTimeout(() => {
         if (es.readyState === EventSource.CONNECTING) {
-          console.error('❌ SSE connection timeout after 10 seconds');
+          console.warn(
+            '⚠️ SSE connection timeout after 15 seconds - disabling live updates'
+          );
           es.close();
           setIsLiveConnected(false);
-          toast({
-            title: 'Connection Timeout',
-            description:
-              'Failed to connect to live updates. Please check your connection.',
-            variant: 'destructive',
-          });
+          // Don't show error toast for timeout, just log it
         }
-      }, 10000); // 10 second timeout
+      }, 15000); // 15 second timeout (increased from 10)
 
       // Clear timeout on successful connection
       es.addEventListener('open', () => {
@@ -268,6 +270,21 @@ export function ActivityFeed() {
 
             case 'error':
               console.error('SSE error:', data.message);
+
+              // If it's an auth error, don't show toast
+              if (
+                data.code === 'AUTH_REQUIRED' ||
+                data.message?.includes('Authentication required') ||
+                data.message?.includes('Unauthorized')
+              ) {
+                console.log(
+                  '🔐 Authentication required - disabling SSE for activity feed'
+                );
+                es.close();
+                setIsLiveConnected(false);
+                return;
+              }
+
               toast({
                 title: 'Connection Error',
                 description: data.message,
@@ -303,7 +320,7 @@ export function ActivityFeed() {
 
         // EventSource.onerror provides limited error information
         // Log connection state and URL for better debugging
-        console.error('❌ SSE connection error:', {
+        console.warn('⚠️ Activity Feed SSE connection issue:', {
           readyState: es.readyState,
           url: es.url,
           withCredentials: es.withCredentials,
@@ -313,12 +330,8 @@ export function ActivityFeed() {
 
         setIsLiveConnected(false);
 
-        // Don't auto-reconnect on error, let user manually refresh
-        toast({
-          title: 'Connection Lost',
-          description: 'Live updates disconnected. Please refresh the page.',
-          variant: 'destructive',
-        });
+        // Don't show error toast for connection issues, just log them
+        // The component will continue to work with periodic refresh
       };
     } catch (error) {
       console.error('Failed to connect to live updates:', error);
@@ -611,11 +624,14 @@ export function ActivityFeed() {
                               target='_blank'
                               rel='noopener noreferrer'
                               className='hover:underline text-blue-600 hover:text-blue-800'
+                              aria-label={
+                                activity.title || 'View activity details'
+                              }
                             >
-                              {activity.title}
+                              {activity.title || 'Untitled Activity'}
                             </a>
                           ) : (
-                            activity.title
+                            activity.title || 'Untitled Activity'
                           )}
                         </h4>
                         <Badge variant='secondary' className='text-xs'>

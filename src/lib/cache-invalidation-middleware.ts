@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CacheInvalidationService } from './cache-invalidation-service';
-import { CacheInvalidationTriggers } from './cache-invalidation-triggers';
 
 /**
  * Cache invalidation middleware for automatic cache invalidation on API mutations

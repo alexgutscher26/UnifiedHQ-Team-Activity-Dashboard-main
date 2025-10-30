@@ -11,7 +11,6 @@ import {
   Fix,
   ValidationResult,
   MemoryLeakDetectionConfig,
-  DetectionConfig,
   LeakType,
   LeakSeverity,
 } from './types';
@@ -244,9 +243,8 @@ export class MemoryLeakDetectorImpl implements MemoryLeakDetector {
           suggestedFix: `Clear the ${timer.type} when no longer needed`,
           codeSnippet: `${timer.type} ID: ${timer.id}`,
           context: {
-            timerId: timer.id,
-            runningTime: timer.runningTime,
-            context: timer.context,
+            variableName: `timer_${timer.id}`,
+            functionName: timer.context || 'unknown',
           },
           metadata: {
             detectedAt: new Date(),
@@ -402,7 +400,7 @@ export class MemoryLeakDetectorImpl implements MemoryLeakDetector {
     options: Required<ScanOptions>
   ): Promise<string[]> {
     // Simple file finding implementation
-    // In a real implementation, you'd use a proper glob library
+    // TODO: In a real implementation, you'd use a proper glob library
     const files: string[] = [];
 
     const scanDir = async (dir: string): Promise<void> => {
@@ -498,7 +496,7 @@ export class MemoryLeakDetectorImpl implements MemoryLeakDetector {
       return {
         current,
         peak,
-        trend: 'stable', // Would be calculated from historical data
+        trend: 'stable',  // TODO: Would be calculated from historical data
       };
     }
 

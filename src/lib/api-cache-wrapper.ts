@@ -86,7 +86,7 @@ export const CachePresets = {
     maxAge: 0,
     tags: ['no-cache'],
   },
-} as const;
+};
 
 /**
  * Helper function to create cache-enabled API handlers
@@ -206,7 +206,7 @@ export const ApiCachePatterns = {
  * Utility to get cache statistics
  */
 export async function getCacheStats() {
-  // This would integrate with Redis to get actual cache statistics
+  // TODO: This would integrate with Redis to get actual cache statistics
   // For now, return a placeholder structure
   return {
     hitRate: 0,

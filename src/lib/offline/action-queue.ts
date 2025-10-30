@@ -1,7 +1,7 @@
 // Offline Action Queue with IndexedDB persistence
 // Manages offline actions and provides CRUD operations
 
-import { indexedDBManager } from './indexeddb';
+import { indexedDBManager, IndexedDBManager } from './indexeddb';
 import {
   OfflineAction,
   QueueStats,
@@ -21,7 +21,7 @@ export class OfflineActionQueue {
       return;
     }
 
-    if (!indexedDBManager.constructor.isSupported()) {
+    if (!IndexedDBManager.isSupported()) {
       throw new Error('IndexedDB is not supported in this browser');
     }
 

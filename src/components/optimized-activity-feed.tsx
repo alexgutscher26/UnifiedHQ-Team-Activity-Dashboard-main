@@ -160,9 +160,12 @@ const ActivityItem = memo(
                   href={githubUrl}
                   target='_blank'
                   rel='noopener noreferrer'
-                  className='hover:underline text-blue-600 hover:text-blue-800'
+                  className='hover:underline text-blue-600 hover:text-blue-800 inline-flex items-center gap-1'
+                  aria-label={`View ${activity.title} on GitHub (opens in new tab)`}
+                  title={`View ${activity.title} on GitHub`}
                 >
                   {activity.title}
+                  <span className='sr-only'>(opens in new tab)</span>
                 </a>
               ) : (
                 activity.title
@@ -415,20 +418,17 @@ export function OptimizedActivityFeed() {
         console.log('✅ Connected to live updates');
       };
 
-      // Add connection timeout
+      // Add connection timeout with longer delay
       const connectionTimeout = setTimeout(() => {
         if (es.readyState === EventSource.CONNECTING) {
-          console.error('❌ SSE connection timeout after 10 seconds');
+          console.warn(
+            '⚠️ SSE connection timeout after 15 seconds - disabling live updates'
+          );
           es.close();
           setIsLiveConnected(false);
-          toast({
-            title: 'Connection Timeout',
-            description:
-              'Failed to connect to live updates. Please check your connection.',
-            variant: 'destructive',
-          });
+          // Don't show error toast for timeout, just log it
         }
-      }, 10000); // 10 second timeout
+      }, 15000); // 15 second timeout (increased from 10)
 
       // Clear timeout on successful connection
       es.addEventListener('open', () => {
@@ -447,6 +447,21 @@ export function OptimizedActivityFeed() {
 
             case 'error':
               console.error('SSE error:', data.message);
+
+              // If it's an auth error, don't show toast
+              if (
+                data.code === 'AUTH_REQUIRED' ||
+                data.message?.includes('Authentication required') ||
+                data.message?.includes('Unauthorized')
+              ) {
+                console.log(
+                  '🔐 Authentication required - disabling SSE for optimized activity feed'
+                );
+                es.close();
+                setIsLiveConnected(false);
+                return;
+              }
+
               toast({
                 title: 'Connection Error',
                 description: data.message,
@@ -481,7 +496,7 @@ export function OptimizedActivityFeed() {
 
         // EventSource.onerror provides limited error information
         // Log connection state and URL for better debugging
-        console.error('❌ SSE connection error:', {
+        console.warn('⚠️ Optimized Activity Feed SSE connection issue:', {
           readyState: es.readyState,
           url: es.url,
           withCredentials: es.withCredentials,
@@ -490,11 +505,8 @@ export function OptimizedActivityFeed() {
         });
 
         setIsLiveConnected(false);
-        toast({
-          title: 'Connection Lost',
-          description: 'Live updates disconnected. Please refresh the page.',
-          variant: 'destructive',
-        });
+        // Don't show error toast for connection issues, just log them
+        // The component will continue to work with periodic refresh
       };
     } catch (error) {
       console.error('Failed to connect to live updates:', error);

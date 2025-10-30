@@ -391,12 +391,8 @@ export class TimerLeakDetector {
       suggestedFix,
       codeSnippet,
       context: {
-        timerType: usage.type,
+        functionName: context.functionContext,
         variableName: usage.variableName,
-        delay: usage.delay,
-        functionContext: context.functionContext,
-        isInReactComponent: context.isInReactComponent,
-        isInUseEffect: context.isInUseEffect,
       },
       metadata: {
         detectedAt: new Date(),
@@ -427,7 +423,7 @@ export class TimerLeakDetector {
       suggestedFix: 'Ensure timer ID is stored and properly cleaned up',
       codeSnippet,
       context: {
-        issueType: issue.type,
+        variableName: issue.type,
       },
       metadata: {
         detectedAt: new Date(),
@@ -533,13 +529,17 @@ export class TimerLeakDetector {
 
   // Generate fix suggestions for timer leaks
   generateTimerFix(report: LeakReport): string {
-    const { context } = report;
-    const timerType = context.timerType as 'interval' | 'timeout';
+    // Infer timer type from report type
+    const timerType = report.type === 'uncleaned-interval' ? 'interval' : 'timeout';
     const cleanupFunction =
       timerType === 'interval' ? 'clearInterval' : 'clearTimeout';
     const setFunction = timerType === 'interval' ? 'setInterval' : 'setTimeout';
 
-    if (context.isInUseEffect) {
+    // Check if it's in useEffect based on description
+    const isInUseEffect = report.description.includes('useEffect');
+    const isInReactComponent = report.description.includes('React component');
+
+    if (isInUseEffect) {
       return `
 // Fix: Store timer ID and add cleanup
 useEffect(() => {
@@ -552,7 +552,7 @@ useEffect(() => {
       `.trim();
     }
 
-    if (context.isInReactComponent) {
+    if (isInReactComponent) {
       return `
 // Fix: Store timer ID and cleanup in component unmount
 const [timerId, setTimerId] = useState(null);

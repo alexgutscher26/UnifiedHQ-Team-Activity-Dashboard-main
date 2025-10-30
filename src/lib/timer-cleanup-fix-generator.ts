@@ -1,6 +1,5 @@
 import * as ts from 'typescript';
 import {
-  Fix,
   FixGenerationResult,
   CodeTransformation,
 } from './memory-leak-fix-generator';
@@ -93,7 +92,7 @@ export class TimerCleanupFixGenerator {
     const delay = node.arguments[1] ? this.getNodeText(node.arguments[1]) : '0';
 
     // Check if timer is assigned to a variable
-    const variableName = this.extractVariableName(node);
+    const variableName = this.extractVariableName(node) || undefined;
     const isAssigned = Boolean(variableName);
 
     // Analyze context

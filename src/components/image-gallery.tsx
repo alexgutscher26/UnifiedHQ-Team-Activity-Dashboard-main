@@ -137,16 +137,26 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
       <div className={cn('relative', className)}>
         {/* Main Image */}
         <div className='relative group'>
-          <div onClick={openFullscreen}>
+          <button
+            onClick={openFullscreen}
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openFullscreen();
+              }
+            }}
+            className='block w-full text-left p-0 border-0 bg-transparent cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-lg'
+            aria-label={`Open ${currentImage.alt} in fullscreen view`}
+          >
             <OptimizedImage
               src={currentImage.src}
               alt={currentImage.alt}
               width={currentImage.width || 800}
               height={currentImage.height || 600}
               quality='hero'
-              className='w-full h-auto rounded-lg cursor-pointer'
+              className='w-full h-auto rounded-lg'
             />
-          </div>
+          </button>
 
           {/* Navigation Arrows */}
           {images.length > 1 && (

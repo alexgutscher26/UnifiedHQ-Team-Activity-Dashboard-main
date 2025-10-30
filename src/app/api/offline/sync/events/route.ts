@@ -2,37 +2,26 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 
 /**
- * Handles the Server-Sent Events (SSE) connection for live updates.
+ * Handles Server-Sent Events (SSE) for offline sync notifications.
  *
- * This function first attempts to retrieve the user session from the request headers. If the session is valid and the user is authenticated, it establishes a readable stream for SSE, sending connection messages and periodic heartbeats. If the user is not authenticated, it returns an error message. The function also manages connection cleanup on disconnection events.
- *
- * @param request - The incoming NextRequest object containing the connection request details.
- * @returns A Response object containing the SSE stream or an error message if the user is unauthorized or if an error occurs during connection establishment.
- * @throws Error If there is an issue with the SSE stream or connection handling.
+ * This endpoint provides real-time updates about offline synchronization events,
+ * including sync start, completion, failures, and conflicts.
  */
 export async function GET(request: NextRequest) {
   try {
-    console.log('[SSE] Received connection request');
+    console.log('[Offline Sync SSE] Received connection request');
 
-    // Try to get session from cookies first
+    // Check authentication
     const session = await auth.api.getSession({
       headers: request.headers,
     });
 
-    console.log('[SSE] Session check:', {
-      hasSession: Boolean(session),
-      hasUser: Boolean(session?.user),
-      userId: session?.user?.id,
-    });
-
     if (!session?.user) {
-      console.log('[SSE] Unauthorized access attempt - session not found');
-      // Return SSE error message instead of JSON
+      console.log('[Offline Sync SSE] Unauthorized access attempt');
       return new Response(
         `data: ${JSON.stringify({
           type: 'error',
-          message:
-            'Authentication required - please refresh the page to sign in',
+          message: 'Authentication required for sync notifications',
           code: 'AUTH_REQUIRED',
           timestamp: new Date().toISOString(),
         })}\n\n`,
@@ -50,7 +39,7 @@ export async function GET(request: NextRequest) {
     }
 
     const userId = session.user.id;
-    console.log(`[SSE] User ${userId} connecting to live updates`);
+    console.log(`[Offline Sync SSE] User ${userId} connecting to sync events`);
 
     // Create a readable stream for SSE
     const stream = new ReadableStream({
@@ -59,17 +48,17 @@ export async function GET(request: NextRequest) {
           // Send initial connection message
           const data = JSON.stringify({
             type: 'connected',
-            message: 'Connected to live updates',
+            message: 'Connected to offline sync events',
             timestamp: new Date().toISOString(),
           });
 
           controller.enqueue(`data: ${data}\n\n`);
 
           // Store the controller for this user's connection
-          if (!(global as any).userConnections) {
-            (global as any).userConnections = new Map();
+          if (!(global as any).syncEventConnections) {
+            (global as any).syncEventConnections = new Map();
           }
-          (global as any).userConnections.set(userId, controller);
+          (global as any).syncEventConnections.set(userId, controller);
 
           // Send periodic heartbeat to keep connection alive
           const heartbeatInterval = setInterval(() => {
@@ -80,30 +69,30 @@ export async function GET(request: NextRequest) {
               });
               controller.enqueue(`data: ${heartbeat}\n\n`);
             } catch (error) {
-              console.error('Heartbeat error:', error);
+              console.error('Sync events heartbeat error:', error);
               clearInterval(heartbeatInterval);
-              (global as any).userConnections?.delete(userId);
+              (global as any).syncEventConnections?.delete(userId);
             }
           }, 30000); // Send heartbeat every 30 seconds
 
           // Clean up on connection close
           request.signal.addEventListener('abort', () => {
-            console.log(`[SSE] User ${userId} disconnected`);
+            console.log(`[Offline Sync SSE] User ${userId} disconnected`);
             clearInterval(heartbeatInterval);
-            (global as any).userConnections?.delete(userId);
+            (global as any).syncEventConnections?.delete(userId);
             try {
               controller.close();
             } catch (error) {
-              console.error('Error closing controller:', error);
+              console.error('Error closing sync events controller:', error);
             }
           });
         } catch (error) {
-          console.error('Error in SSE stream start:', error);
+          console.error('Error in sync events SSE stream start:', error);
           try {
             controller.close();
           } catch (closeError) {
             console.error(
-              'Error closing controller on start error:',
+              'Error closing sync events controller on start error:',
               closeError
             );
           }
@@ -121,53 +110,53 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('SSE connection error:', {
+    console.error('Offline sync SSE connection error:', {
       error: error,
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
       timestamp: new Date().toISOString(),
     });
     return NextResponse.json(
-      { error: 'Failed to establish connection' },
+      { error: 'Failed to establish sync events connection' },
       { status: 500 }
     );
   }
 }
 
-// Helper function to broadcast updates to connected users
-export function broadcastToUser(userId: string, data: any) {
-  const userConnections = (global as any).userConnections;
-  if (userConnections?.has(userId)) {
-    const controller = userConnections.get(userId);
+// Helper function to broadcast sync events to connected users
+export function broadcastSyncEvent(userId: string, event: any) {
+  const syncEventConnections = (global as any).syncEventConnections;
+  if (syncEventConnections?.has(userId)) {
+    const controller = syncEventConnections.get(userId);
     try {
       const message = JSON.stringify({
-        type: 'activity_update',
-        data,
+        type: 'sync_event',
+        data: event,
         timestamp: new Date().toISOString(),
       });
       controller.enqueue(`data: ${message}\n\n`);
     } catch (error) {
-      console.error('Failed to broadcast to user:', error);
-      userConnections?.delete(userId);
+      console.error('Failed to broadcast sync event to user:', error);
+      syncEventConnections?.delete(userId);
     }
   }
 }
 
 // Helper function to broadcast to all connected users
-export function broadcastToAll(data: any) {
-  const userConnections = (global as any).userConnections;
-  if (userConnections) {
-    for (const [userId, controller] of userConnections) {
+export function broadcastSyncEventToAll(event: any) {
+  const syncEventConnections = (global as any).syncEventConnections;
+  if (syncEventConnections) {
+    for (const [userId, controller] of syncEventConnections) {
       try {
         const message = JSON.stringify({
-          type: 'activity_update',
-          data,
+          type: 'sync_event',
+          data: event,
           timestamp: new Date().toISOString(),
         });
         controller.enqueue(`data: ${message}\n\n`);
       } catch (error) {
-        console.error('Failed to broadcast to user:', userId, error);
-        userConnections.delete(userId);
+        console.error('Failed to broadcast sync event to user:', userId, error);
+        syncEventConnections.delete(userId);
       }
     }
   }

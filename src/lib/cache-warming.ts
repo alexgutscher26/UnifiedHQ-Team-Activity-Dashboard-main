@@ -11,7 +11,7 @@ export class CacheWarming {
     try {
       console.log(`Warming cache for user: ${userId}`);
 
-      // This would typically fetch and cache user preferences, settings, etc.
+      // TODO: This would typically fetch and cache user preferences, settings, etc.
       // For now, we'll create placeholder entries that would be populated by actual data fetching
 
       const userPrefsKey = CacheKeyGenerator.user(userId, 'preferences');
@@ -22,7 +22,7 @@ export class CacheWarming {
       const settingsExist = await RedisCache.exists(userSettingsKey);
 
       if (!prefsExist) {
-        // In a real implementation, this would fetch from database
+        // TODO: In a real implementation, this would fetch from database
         const defaultPrefs = {
           theme: 'light',
           notifications: true,
@@ -37,7 +37,7 @@ export class CacheWarming {
       }
 
       if (!settingsExist) {
-        // In a real implementation, this would fetch from database
+        // TODO: In a real implementation, this would fetch from database
         const defaultSettings = {
           timezone: 'UTC',
           date_format: 'YYYY-MM-DD',
@@ -77,35 +77,6 @@ export class CacheWarming {
           repositories,
           TTLManager.getTTL('GITHUB_REPOS')
         );
-      }
-
-      // Warm recent activity cache for each repository
-      if (repositories) {
-        for (const repo of repositories.slice(0, 5)) {
-          // Limit to 5 repos for performance
-          const activityKey = CacheKeyGenerator.github(
-            userId,
-            'activity',
-            repo
-          );
-          const activityExists = await RedisCache.exists(activityKey);
-
-          if (!activityExists) {
-            // Placeholder for recent activity data
-            const recentActivity = {
-              commits: [],
-              pull_requests: [],
-              issues: [],
-              last_updated: new Date().toISOString(),
-            };
-
-            await RedisCache.set(
-              activityKey,
-              recentActivity,
-              TTLManager.getTTL('GITHUB_COMMITS')
-            );
-          }
-        }
       }
 
       console.log(`GitHub cache warming completed for user: ${userId}`);
@@ -148,7 +119,7 @@ export class CacheWarming {
           const messagesExist = await RedisCache.exists(messagesKey);
 
           if (!messagesExist) {
-            // Placeholder for recent messages
+            // TODO: Placeholder for recent messages
             const recentMessages = {
               messages: [],
               last_updated: new Date().toISOString(),
@@ -261,8 +232,6 @@ export class CacheWarming {
       // Run cache warming operations in parallel for better performance
       await Promise.all([
         this.warmUserCache(userId),
-        this.warmGitHubCache(userId, options?.repositories),
-        this.warmSlackCache(userId, options?.channels),
         this.warmAISummaryCache(userId),
         options?.commonEndpoints
           ? this.warmAPICache(options.commonEndpoints)
@@ -285,11 +254,10 @@ export class CacheWarming {
    * that have a time-to-live (TTL) less than the specified threshold. It logs the process and
    * extends the TTL for qualifying keys using a placeholder value. The function handles errors
    * gracefully, logging any issues encountered during the refresh process.
-   *
-   * @param {number} [thresholdSeconds=300] - The threshold in seconds for determining which
-   * cache entries to refresh based on their TTL.
    */
-  static async refreshExpiringCache(thresholdSeconds = 300): Promise<void> {
+  static async refreshExpiringCache(
+    thresholdSeconds: number = 300
+  ): Promise<void> {
     try {
       console.log('Starting background cache refresh for expiring entries');
 
@@ -303,7 +271,7 @@ export class CacheWarming {
         if (ttl > 0 && ttl < thresholdSeconds) {
           console.log(`Refreshing expiring cache key: ${key} (TTL: ${ttl}s)`);
 
-          // In a real implementation, this would trigger the appropriate data fetching
+          // todo: In a real implementation, this would trigger the appropriate data fetching
           // and cache update based on the key pattern
 
           // For now, we'll just extend the TTL as a placeholder
@@ -338,10 +306,6 @@ export class CacheWarming {
           // Determine what data to preload based on the path
           if (pattern.path.includes('/dashboard')) {
             await this.warmUserSession(userId);
-          } else if (pattern.path.includes('/github')) {
-            await this.warmGitHubCache(userId);
-          } else if (pattern.path.includes('/slack')) {
-            await this.warmSlackCache(userId);
           } else if (
             pattern.path.includes('/ai') ||
             pattern.path.includes('/summary')
@@ -379,9 +343,6 @@ export class CacheWarming {
       for (const path of timeBasedPaths) {
         // Determine appropriate cache warming based on path
         if (path.includes('/api/github')) {
-          await this.warmGitHubCache(userId);
-        } else if (path.includes('/api/slack')) {
-          await this.warmSlackCache(userId);
         } else if (path.includes('/api/ai')) {
           await this.warmAISummaryCache(userId);
         }

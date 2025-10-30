@@ -357,7 +357,11 @@ export class CachePreloader {
         lastUpdated: Date.now(),
       };
 
-      await store.put(patternsData);
+      const request = store.put(patternsData);
+      await new Promise<void>((resolve, reject) => {
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
     } catch (error) {
       console.error('[Cache Preloader] Failed to save patterns:', error);
     }
@@ -374,7 +378,11 @@ export class CachePreloader {
       const transaction = db.transaction(['patterns'], 'readonly');
       const store = transaction.objectStore('patterns');
 
-      const result = await store.get('navigation-patterns');
+      const request = store.get('navigation-patterns');
+      const result = await new Promise<any>((resolve, reject) => {
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
 
       if (result?.patterns) {
         this.patterns = new Map(result.patterns);

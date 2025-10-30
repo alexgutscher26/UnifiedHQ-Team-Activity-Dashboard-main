@@ -28,8 +28,12 @@ const redisConfig = {
 export const redis: RedisClientType =
   globalForRedis.redis ?? createClient(redisConfig);
 
-// Initialize connection only when not in test environment
-if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test') {
+// Initialize connection only when not in test or build environment
+if (
+  typeof window === 'undefined' &&
+  process.env.NODE_ENV !== 'test' &&
+  process.env.NEXT_PHASE !== 'phase-production-build'
+) {
   if (process.env.NODE_ENV !== 'production') {
     // Only attempt connection in development runtime
     if (!redis.isOpen && !redis.isReady) {
@@ -208,6 +212,10 @@ export class RedisCache {
    */
   private static isRedisAvailable(): boolean {
     try {
+      // Skip Redis during build phase
+      if (process.env.NEXT_PHASE === 'phase-production-build') {
+        return false;
+      }
       return redis.isOpen || redis.isReady;
     } catch {
       return false;

@@ -53,26 +53,64 @@ export function OfflineSyncNotifications() {
   );
 
   useEffect(() => {
-    // Listen for sync events
-    const eventSource = new EventSource('/api/offline/sync/events');
+    // Only attempt SSE connection if online
+    if (!networkStatus.isOnline) {
+      return;
+    }
 
-    eventSource.onmessage = event => {
+    // Delay SSE connection to allow authentication to initialize
+    const sseTimeout = setTimeout(() => {
       try {
-        const data = JSON.parse(event.data);
-        handleSyncEvent(data);
-      } catch (error) {
-        console.error('Failed to parse sync event:', error);
-      }
-    };
+        console.log('🔄 Attempting to connect to offline sync events...');
 
-    eventSource.onerror = error => {
-      console.error('Sync event source error:', error);
-    };
+        const eventSource = new EventSource('/api/offline/sync/events');
+
+        // Add connection timeout
+        const connectionTimeout = setTimeout(() => {
+          if (eventSource.readyState === EventSource.CONNECTING) {
+            console.warn(
+              '⚠️ Offline sync SSE connection timeout - disabling sync notifications'
+            );
+            eventSource.close();
+          }
+        }, 15000); // 15 second timeout
+
+        eventSource.onopen = () => {
+          console.log('✅ Connected to offline sync events');
+          clearTimeout(connectionTimeout);
+        };
+
+        eventSource.onmessage = event => {
+          try {
+            const data = JSON.parse(event.data);
+            handleSyncEvent(data);
+          } catch (error) {
+            console.error('Failed to parse sync event:', error);
+          }
+        };
+
+        eventSource.onerror = error => {
+          clearTimeout(connectionTimeout);
+          console.warn('⚠️ Sync event source connection issue:', error);
+          // Don't show error toast, just log the issue
+        };
+
+        // Store reference for cleanup
+        const cleanup = () => {
+          clearTimeout(connectionTimeout);
+          eventSource.close();
+        };
+
+        return cleanup;
+      } catch (error) {
+        console.error('Failed to create sync event source:', error);
+      }
+    }, 3000); // Wait 3 seconds before attempting connection
 
     return () => {
-      eventSource.close();
+      clearTimeout(sseTimeout);
     };
-  }, []);
+  }, [networkStatus.isOnline]);
 
   useEffect(() => {
     // Handle network state changes
@@ -353,7 +391,7 @@ export function OfflineSyncNotifications() {
   ) => {
     const newNotification: SyncNotification = {
       ...notification,
-      id: `notification_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `notification_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
       timestamp: Date.now(),
     };
 

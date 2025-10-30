@@ -1,17 +1,20 @@
-import bundleAnalyzer from '@next/bundle-analyzer'
+import bundleAnalyzer from '@next/bundle-analyzer';
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
-  openAnalyzer: false
-})
+  openAnalyzer: false,
+});
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
-    ignoreDuringBuilds: true
+    ignoreDuringBuilds: true,
   },
   typescript: {
-    ignoreBuildErrors: true
+    ignoreBuildErrors: true,
+  },
+  experimental: {
+    serverComponentsExternalPackages: ['@prisma/client'],
   },
   images: {
     formats: ['image/webp', 'image/avif'],
@@ -23,12 +26,12 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**'
-      }
-    ]
+        hostname: '**',
+      },
+    ],
   },
   // CDN and Edge Network configuration
-  async headers () {
+  async headers() {
     return [
       // Static assets - long-term caching
       {
@@ -36,13 +39,13 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable'
+            value: 'public, max-age=31536000, immutable',
           },
           {
             key: 'CDN-Cache-Control',
-            value: 'public, max-age=31536000'
-          }
-        ]
+            value: 'public, max-age=31536000',
+          },
+        ],
       },
       // Images - optimized caching
       {
@@ -50,13 +53,13 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=86400, stale-while-revalidate=604800'
+            value: 'public, max-age=86400, stale-while-revalidate=604800',
           },
           {
             key: 'CDN-Cache-Control',
-            value: 'public, max-age=86400'
-          }
-        ]
+            value: 'public, max-age=86400',
+          },
+        ],
       },
       // CSS and JS files - versioned assets
       {
@@ -64,13 +67,13 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable'
+            value: 'public, max-age=31536000, immutable',
           },
           {
             key: 'CDN-Cache-Control',
-            value: 'public, max-age=31536000'
-          }
-        ]
+            value: 'public, max-age=31536000',
+          },
+        ],
       },
       // Fonts - long-term caching
       {
@@ -78,17 +81,17 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable'
+            value: 'public, max-age=31536000, immutable',
           },
           {
             key: 'CDN-Cache-Control',
-            value: 'public, max-age=31536000'
+            value: 'public, max-age=31536000',
           },
           {
             key: 'Access-Control-Allow-Origin',
-            value: '*'
-          }
-        ]
+            value: '*',
+          },
+        ],
       },
       // API routes - short-term caching with revalidation
       {
@@ -96,13 +99,13 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=300, stale-while-revalidate=600'
+            value: 'public, max-age=300, stale-while-revalidate=600',
           },
           {
             key: 'CDN-Cache-Control',
-            value: 'public, max-age=60'
-          }
-        ]
+            value: 'public, max-age=60',
+          },
+        ],
       },
       // HTML pages - network-first with short cache
       {
@@ -110,113 +113,20 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=60, stale-while-revalidate=300'
+            value: 'public, max-age=60, stale-while-revalidate=300',
           },
           {
             key: 'CDN-Cache-Control',
-            value: 'public, max-age=60'
-          }
-        ]
-      }
-    ]
-  },
-  // CDN and Edge Network configuration
-  async headers () {
-    return [
-      // Static assets - long-term caching
-      {
-        source: '/static/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable'
+            value: 'public, max-age=60',
           },
-          {
-            key: 'CDN-Cache-Control',
-            value: 'public, max-age=31536000'
-          }
-        ]
+        ],
       },
-      // Images - optimized caching
-      {
-        source: '/:path*\\.(jpg|jpeg|png|gif|webp|avif|svg|ico)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=86400, stale-while-revalidate=604800'
-          },
-          {
-            key: 'CDN-Cache-Control',
-            value: 'public, max-age=86400'
-          }
-        ]
-      },
-      // CSS and JS files - versioned assets
-      {
-        source: '/:path*\\.(css|js)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable'
-          },
-          {
-            key: 'CDN-Cache-Control',
-            value: 'public, max-age=31536000'
-          }
-        ]
-      },
-      // Fonts - long-term caching
-      {
-        source: '/:path*\\.(woff|woff2|eot|ttf|otf)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable'
-          },
-          {
-            key: 'CDN-Cache-Control',
-            value: 'public, max-age=31536000'
-          },
-          {
-            key: 'Access-Control-Allow-Origin',
-            value: '*'
-          }
-        ]
-      },
-      // API routes - short-term caching with revalidation
-      {
-        source: '/api/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=300, stale-while-revalidate=600'
-          },
-          {
-            key: 'CDN-Cache-Control',
-            value: 'public, max-age=60'
-          }
-        ]
-      },
-      // HTML pages - network-first with short cache
-      {
-        source: '/((?!api|_next|static).*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=60, stale-while-revalidate=300'
-          },
-          {
-            key: 'CDN-Cache-Control',
-            value: 'public, max-age=60'
-          }
-        ]
-      }
-    ]
+    ];
   },
   // Bundle analyzer configuration
   ...(process.env.ANALYZE === 'true' && {
-    outputFileTracing: false
-  })
-}
+    outputFileTracing: false,
+  }),
+};
 
-export default withBundleAnalyzer(nextConfig)
+export default withBundleAnalyzer(nextConfig);

@@ -3,28 +3,28 @@ import assert from 'node:assert';
 
 // Mock service worker environment
 const mockCaches = {
-  open: mock.fn(),
-  keys: mock.fn(),
-  delete: mock.fn(),
-  match: mock.fn(),
+  open: mock.fn<any>(),
+  keys: mock.fn<any>(),
+  delete: mock.fn<any>(),
+  match: mock.fn<any>(),
 };
 
 const mockCache = {
-  match: mock.fn(),
-  put: mock.fn(),
-  delete: mock.fn(),
-  keys: mock.fn(),
-  addAll: mock.fn(),
+  match: mock.fn<any>(),
+  put: mock.fn<any>(),
+  delete: mock.fn<any>(),
+  keys: mock.fn<any>(),
+  addAll: mock.fn<any>(),
 };
 
-const mockFetch = mock.fn();
+const mockFetch = mock.fn<any>();
 const mockClients = {
-  claim: mock.fn(),
+  claim: mock.fn<any>(),
 };
 
 const mockSelf = {
-  addEventListener: mock.fn(),
-  skipWaiting: mock.fn(),
+  addEventListener: mock.fn<any>(),
+  skipWaiting: mock.fn<any>(),
   clients: mockClients,
 };
 
@@ -340,6 +340,7 @@ describe('Service Worker Integration', () => {
         await mockCache.put(request, largeResponse);
         assert.fail('Should have thrown quota error');
       } catch (error) {
+        assert.ok(error instanceof Error);
         assert.strictEqual(error.name, 'QuotaExceededError');
       }
     });
@@ -347,7 +348,7 @@ describe('Service Worker Integration', () => {
 
   describe('Service Worker Lifecycle', () => {
     it('should handle install event', () => {
-      const installHandler = mock.fn();
+      const installHandler = mock.fn<any>();
 
       mockSelf.addEventListener('install', installHandler);
 
@@ -359,7 +360,7 @@ describe('Service Worker Integration', () => {
     });
 
     it('should handle activate event', () => {
-      const activateHandler = mock.fn();
+      const activateHandler = mock.fn<any>();
 
       mockSelf.addEventListener('activate', activateHandler);
 
@@ -371,7 +372,7 @@ describe('Service Worker Integration', () => {
     });
 
     it('should handle fetch event', () => {
-      const fetchHandler = mock.fn();
+      const fetchHandler = mock.fn<any>();
 
       mockSelf.addEventListener('fetch', fetchHandler);
 

@@ -413,11 +413,7 @@ const requireEventListenerCleanup = {
     }
 };
 
-export { requireUseEffectCleanup, requireEventListenerCleanup };/
-    **
- * Rule: require - timer - cleanup
-    * Detects setInterval / setTimeout calls without corresponding clear calls
-        */
+export { requireUseEffectCleanup, requireEventListenerCleanup };
 const requireTimerCleanup = {
     meta: {
         type: 'problem',
@@ -609,11 +605,8 @@ const requireTimerCleanup = {
     }
 };
 
-export { requireUseEffectCleanup, requireEventListenerCleanup, requireTimerCleanup };/
-    **
- * Rule: require - subscription - cleanup
-    * Detects subscription patterns without corresponding unsubscribe / close calls
-        */
+export { requireUseEffectCleanup, requireEventListenerCleanup, requireTimerCleanup };
+
 const requireSubscriptionCleanup = {
     meta: {
         type: 'problem',

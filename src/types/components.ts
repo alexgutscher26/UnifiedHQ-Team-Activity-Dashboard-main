@@ -260,7 +260,8 @@ export type ConnectionState =
   | 'connecting'
   | 'connected'
   | 'disconnected'
-  | 'error';
+  | 'error'
+  | 'disabled';
 
 // Event Source Types
 export interface EventSourceConfig {

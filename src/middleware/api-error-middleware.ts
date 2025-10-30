@@ -1,5 +1,3 @@
-// API Error Handling Middleware
-
 import { NextRequest, NextResponse } from 'next/server';
 import { ApiErrorType, createApiError } from '@/lib/api-error-handler';
 

@@ -1,6 +1,5 @@
 import * as ts from 'typescript';
 import {
-  Fix,
   FixGenerationResult,
   CodeTransformation,
 } from './memory-leak-fix-generator';
@@ -118,7 +117,7 @@ export class ConnectionCleanupFixGenerator {
 
     return {
       connectionType,
-      variableName,
+      variableName: variableName || undefined,
       isAssigned,
       constructorArgs,
       isInUseEffect,
@@ -156,7 +155,7 @@ export class ConnectionCleanupFixGenerator {
 
     return {
       connectionType: 'Subscription',
-      variableName,
+      variableName: variableName || undefined,
       isAssigned,
       constructorArgs: [],
       isInUseEffect,

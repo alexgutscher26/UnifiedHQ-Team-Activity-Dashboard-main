@@ -334,11 +334,13 @@ export function OfflineFirstActivityFeed() {
 
       const connectionTimeout = setTimeout(() => {
         if (es.readyState === EventSource.CONNECTING) {
-          console.error('❌ SSE connection timeout after 10 seconds');
+          console.warn(
+            '⚠️ SSE connection timeout after 15 seconds - disabling live updates'
+          );
           es.close();
           setIsLiveConnected(false);
         }
-      }, 10000);
+      }, 15000);
 
       es.addEventListener('open', () => {
         clearTimeout(connectionTimeout);
@@ -356,6 +358,21 @@ export function OfflineFirstActivityFeed() {
 
             case 'error':
               console.error('SSE error:', data.message);
+
+              // If it's an auth error, don't show toast
+              if (
+                data.code === 'AUTH_REQUIRED' ||
+                data.message?.includes('Authentication required') ||
+                data.message?.includes('Unauthorized')
+              ) {
+                console.log(
+                  '🔐 Authentication required - disabling SSE for offline activity feed'
+                );
+                es.close();
+                setIsLiveConnected(false);
+                return;
+              }
+
               es.close();
               setIsLiveConnected(false);
               break;
@@ -380,8 +397,9 @@ export function OfflineFirstActivityFeed() {
 
       es.onerror = error => {
         clearTimeout(connectionTimeout);
-        console.error('❌ SSE connection error:', error);
+        console.warn('⚠️ Offline Activity Feed SSE connection issue:', error);
         setIsLiveConnected(false);
+        // Don't show error toast, just log the issue
       };
     } catch (error) {
       console.error('Failed to connect to live updates:', error);
@@ -689,8 +707,11 @@ export function OfflineFirstActivityFeed() {
                               target='_blank'
                               rel='noopener noreferrer'
                               className='hover:underline text-blue-600 hover:text-blue-800'
+                              aria-label={
+                                activity.title || 'View activity details'
+                              }
                             >
-                              {activity.title}
+                              {activity.title || 'Untitled Activity'}
                             </a>
                           ) : (
                             <span
@@ -700,7 +721,7 @@ export function OfflineFirstActivityFeed() {
                                   : ''
                               }
                             >
-                              {activity.title}
+                              {activity.title || 'Untitled Activity'}
                             </span>
                           )}
                         </h4>

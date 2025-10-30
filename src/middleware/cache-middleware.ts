@@ -117,6 +117,26 @@ const ROUTE_CACHE_CONFIGS: Record<string, CacheConfig> = {
     tags: ['user', 'api'],
     varyBy: ['authorization'],
   },
+  // SSE endpoints - skip caching for real-time connections
+  '/api/activities/live': {
+    strategy: 'network-first',
+    skipCache: true,
+    maxAge: 0,
+    tags: ['sse', 'realtime'],
+  },
+  '/api/offline/sync/events': {
+    strategy: 'network-first',
+    skipCache: true,
+    maxAge: 0,
+    tags: ['sse', 'realtime', 'sync'],
+  },
+  // Health check endpoints - minimal caching
+  '/api/health': {
+    strategy: 'network-first',
+    ttl: 30, // 30 seconds
+    maxAge: 30,
+    tags: ['health', 'api'],
+  },
 };
 
 /**
@@ -152,7 +172,7 @@ function generateCacheKey(req: NextRequest, config: CacheConfig): string {
           // Use TextEncoder/btoa for Edge Runtime compatibility
           const encoder = new TextEncoder();
           const data = encoder.encode(value);
-          const hash = btoa(String.fromCharCode(...data)).slice(0, 8);
+          const hash = btoa(String.fromCharCode(...data)).substring(0, 8);
           keyParts.push(`${header}:${hash}`);
         } else {
           keyParts.push(`${header}:${value}`);
@@ -228,10 +248,23 @@ function setCacheHeaders(
   }
 
   // Add ETag for conditional requests
-  const etag = `"${Date.now()}-${Math.random().toString(36).substr(2, 9)}"`;
+  const etag = `"${Date.now()}-${Math.random().toString(36).substring(2, 11)}"`;
   response.headers.set('ETag', etag);
 
   return response;
+}
+
+/**
+ * Check if request is for SSE endpoint
+ */
+function isSSEEndpoint(req: NextRequest): boolean {
+  const url = new URL(req.url);
+  const pathname = url.pathname;
+
+  // Check for SSE endpoints
+  const sseEndpoints = ['/api/activities/live', '/api/offline/sync/events'];
+
+  return sseEndpoints.some(endpoint => pathname.startsWith(endpoint));
 }
 
 /**
@@ -239,9 +272,9 @@ function setCacheHeaders(
  *
  * This function determines whether to skip caching based on several conditions:
  * if caching is explicitly disabled in the config, if the request method is not GET,
- * if a no-cache header is present, or if the request includes authorization in a
- * development environment with a specific configuration. If none of these conditions
- * are met, caching is allowed.
+ * if a no-cache header is present, if it's an SSE endpoint, or if the request includes
+ * authorization in a development environment with a specific configuration. If none of
+ * these conditions are met, caching is allowed.
  *
  * @param req - The request object of type NextRequest.
  * @param config - The configuration object of type CacheConfig.
@@ -255,6 +288,11 @@ function shouldSkipCache(req: NextRequest, config: CacheConfig): boolean {
 
   // Skip cache for non-GET requests
   if (req.method !== 'GET') {
+    return true;
+  }
+
+  // Always skip cache for SSE endpoints
+  if (isSSEEndpoint(req)) {
     return true;
   }
 
@@ -360,7 +398,13 @@ export async function withCache(
         setTimeout(async () => {
           try {
             const freshResponse = await handler(req);
-            await cacheResponse(cacheKey, freshResponse, config);
+            // Create a proper NextResponse for caching
+            const responseForCache = new NextResponse(freshResponse.body, {
+              status: freshResponse.status,
+              statusText: freshResponse.statusText,
+              headers: freshResponse.headers,
+            });
+            await cacheResponse(cacheKey, responseForCache, config);
           } catch (error) {
             console.error('Background revalidation failed:', error);
           }
@@ -375,7 +419,13 @@ export async function withCache(
 
     // Cache the response if it's successful
     if (response.status >= 200 && response.status < 300) {
-      await cacheResponse(cacheKey, response.clone(), config);
+      // Create a proper NextResponse clone for caching
+      const responseForCache = new NextResponse(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+      });
+      await cacheResponse(cacheKey, responseForCache, config);
     }
 
     response.headers.set('X-Cache', 'MISS');
@@ -409,7 +459,9 @@ async function cacheResponse(
   config: CacheConfig
 ): Promise<void> {
   try {
-    const body = await response.text();
+    // Clone the response to avoid consuming the original body
+    const clonedResponse = response.clone();
+    const body = await clonedResponse.text();
     const headers: Record<string, string> = {};
 
     // Copy relevant headers
@@ -462,12 +514,7 @@ export class CacheWarmer {
       this.warmingQueue.add(url);
 
       try {
-        const req = new NextRequest(url, {
-          method: 'GET',
-          headers: new Headers(headers),
-        });
-
-        // This would need to be called with the actual handler
+        // TODO: This would need to be called with the actual handler
         // In practice, this would be integrated with the route handlers
         console.log(`Warming cache for: ${url}`);
       } catch (error) {
@@ -486,7 +533,7 @@ export class CacheWarmer {
   static async warmUserCache(userId: string): Promise<void> {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const endpoints = [
-      { url: `${baseUrl}/api/user/profile` },
+      { url: `${baseUrl}/api/user/profile`, headers: { 'x-user-id': userId } },
       { url: `${baseUrl}/api/github/repos` },
       { url: `${baseUrl}/api/slack/channels` },
       { url: `${baseUrl}/api/slack/stats` },

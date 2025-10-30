@@ -313,6 +313,3 @@ export function withFeatureFlag(feature: keyof FeatureFlagConfig) {
     }) as T;
   };
 }
-
-// Export types
-export type { FeatureFlagConfig };

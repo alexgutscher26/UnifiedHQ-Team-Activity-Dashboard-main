@@ -1,24 +1,27 @@
 import { describe, it, beforeEach, afterEach, mock } from 'node:test';
 import assert from 'node:assert';
 
+// Helper to create typed mock functions
+const createMockFn = () => mock.fn<any>();
+
 // Mock global objects for service worker testing
 const mockServiceWorker = {
-  register: mock.fn(),
-  unregister: mock.fn(),
-  update: mock.fn(),
-  addEventListener: mock.fn(),
-  removeEventListener: mock.fn(),
-  postMessage: mock.fn(),
+  register: mock.fn<any>(),
+  unregister: mock.fn<any>(),
+  update: mock.fn<any>(),
+  addEventListener: mock.fn<any>(),
+  removeEventListener: mock.fn<any>(),
+  postMessage: mock.fn<any>(),
 };
 
 const mockRegistration = {
   installing: null,
   waiting: null,
   active: null,
-  addEventListener: mock.fn(),
-  removeEventListener: mock.fn(),
-  unregister: mock.fn(),
-  update: mock.fn(),
+  addEventListener: mock.fn<any>(),
+  removeEventListener: mock.fn<any>(),
+  unregister: mock.fn<any>(() => Promise.resolve(true)),
+  update: mock.fn<any>(() => Promise.resolve()),
 };
 
 // Mock navigator
@@ -60,9 +63,9 @@ describe('Service Worker Registration', () => {
       );
 
       const callbacks = {
-        onInstalling: mock.fn(),
-        onActive: mock.fn(),
-        onError: mock.fn(),
+        onInstalling: mock.fn<any>(),
+        onActive: mock.fn<any>(),
+        onError: mock.fn<any>(),
       };
 
       const state = await serviceWorkerManager.register(callbacks);
@@ -226,14 +229,14 @@ describe('Service Worker Registration', () => {
   describe('skipWaiting', () => {
     it('should skip waiting successfully', async () => {
       const mockWaitingWorker = {
-        postMessage: mock.fn(),
-        addEventListener: mock.fn(),
-        removeEventListener: mock.fn(),
+        postMessage: mock.fn<any>(),
+        addEventListener: mock.fn<any>(),
+        removeEventListener: mock.fn<any>(),
       };
 
       const mockActiveWorker = {
-        addEventListener: mock.fn(),
-        removeEventListener: mock.fn(),
+        addEventListener: mock.fn<any>(),
+        removeEventListener: mock.fn<any>(),
       };
 
       const registrationWithWaiting = {

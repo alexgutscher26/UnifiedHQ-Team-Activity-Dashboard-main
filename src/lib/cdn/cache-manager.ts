@@ -276,7 +276,7 @@ export class CDNCacheManager {
    */
   private async calculateHitRate(): Promise<number> {
     try {
-      // This would typically come from analytics or monitoring
+      // TODO: This would typically come from analytics or monitoring
       // For now, return a simulated value based on cache headers
       const testPaths = ['/api/github/repos', '/api/slack/channels', '/'];
       let hits = 0;
@@ -306,7 +306,7 @@ export class CDNCacheManager {
    * Get cache statistics
    */
   async getCacheStats(): Promise<CacheStats> {
-    // This would typically integrate with Vercel Analytics API
+    // TODO: This would typically integrate with Vercel Analytics API
     // For now, return simulated data structure
     return {
       totalRequests: 0,

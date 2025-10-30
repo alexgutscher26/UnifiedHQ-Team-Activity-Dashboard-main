@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'bun:test';
+import { describe, it, expect, beforeEach } from '@jest/globals';
 import { EdgeConfig } from '../edge-config';
 import { EdgeMiddleware } from '../edge-middleware';
 import { NextRequest, NextResponse } from 'next/server';

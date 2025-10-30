@@ -4,10 +4,6 @@
 
 import {
   MemoryLeakDetectionConfig,
-  DetectionConfig,
-  FixConfig,
-  MonitoringConfig,
-  PreventionConfig,
   LeakSeverity,
   LeakType,
 } from './types';
@@ -512,7 +508,7 @@ export const configUtils = {
     const manager = getConfigManager();
     const config = manager.getConfig();
 
-    // This would require extending the config structure to support per-type settings
+    // TODO: This would require extending the config structure to support per-type settings
     // For now, we'll just log the action
     console.log(
       `${enabled ? 'Enabled' : 'Disabled'} detection for ${leakType}`

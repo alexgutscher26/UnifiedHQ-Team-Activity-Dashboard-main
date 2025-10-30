@@ -425,7 +425,7 @@ Always respond with valid JSON format as requested.`;
 
     for (const userId of userIds) {
       try {
-        // This would typically be called before scheduled generation
+        // TODO: This would typically be called before scheduled generation
         // to pre-populate cache with user activity data
         const cacheKey = CacheKeyGenerator.user(userId, 'activity_data');
 
@@ -433,7 +433,7 @@ Always respond with valid JSON format as requested.`;
         const cachedData = await RedisCache.get(cacheKey);
         if (!cachedData) {
           console.log(`🔥 Pre-warming activity data cache for user ${userId}`);
-          // The actual activity data would be fetched and cached here
+          // todo: The actual activity data would be fetched and cached here
           // This is a placeholder for the warming logic
         }
       } catch (error) {

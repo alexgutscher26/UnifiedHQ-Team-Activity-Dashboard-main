@@ -1,14 +1,258 @@
 {
   "scanSettings": {
-    "baseBranches": []
+    "baseBranches": [
+      "main",
+      "develop"
+    ],
+    "enableLicenseViolations": true,
+    "enableReachability": true,
+    "exploitability": true,
+    "configMode": "AUTO",
+    "configExternalChangeDetection": true,
+    "projectToken": "",
+    "baseBranchesToScan": [
+      "main",
+      "develop",
+      "release/*"
+    ],
+    "scanComment": "Mend security scan for UnifiedHQ",
+    "enableImpactAnalysis": true
   },
   "checkRunSettings": {
     "vulnerableCheckRunConclusionLevel": "failure",
     "displayMode": "diff",
-    "useMendCheckNames": true
+    "useMendCheckNames": true,
+    "strictMode": true,
+    "showOnlyVulnerableLibraries": false,
+    "checkRunConclusionLevel": "success"
   },
   "issueSettings": {
     "minSeverityLevel": "LOW",
-    "issueType": "DEPENDENCY"
+    "issueType": "DEPENDENCY",
+    "failOnNewVulnerabilities": true,
+    "failOnNewLicenseViolations": true,
+    "maxOpenIssues": 100,
+    "enableSeverityFilters": true,
+    "severityFilters": {
+      "critical": "failure",
+      "high": "failure",
+      "medium": "warning",
+      "low": "neutral"
+    }
+  },
+  "remediateSettings": {
+    "enableRenovate": true,
+    "extends": [
+      "config:base"
+    ],
+    "packageRules": [
+      {
+        "matchUpdateTypes": [
+          "major"
+        ],
+        "automerge": false
+      },
+      {
+        "matchUpdateTypes": [
+          "minor",
+          "patch"
+        ],
+        "automerge": true,
+        "automergeType": "pr"
+      },
+      {
+        "matchPackagePatterns": [
+          "^@types/"
+        ],
+        "automerge": true
+      }
+    ],
+    "schedule": [
+      "before 6am on monday"
+    ],
+    "timezone": "UTC",
+    "labels": [
+      "dependencies",
+      "security"
+    ],
+    "assignees": [
+      "@maintainers"
+    ],
+    "reviewers": [
+      "@security-team"
+    ]
+  },
+  "hostRules": [
+    {
+      "matchHost": "registry.npmjs.org",
+      "timeout": 60000
+    }
+  ],
+  "licensePolicySettings": {
+    "approvedLicenses": [
+      "MIT",
+      "Apache-2.0",
+      "BSD-2-Clause",
+      "BSD-3-Clause",
+      "ISC",
+      "0BSD",
+      "CC0-1.0",
+      "Unlicense"
+    ],
+    "rejectedLicenses": [
+      "GPL-2.0",
+      "GPL-3.0",
+      "AGPL-1.0",
+      "AGPL-3.0",
+      "LGPL-2.0",
+      "LGPL-2.1",
+      "LGPL-3.0",
+      "CPAL-1.0",
+      "EPL-1.0",
+      "EPL-2.0",
+      "EUPL-1.1",
+      "EUPL-1.2"
+    ],
+    "unknownLicenseAction": "failure",
+    "copyleftLicenseAction": "failure"
+  },
+  "generalSettings": {
+    "shouldScanRepo": true,
+    "baseBranchesToScan": [
+      "main",
+      "develop"
+    ],
+    "forceCheckAllDependencies": true,
+    "forceUpdate": false,
+    "generateProjectDetailsJson": true,
+    "saveReportAs": [
+      "json",
+      "xml"
+    ],
+    "reportTimeout": 300000
+  },
+  "scanSettingsInheritedFrom": "company",
+  "projectSettings": {
+    "projectName": "UnifiedHQ",
+    "projectVersion": "1.0.0",
+    "projectDescription": "Team Activity Dashboard with GitHub, Slack, and AI integrations",
+    "projectUrl": "https://github.com/unifiedhq/unifiedhq",
+    "projectTags": [
+      "dashboard",
+      "integrations",
+      "nextjs",
+      "typescript"
+    ],
+    "includeDevDependencies": true,
+    "includePeerDependencies": false
+  },
+  "scanSettings2": {
+    "enableLicenseViolations": true,
+    "licenseViolationFailBuildLevel": "ALL",
+    "enablePackageManagerFiles": true,
+    "exploitability": true,
+    "enableReachability": true,
+    "reachabilityTimeout": 300,
+    "enableImpactAnalysis": true,
+    "impactAnalysisTimeout": 600,
+    "enableContainerScan": true,
+    "dockerImageName": "unifiedhq/app",
+    "dockerFilePath": "./Dockerfile",
+    "enableInfrastructureAsCode": true,
+    "iacScanTimeout": 180
+  },
+  "excludes": [
+    "**/node_modules/**",
+    "**/bower_components/**",
+    "**/.git/**",
+    "**/.next/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/coverage/**",
+    "**/.nyc_output/**",
+    "**/test/**",
+    "**/__tests__/**",
+    "**/*.test.js",
+    "**/*.test.ts",
+    "**/*.spec.js",
+    "**/*.spec.ts",
+    "**/docs/**",
+    "**/*.md",
+    "**/scripts/test/**",
+    "**/prisma/migrations/**"
+  ],
+  "includes": [
+    "package.json",
+    "package-lock.json",
+    "yarn.lock",
+    "bun.lockb",
+    "pnpm-lock.yaml",
+    "Dockerfile",
+    "docker-compose.yml",
+    "requirements.txt",
+    "Pipfile",
+    "Pipfile.lock",
+    "go.mod",
+    "go.sum"
+  ],
+  "vulnerabilitySettings": {
+    "enableSecurityAdvisories": true,
+    "enableVulnerabilityAlerting": true,
+    "alertingEmail": "security@unifiedhq.com",
+    "enableSlackNotifications": true,
+    "slackWebhookUrl": "",
+    "criticalVulnerabilityAction": "fail_build",
+    "highVulnerabilityAction": "fail_build",
+    "mediumVulnerabilityAction": "create_issue",
+    "lowVulnerabilityAction": "log_only",
+    "enableCVSSv3": true,
+    "cvssThreshold": 4.0,
+    "enableExploitPrediction": true,
+    "enableThreatIntelligence": true
+  },
+  "integrationSettings": {
+    "enableJiraIntegration": false,
+    "enableSlackIntegration": true,
+    "enableEmailNotifications": true,
+    "enableWebhooks": true,
+    "webhookUrl": "",
+    "enableSarifExport": true,
+    "enableSbomGeneration": true,
+    "sbomFormat": [
+      "spdx",
+      "cyclonedx"
+    ],
+    "enableComplianceReporting": true
+  },
+  "reportSettings": {
+    "enableDetailedReport": true,
+    "enableExecutiveSummary": true,
+    "enableTrendAnalysis": true,
+    "enableBenchmarking": true,
+    "reportFormats": [
+      "pdf",
+      "html",
+      "json",
+      "xml",
+      "csv"
+    ],
+    "reportSchedule": "weekly",
+    "reportRecipients": [
+      "security@unifiedhq.com",
+      "devops@unifiedhq.com"
+    ],
+    "enableDashboard": true,
+    "dashboardUrl": "https://app.whitesourcesoftware.com/Wss/WSS.html"
+  },
+  "complianceSettings": {
+    "enableSOX": false,
+    "enableHIPAA": false,
+    "enablePCIDSS": false,
+    "enableGDPR": true,
+    "enableSOC2": true,
+    "enableISO27001": true,
+    "customComplianceRules": [],
+    "enableLicenseCompliance": true,
+    "enableSecurityCompliance": true
   }
 }

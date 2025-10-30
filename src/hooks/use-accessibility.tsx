@@ -6,10 +6,6 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 
 /**
  * Hook for managing ARIA live region announcements.
- *
- * @returns {Object} Object containing announce function and current announcements
- * @returns {Function} returns.announce - Function to announce a message
- * @returns {string[]} returns.announcements - Array of current announcements
  */
 export const useAriaLiveAnnouncer = () => {
   const [announcements, setAnnouncements] = useState<string[]>([]);
@@ -17,9 +13,6 @@ export const useAriaLiveAnnouncer = () => {
 
   /**
    * Announces a message to screen readers via ARIA live regions
-   * 
-   * @param message - The message to announce
-   * @param priority - The announcement priority ('polite' or 'assertive')
    */
   const announce = useCallback(
     (message: string, priority: 'polite' | 'assertive' = 'polite') => {
@@ -51,13 +44,6 @@ export const useAriaLiveAnnouncer = () => {
 
 /**
  * Hook for managing focus behavior and focus trapping with proper cleanup.
- *
- * This hook provides utilities for focus management, including trapping focus within a specified container, restoring focus to the last saved element, and saving the current focused element. It ensures that event listeners are cleaned up to prevent memory leaks when the component unmounts.
- *
- * @returns {Object} Object containing focus management functions
- * @returns {Function} returns.trapFocus - Traps focus within a container element
- * @returns {Function} returns.restoreFocus - Restores focus to the last saved element
- * @returns {Function} returns.saveFocus - Saves the current focused element
  */
 export const useFocusManagement = () => {
   const focusHistory = useRef<HTMLElement[]>([]);
@@ -65,9 +51,6 @@ export const useFocusManagement = () => {
 
   /**
    * Traps focus within a container element (e.g., for modals or dropdowns)
-   * 
-   * @param container - The HTML element to trap focus within
-   * @returns Cleanup function to remove the focus trap
    */
   const trapFocus = useCallback((container: HTMLElement) => {
     const focusableElements = container.querySelectorAll(
@@ -77,15 +60,6 @@ export const useFocusManagement = () => {
     const firstElement = focusableElements[0];
     const lastElement = focusableElements[focusableElements.length - 1];
 
-    /**
-     * Handles the Tab key press event for navigating between elements.
-     *
-     * This function checks if the pressed key is 'Tab' and determines the navigation direction based on the shift key state.
-     * If the shift key is pressed and the currently focused element is the firstElement, it focuses on the lastElement.
-     * Conversely, if the shift key is not pressed and the currently focused element is the lastElement, it focuses on the firstElement, preventing the default tab behavior.
-     *
-     * @param e - The keyboard event triggered by the Tab key press.
-     */
     const handleTabKey = (e: KeyboardEvent) => {
       if (e.key === 'Tab') {
         if (e.shiftKey) {
@@ -105,9 +79,6 @@ export const useFocusManagement = () => {
     container.addEventListener('keydown', handleTabKey);
     firstElement?.focus();
 
-    /**
-     * Cleans up event listeners and removes the cleanup function from active traps.
-     */
     const cleanup = () => {
       container.removeEventListener('keydown', handleTabKey);
       activeTraps.current.delete(cleanup);
@@ -129,8 +100,6 @@ export const useFocusManagement = () => {
 
   /**
    * Saves an element to the focus history for later restoration
-   * 
-   * @param element - The HTML element to save for focus restoration
    */
   const saveFocus = useCallback((element: HTMLElement) => {
     focusHistory.current.push(element);
@@ -149,19 +118,6 @@ export const useFocusManagement = () => {
 
 /**
  * Hook for handling keyboard navigation with customizable key handlers.
- *
- * This hook provides keyboard event handling for common navigation patterns by attaching and detaching event listeners to manage keyboard interactions. It allows for customizable handlers for various keys, including Escape, Enter, and arrow keys, ensuring that the appropriate functions are called when these keys are pressed.
- *
- * @param onEscape - Handler for Escape key press.
- * @param onEnter - Handler for Enter or Space key press.
- * @param onArrowUp - Handler for Arrow Up key press.
- * @param onArrowDown - Handler for Arrow Down key press.
- * @param onArrowLeft - Handler for Arrow Left key press.
- * @param onArrowRight - Handler for Arrow Right key press.
- * @returns {Object} Object containing keyboard navigation functions.
- * @returns {Function} returns.handleKeyDown - Key down event handler.
- * @returns {Function} returns.attachKeyboardListener - Attaches global keyboard listener.
- * @returns {Function} returns.detachKeyboardListener - Detaches global keyboard listener.
  */
 export const useKeyboardNavigation = (
   onEscape?: () => void,
@@ -226,25 +182,12 @@ export const useKeyboardNavigation = (
 
 /**
  * Hook for screen reader detection and speech synthesis support.
- *
- * This hook detects if a screen reader is active by checking for the presence of speech synthesis
- * capabilities and specific user agents. It manages speech synthesis utterances and ensures cleanup
- * of active utterances when the component using this hook unmounts. The hook returns an object
- * containing the screen reader status and a function to announce messages to the screen reader.
- *
- * @returns {Object} Object containing screen reader utilities
- * @returns {boolean} returns.isScreenReaderActive - Whether a screen reader is detected
- * @returns {Function} returns.announceToScreenReader - Function to speak text aloud
  */
 export const useScreenReaderSupport = () => {
   const [isScreenReaderActive, setIsScreenReaderActive] = useState(false);
   const activeUtterances = useRef<Set<SpeechSynthesisUtterance>>(new Set());
 
   useEffect(() => {
-    // Detect screen reader usage
-    /**
-     * Detects if a screen reader is active based on browser features and user agent.
-     */
     const detectScreenReader = () => {
       const hasScreenReader =
         window.speechSynthesis ||
@@ -268,8 +211,6 @@ export const useScreenReaderSupport = () => {
 
   /**
    * Announces a message using speech synthesis for screen readers
-   * 
-   * @param message - The message to speak aloud
    */
   const announceToScreenReader = useCallback(
     (message: string) => {
@@ -299,29 +240,10 @@ export const useScreenReaderSupport = () => {
 
 /**
  * Hook for color contrast calculations and accessibility validation
- * 
- * @description Provides utilities for calculating color contrast ratios and
- * validating accessibility compliance according to WCAG guidelines.
- * 
- * @returns {Object} Object containing contrast utilities
- * @returns {Function} returns.getContrastRatio - Calculates contrast ratio between two colors
- * @returns {Function} returns.isAccessibleContrast - Checks if contrast meets WCAG AA standards
- * 
- * @example
- * ```tsx
- * const { getContrastRatio, isAccessibleContrast } = useColorContrast();
- * 
- * const ratio = getContrastRatio('#000000', '#ffffff');
- * const isAccessible = isAccessibleContrast('#333333', '#ffffff');
- * ```
  */
 export const useColorContrast = () => {
   /**
    * Calculates the contrast ratio between two colors
-   * 
-   * @param color1 - First color (hex, rgb, or named color)
-   * @param color2 - Second color (hex, rgb, or named color)
-   * @returns The contrast ratio between the colors
    */
   const getContrastRatio = useCallback((color1: string, color2: string) => {
     // Simplified contrast ratio calculation
@@ -331,10 +253,6 @@ export const useColorContrast = () => {
 
   /**
    * Checks if the contrast between foreground and background colors meets WCAG AA standards
-   * 
-   * @param foreground - Foreground color
-   * @param background - Background color
-   * @returns True if contrast ratio meets WCAG AA standard (4.5:1)
    */
   const isAccessibleContrast = useCallback(
     (foreground: string, background: string) => {
@@ -370,9 +288,6 @@ export const useHighContrastMode = () => {
     const mediaQuery = window.matchMedia('(prefers-contrast: high)');
     setIsHighContrast(mediaQuery.matches);
 
-    /**
-     * Updates the high contrast state based on the media query match.
-     */
     const handleChange = (e: MediaQueryListEvent) => {
       setIsHighContrast(e.matches);
     };
@@ -386,9 +301,6 @@ export const useHighContrastMode = () => {
 
 /**
  * Hook for detecting reduced motion preference.
- *
- * @returns {Object} Object containing reduced motion state.
- * @returns {boolean} returns.prefersReducedMotion - Whether reduced motion is preferred.
  */
 export const useReducedMotion = () => {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
@@ -397,9 +309,6 @@ export const useReducedMotion = () => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     setPrefersReducedMotion(mediaQuery.matches);
 
-    /**
-     * Updates the prefersReducedMotion state based on the media query match.
-     */
     const handleChange = (e: MediaQueryListEvent) => {
       setPrefersReducedMotion(e.matches);
     };
@@ -413,20 +322,10 @@ export const useReducedMotion = () => {
 
 /**
  * Hook for performing accessibility audits on DOM elements.
- *
- * This hook provides a utility function, auditComponent, which checks a given DOM element for common accessibility issues, including missing alt text for images, missing labels for form inputs, and proper heading hierarchy. It collects and returns an array of descriptions for any identified issues.
- *
- * @returns {Object} Object containing audit utilities.
- * @returns {Function} returns.auditComponent - Audits a DOM element for accessibility issues.
- * @param element - The HTML element to audit.
- * @returns Array of accessibility issue descriptions.
  */
 export const useAccessibilityAudit = () => {
   /**
    * Audits a DOM element for common accessibility issues
-   * 
-   * @param element - The HTML element to audit
-   * @returns Array of accessibility issue descriptions
    */
   const auditComponent = useCallback((element: HTMLElement) => {
     const issues: string[] = [];
@@ -483,34 +382,16 @@ export const useAccessibilityAudit = () => {
 
 /**
  * ARIA live region component for screen reader announcements
- * 
- * @description Renders an ARIA live region that announces messages to screen readers.
- * The component is visually hidden but accessible to assistive technologies.
- * 
- * @param props - Component props
- * @param props.announcements - Array of announcement strings to display
- * 
- * @example
- * ```tsx
- * const { announcements } = useAriaLiveAnnouncer();
- * 
- * return (
- *   <div>
- *     <AriaLiveRegion announcements={announcements} />
- *     {/* Rest of your component */}
- *   </div >
- * );
- * ```
  */
 export const AriaLiveRegion: React.FC<{ announcements: string[] }> = ({
   announcements,
 }) => {
   return (
     <div
-      aria-live='polite'
-      aria-atomic='true'
-      className='sr-only'
-      role='status'
+      aria-live="polite"
+      aria-atomic="true"
+      className="sr-only"
+      role="status"
     >
       {announcements.map((announcement, index) => (
         <div key={index}>{announcement}</div>
@@ -521,31 +402,17 @@ export const AriaLiveRegion: React.FC<{ announcements: string[] }> = ({
 
 /**
  * Skip links component for keyboard navigation
- * 
- * @description Renders skip links that are hidden by default but become visible
- * when focused. Allows keyboard users to quickly navigate to main content areas.
- * 
- * @example
- * ```tsx
-  * return (
- * <div>
-      *     <SkipLinks />
-      *     <nav id="navigation">Navigation content</nav>
-      *     <main id="main-content">Main content</main>
-      *   </div>
-    * );
- * ```
  */
 export const SkipLinks: React.FC = () => {
   const { skipLinks } = useSkipLinks();
 
   return (
-    <div className='sr-only focus-within:not-sr-only'>
+    <div className="sr-only focus-within:not-sr-only">
       {skipLinks.map(link => (
         <a
           key={link.id}
-          href={`#${ link.id } `}
-          className='absolute top-0 left-0 z-50 bg-primary text-primary-foreground px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-ring'
+          href={`#${link.id}`}
+          className="absolute top-0 left-0 z-50 bg-primary text-primary-foreground px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
         >
           {link.label}
         </a>
@@ -556,18 +423,6 @@ export const SkipLinks: React.FC = () => {
 
 /**
  * Hook for focus-visible polyfill support in older browsers
- * 
- * @description Adds focus-visible polyfill class to the document body
- * for browsers that don't support the :focus-visible CSS selector.
- * 
- * @example
- * ```tsx
-  * function App() {
- * useFocusVisible();
- *   
- *   return <div>Your app content</div>;
- * }
-  * ```
  */
 export const useFocusVisible = () => {
   useEffect(() => {
@@ -580,9 +435,6 @@ export const useFocusVisible = () => {
 
 /**
  * Accessibility-related constants and timing values
- * 
- * @description Provides standardized timing and threshold values for
- * accessibility features to ensure consistent behavior across the application.
  */
 export const ACCESSIBILITY_CONSTANTS = {
   FOCUS_TIMEOUT: 100,
@@ -594,9 +446,6 @@ export const ACCESSIBILITY_CONSTANTS = {
 
 /**
  * Standard ARIA roles for accessibility
- * 
- * @description Provides a comprehensive list of ARIA roles as constants
- * to ensure consistent usage and prevent typos in role assignments.
  */
 export const ARIA_ROLES = {
   BUTTON: 'button',
@@ -639,9 +488,6 @@ export const ARIA_ROLES = {
 
 /**
  * Standard ARIA properties and attributes
- * 
- * @description Provides a comprehensive list of ARIA properties as constants
- * to ensure consistent usage and prevent typos in attribute assignments.
  */
 export const ARIA_PROPERTIES = {
   LABEL: 'aria-label',

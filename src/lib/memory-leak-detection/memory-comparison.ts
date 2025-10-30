@@ -2,9 +2,7 @@
  * Memory usage comparison system for measuring fix effectiveness and regression detection
  */
 
-import { performance } from 'perf_hooks';
-import { MemoryMeasurement } from './test-utilities';
-import { Fix, LeakReport, MemoryMetrics } from './types';
+import { Fix } from './types';
 
 // Memory snapshot for comparison
 export interface MemorySnapshot {
@@ -356,7 +354,7 @@ export class MemoryComparisonSystem {
       comparison.differences.performanceImpact.cpuUsageChange >
       (baselineSnapshot.performanceMetrics.cpuUsage *
         finalThresholds.performanceDegradationThreshold) /
-        100;
+      100;
 
     const detected =
       memoryRegression || resourceRegression || performanceRegression;
@@ -481,7 +479,8 @@ export class MemoryComparisonSystem {
         }
       }
     } catch (error) {
-      throw new Error(`Failed to import snapshots: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to import snapshots: ${errorMessage}`);
     }
   }
 
@@ -494,19 +493,20 @@ export class MemoryComparisonSystem {
     subscriptions: number;
     connections: number;
   }> {
-    // In a real implementation, these would track actual resources
-    // For now, return mock data that could be extended
-    return {
+    // TODO: In a real implementation, these would track actual resources
+    // Using Promise.resolve() to maintain async interface for future implementation
+    // This allows callers to use await without breaking when real async implementation is added
+    return Promise.resolve({
       eventListeners: 0,
       intervals: 0,
       timeouts: 0,
       subscriptions: 0,
       connections: 0,
-    };
+    });
   }
 
   private setupGCMonitoring(): void {
-    // This would set up GC monitoring in a real implementation
+    // TODO: This would set up GC monitoring in a real implementation
     // For now, just initialize the stats
     this.gcStats = { count: 0, totalDuration: 0 };
   }

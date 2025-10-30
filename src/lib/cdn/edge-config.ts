@@ -317,5 +317,3 @@ export class EdgeConfig {
   }
 }
 
-// Export cache rule types for use in other modules
-export type { EdgeCacheRule, AssetOptimization };

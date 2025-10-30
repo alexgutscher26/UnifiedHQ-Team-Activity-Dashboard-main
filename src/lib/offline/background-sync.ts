@@ -5,9 +5,6 @@ import { conflictResolutionManager } from './conflict-resolution';
 import {
   OfflineAction,
   SyncResult,
-  RetryConfig,
-  DataConflict,
-  ConflictResolution,
 } from './types';
 
 export interface SyncProgress {
@@ -51,7 +48,7 @@ export class BackgroundSyncHandler {
       throw new Error('Service Worker not supported');
     }
 
-    if (!('sync' in window.ServiceWorkerRegistration.prototype)) {
+    if (!('sync' in (window as any).ServiceWorkerRegistration.prototype)) {
       console.warn(
         '[Background Sync] Background Sync not supported, using fallback'
       );
@@ -63,7 +60,7 @@ export class BackgroundSyncHandler {
       const registration = await navigator.serviceWorker.ready;
 
       // Register background sync
-      await registration.sync.register('offline-actions-sync');
+      await (registration as any).sync.register('offline-actions-sync');
 
       this.isRegistered = true;
       console.log('[Background Sync] Registered successfully');

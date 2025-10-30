@@ -398,10 +398,10 @@ export class StaticCodeAnalyzer {
       }
 
       // Analyze intervals and timeouts
-      await this.analyzeTimers(code, filePath, reports, parser);
+      this.analyzeTimers(code, filePath, reports, parser);
 
       // Analyze connections
-      await this.analyzeConnections(code, filePath, reports, parser);
+      this.analyzeConnections(code, filePath, reports, parser);
     } catch (error) {
       console.error(`Error analyzing file ${filePath}:`, error);
     }
@@ -410,12 +410,12 @@ export class StaticCodeAnalyzer {
   }
 
   // Analyze timer-related leaks
-  private async analyzeTimers(
+  private analyzeTimers(
     code: string,
     filePath: string,
     reports: LeakReport[],
     parser: SimpleASTParser
-  ): Promise<void> {
+  ): void {
     // Find setInterval without clearInterval
     const intervalPattern = /setInterval\s*\(/g;
     let match;
@@ -485,12 +485,12 @@ export class StaticCodeAnalyzer {
   }
 
   // Analyze connection-related leaks
-  private async analyzeConnections(
+  private analyzeConnections(
     code: string,
     filePath: string,
     reports: LeakReport[],
     parser: SimpleASTParser
-  ): Promise<void> {
+  ): void {
     // Find EventSource without close
     const eventSourcePattern = /new\s+EventSource\s*\(/g;
     let match;

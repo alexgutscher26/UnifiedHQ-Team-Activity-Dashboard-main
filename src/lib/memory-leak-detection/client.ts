@@ -18,18 +18,18 @@ export interface ClientMemoryLeakDetector {
   cleanup(): void;
 }
 
-// Mock implementation for client-side (in a real app, this would call APIs)
+// TODO: Mock implementation for client-side (in a real app, this would call APIs)
 class ClientMemoryLeakDetectorImpl implements ClientMemoryLeakDetector {
   private isCleanedUp = false;
 
-  async scanProject(): Promise<ProjectLeakReport> {
+  scanProject(): Promise<ProjectLeakReport> {
     if (this.isCleanedUp) {
-      throw new Error('Detector has been cleaned up');
+      return Promise.reject(new Error('Detector has been cleaned up'));
     }
 
-    // In a real implementation, this would call a server API
+    // TODO: In a real implementation, this would call a server API
     // For now, return mock data to prevent build errors
-    return {
+    return Promise.resolve({
       totalLeaks: 0,
       files: [],
       reports: [],
@@ -40,14 +40,30 @@ class ClientMemoryLeakDetectorImpl implements ClientMemoryLeakDetector {
         lowCount: 0,
         fixableCount: 0,
       },
-      scanDuration: 0,
-      timestamp: new Date(),
-    };
+      leaksByType: {
+        'missing-useeffect-cleanup': 0,
+        'uncleaned-event-listener': 0,
+        'uncleaned-interval': 0,
+        'uncleaned-timeout': 0,
+        'uncleaned-subscription': 0,
+        'unclosed-eventsource': 0,
+        'unclosed-websocket': 0,
+        'memory-accumulation': 0,
+        'circular-reference': 0,
+      },
+      leaksBySeverity: {
+        low: 0,
+        medium: 0,
+        high: 0,
+        critical: 0,
+      },
+      generatedAt: new Date(),
+    });
   }
 
-  async analyzeRuntime(): Promise<RuntimeLeakReport> {
+  analyzeRuntime(): Promise<RuntimeLeakReport> {
     if (this.isCleanedUp) {
-      throw new Error('Detector has been cleaned up');
+      return Promise.reject(new Error('Detector has been cleaned up'));
     }
 
     // Get basic memory info if available
@@ -57,7 +73,7 @@ class ClientMemoryLeakDetectorImpl implements ClientMemoryLeakDetector {
       jsHeapSizeLimit: 0,
     };
 
-    return {
+    return Promise.resolve({
       memoryUsage: {
         current: memoryInfo.usedJSHeapSize || 0,
         peak: memoryInfo.totalJSHeapSize || 0,
@@ -73,7 +89,7 @@ class ClientMemoryLeakDetectorImpl implements ClientMemoryLeakDetector {
       suspiciousPatterns: [],
       recommendations: [],
       timestamp: new Date(),
-    };
+    });
   }
 
   cleanup(): void {
@@ -103,14 +119,14 @@ export function startClientRuntimeMonitoring(options?: {
       if (
         options?.memoryThreshold &&
         runtimeReport.memoryUsage.current >
-          options.memoryThreshold * 1024 * 1024 // Convert MB to bytes
+        options.memoryThreshold * 1024 * 1024 // Convert MB to bytes
       ) {
-        options.onLeak?.(runtimeReport);
+        options?.onLeak?.(runtimeReport);
       }
 
       // Check for suspicious patterns
       if (runtimeReport.suspiciousPatterns.length > 0) {
-        options.onLeak?.(runtimeReport);
+        options?.onLeak?.(runtimeReport);
       }
     } catch (error) {
       console.error('Runtime monitoring error:', error);

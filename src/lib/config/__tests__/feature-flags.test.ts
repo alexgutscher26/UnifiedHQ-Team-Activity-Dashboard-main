@@ -1,7 +1,7 @@
 // Tests for Feature Flag System
 // Validates feature flag functionality and rollout controls
 
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { FeatureFlags } from '../feature-flags';
 
 describe('FeatureFlags', () => {
@@ -50,7 +50,7 @@ describe('FeatureFlags', () => {
 
   describe('Feature Flag Initialization', () => {
     it('should initialize with default values for development', () => {
-      process.env.NODE_ENV = 'development';
+      (process.env as any).NODE_ENV = 'development';
 
       const flags = FeatureFlags.initialize();
 
@@ -65,7 +65,7 @@ describe('FeatureFlags', () => {
     });
 
     it('should initialize with default values for production', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
 
       const flags = FeatureFlags.initialize();
 
@@ -77,7 +77,7 @@ describe('FeatureFlags', () => {
     });
 
     it('should initialize with default values for test environment', () => {
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       const flags = FeatureFlags.initialize();
 
@@ -90,7 +90,7 @@ describe('FeatureFlags', () => {
     });
 
     it('should respect environment variable overrides', () => {
-      process.env.NODE_ENV = 'development';
+      (process.env as any).NODE_ENV = 'development';
       process.env.ENABLE_REDIS_CACHE = 'false';
       process.env.ENABLE_CDN_INTEGRATION = 'true';
       process.env.ENABLE_CACHE_WARMING = 'true';
@@ -105,7 +105,7 @@ describe('FeatureFlags', () => {
 
   describe('Feature Flag Checking', () => {
     it('should check if feature is enabled', () => {
-      process.env.NODE_ENV = 'development';
+      (process.env as any).NODE_ENV = 'development';
       process.env.ENABLE_REDIS_CACHE = 'true';
 
       expect(FeatureFlags.isEnabled('redisCache')).toBe(true);
@@ -137,7 +137,7 @@ describe('FeatureFlags', () => {
 
   describe('User-based Feature Rollout', () => {
     beforeEach(() => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
       process.env.ENABLE_REDIS_CACHE = 'true';
     });
 
@@ -210,7 +210,7 @@ describe('FeatureFlags', () => {
 
   describe('Feature Flag Management', () => {
     it('should get all enabled features', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
       process.env.ENABLE_REDIS_CACHE = 'true';
       process.env.ENABLE_CDN_INTEGRATION = 'true';
       process.env.ENABLE_SERVICE_WORKER_CACHE = 'false';
@@ -223,7 +223,7 @@ describe('FeatureFlags', () => {
     });
 
     it('should get client-safe configuration', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
 
       const clientConfig = FeatureFlags.getClientConfig();
 
@@ -240,7 +240,7 @@ describe('FeatureFlags', () => {
     });
 
     it('should update feature flags at runtime', () => {
-      process.env.NODE_ENV = 'development';
+      (process.env as any).NODE_ENV = 'development';
 
       expect(FeatureFlags.isEnabled('redisCache')).toBe(true);
 
@@ -250,7 +250,7 @@ describe('FeatureFlags', () => {
     });
 
     it('should get feature flag status', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
       process.env.FEATURE_ROLLOUT_PERCENTAGE = '75';
       process.env.FEATURE_USER_SEGMENTS = 'beta,premium';
 
@@ -267,7 +267,7 @@ describe('FeatureFlags', () => {
 
   describe('Feature Flag Validation', () => {
     it('should validate valid configuration', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
       process.env.FEATURE_ROLLOUT_PERCENTAGE = '100';
       process.env.ENABLE_REDIS_CACHE = 'true';
       process.env.ENABLE_CACHE_WARMING = 'true';

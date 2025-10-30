@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, test, expect } from '@jest/globals';
 import { DEFAULT_RETRY_CONFIG } from '../types';
 
 describe('Offline Infrastructure Integration', () => {

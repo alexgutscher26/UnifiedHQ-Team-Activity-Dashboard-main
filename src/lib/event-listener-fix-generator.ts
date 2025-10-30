@@ -1,6 +1,5 @@
 import * as ts from 'typescript';
 import {
-  Fix,
   FixGenerationResult,
   CodeTransformation,
 } from './memory-leak-fix-generator';
@@ -346,7 +345,7 @@ export class EventListenerFixGenerator {
     // Handle different handler types
     let handlerRef = pattern.handler;
     if (pattern.handlerType === 'inline') {
-      // For inline handlers, we need to use the same function reference
+      // TODO: For inline handlers, we need to use the same function reference
       // This requires variable extraction which should be handled separately
       handlerRef = 'handlerRef'; // Placeholder - should be extracted variable name
     }

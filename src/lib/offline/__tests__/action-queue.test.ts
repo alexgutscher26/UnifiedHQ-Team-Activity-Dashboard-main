@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from 'bun:test';
+import { describe, test, expect, beforeEach } from '@jest/globals';
 import { OfflineActionQueue } from '../action-queue';
 import { DEFAULT_RETRY_CONFIG } from '../types';
 

@@ -39,11 +39,19 @@ We are committed to providing a welcoming and inclusive environment for all cont
 
 ### Prerequisites
 
-- **Node.js**: Version 18.17.0 or higher
-- **Package Manager**: npm, yarn, or pnpm
-- **Git**: Latest version
-- **Database**: PostgreSQL (for local development)
-- **Redis**: For caching (optional for local development)
+- **Node.js**: Version 18.17.0 or higher (LTS recommended)
+- **Bun**: Primary package manager (v1.0.0+) - [Install Bun](https://bun.sh/docs/installation)
+- **Git**: Latest version with SSH keys configured
+- **Database**: PostgreSQL 14+ (for local development)
+- **Redis**: For caching (optional for local development, required for production features)
+- **IDE**: VS Code with recommended extensions (see `.vscode/extensions.json`)
+
+### Recommended Tools
+
+- **Docker**: For consistent development environment
+- **GitHub CLI**: For easier PR management (`gh` command)
+- **Prisma Studio**: Database GUI (included with Prisma)
+- **Postman/Insomnia**: For API testing
 
 ### First Time Setup
 
@@ -56,11 +64,11 @@ We are committed to providing a welcoming and inclusive environment for all cont
 
 2. **Install dependencies**
    ```bash
-   npm install
-   # or
-   yarn install
-   # or
-   pnpm install
+   bun install
+   # Alternative package managers (not recommended)
+   # npm install
+   # yarn install
+   # pnpm install
    ```
 
 3. **Set up environment variables**
@@ -71,18 +79,33 @@ We are committed to providing a welcoming and inclusive environment for all cont
 
 4. **Set up the database**
    ```bash
-   npx prisma generate
-   npx prisma db push
-   npx prisma db seed
+   # Generate Prisma client
+   bun prisma generate
+   
+   # Push schema to database
+   bun prisma db push
+   
+   # Seed database with sample data
+   bun prisma db seed
+   
+   # Optional: Open Prisma Studio
+   bun prisma studio
    ```
 
 5. **Start the development server**
    ```bash
-   bun run dev
-   # or
-   yarn dev
-   # or
-   pnpm dev
+   bun dev
+   ```
+   
+   The application will be available at `http://localhost:3000`
+
+6. **Verify setup**
+   ```bash
+   # Check if all services are running
+   bun run health-check
+   
+   # Run tests to ensure everything works
+   bun test
    ```
 
 ## 🏗️ Development Setup
@@ -111,55 +134,112 @@ SENTRY_DSN="your-sentry-dsn"
 
 # AI Summary (OpenRouter)
 OPENROUTER_API_KEY="your-openrouter-api-key"
+
+# Slack Integration (optional)
+SLACK_CLIENT_ID="your-slack-client-id"
+SLACK_CLIENT_SECRET="your-slack-client-secret"
+SLACK_BOT_TOKEN="xoxb-your-bot-token"
+
+# Development flags
+NODE_ENV="development"
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
 
 ### Available Scripts
 
 ```bash
 # Development
-bun run dev          # Start development server
-bun run build        # Build for production
-bun run start        # Start production server
+bun dev              # Start development server
+bun build            # Build for production
+bun start            # Start production server
+bun preview          # Preview production build locally
 
 # Code Quality
-bun run lint         # Run ESLint
-bun run format       # Format code with Prettier
-bun run format:check # Check code formatting
+bun lint             # Run ESLint
+bun lint:fix         # Fix ESLint issues automatically
+bun format           # Format code with Prettier
+bun format:check     # Check code formatting
+bun type-check       # Run TypeScript type checking
+
+# Testing
+bun test             # Run all tests
+bun test:watch       # Run tests in watch mode
+bun test:coverage    # Run tests with coverage report
+bun test:e2e         # Run end-to-end tests
 
 # Database
-npx prisma generate  # Generate Prisma client
-npx prisma db push   # Push schema changes
-npx prisma studio    # Open Prisma Studio
+bun prisma generate  # Generate Prisma client
+bun prisma db push   # Push schema changes
+bun prisma db pull   # Pull schema from database
+bun prisma studio    # Open Prisma Studio
+bun prisma migrate   # Run database migrations
+
+# Utilities
+bun health-check     # Check system health
+bun clean            # Clean build artifacts
+bun deps:update      # Update dependencies
+bun security:audit   # Run security audit
 ```
 
 ## 📁 Project Structure
 
 ```
-src/
-├── app/                 # Next.js app directory
-│   ├── api/            # API routes
-│   ├── auth/           # Authentication pages
-│   ├── dashboard/      # Dashboard pages
-│   └── globals.css     # Global styles
-├── components/         # React components
-│   ├── ui/            # Reusable UI components
-│   └── ...            # Feature-specific components
-├── lib/               # Utility libraries
-│   ├── integrations/  # Third-party integrations
-│   └── ...            # Other utilities
-├── hooks/             # Custom React hooks
-├── contexts/          # React contexts
-└── styles/            # Additional styles
+├── .github/            # GitHub workflows and templates
+├── .kiro/             # Kiro IDE configuration and steering
+├── docs/              # Project documentation
+├── prisma/            # Database schema and migrations
+├── public/            # Static assets
+├── scripts/           # Build and utility scripts
+├── src/
+│   ├── app/           # Next.js 15 app directory
+│   │   ├── api/       # API routes (REST endpoints)
+│   │   ├── auth/      # Authentication pages
+│   │   ├── dashboard/ # Main dashboard pages
+│   │   ├── integrations/ # Integration setup pages
+│   │   ├── settings/  # User settings pages
+│   │   └── globals.css # Global styles
+│   ├── components/    # React components
+│   │   ├── ui/        # shadcn/ui components (New York variant)
+│   │   ├── forms/     # Form components
+│   │   ├── charts/    # Chart and visualization components
+│   │   └── ...        # Feature-specific components
+│   ├── lib/           # Utility libraries
+│   │   ├── integrations/ # Third-party API integrations
+│   │   ├── auth.ts    # Better Auth configuration
+│   │   ├── db.ts      # Database utilities
+│   │   └── utils.ts   # General utilities
+│   ├── hooks/         # Custom React hooks
+│   ├── contexts/      # React contexts and providers
+│   ├── types/         # TypeScript type definitions
+│   ├── generated/     # Generated code (Prisma client)
+│   └── middleware.ts  # Next.js middleware
+├── .env.example       # Environment variables template
+├── tailwind.config.ts # Tailwind CSS configuration
+├── next.config.mjs    # Next.js configuration
+└── package.json       # Dependencies and scripts
 ```
 
 ### Key Directories
 
-- **`/src/app`**: Next.js 13+ app router pages and API routes
-- **`/src/components`**: Reusable React components
-- **`/src/lib`**: Utility functions and configurations
-- **`/src/hooks`**: Custom React hooks
-- **`/prisma`**: Database schema and migrations
-- **`/docs`**: Project documentation
+- **`/src/app`**: Next.js 15 app router with file-based routing
+- **`/src/components`**: Reusable React components with TypeScript
+- **`/src/lib`**: Utility functions, configurations, and integrations
+- **`/src/hooks`**: Custom React hooks for shared logic
+- **`/src/contexts`**: React Context providers for global state
+- **`/src/types`**: TypeScript type definitions and interfaces
+- **`/prisma`**: Database schema, migrations, and seed data
+- **`/docs`**: Comprehensive project documentation
+- **`/.kiro`**: Kiro IDE steering rules and configuration
+- **`/scripts`**: Automation scripts for development and deployment
+
+### Architecture Patterns
+
+- **App Router**: Next.js 15 with React Server Components
+- **Database**: PostgreSQL with Prisma ORM
+- **Authentication**: Better Auth with OAuth 2.0
+- **Styling**: Tailwind CSS 4.1 with shadcn/ui components
+- **State Management**: React Context + Custom hooks
+- **API Design**: RESTful endpoints with TypeScript validation
 
 ## 📝 Coding Standards
 
@@ -221,10 +301,13 @@ export function Button({ children, onClick, variant = 'primary' }: ButtonProps) 
 
 ### Project-Specific Rules
 
-#### GitHub Integration
+#### Integration Guidelines
+
+**GitHub Integration**
 - **Always use cached client**: Use `@/lib/integrations/github-cached`
 - **Never use direct Octokit**: Avoid `@/lib/integrations/github` directly
 - **Cache management**: Use `GitHubCacheManager` for cache operations
+- **Rate limiting**: Respect GitHub API rate limits with exponential backoff
 
 ```typescript
 // ✅ Good
@@ -234,24 +317,63 @@ import { fetchGithubActivity } from '@/lib/integrations/github-cached';
 import { fetchGithubActivity } from '@/lib/integrations/github';
 ```
 
-#### Image Optimization
-- **Use OptimizedImage**: Always use `OptimizedImage` component
-- **Quality levels**: Use appropriate quality levels (hero, card, thumbnail, avatar)
+**Slack Integration**
+- **Use Bot API**: Prefer Bot API over Web API when possible
+- **Channel permissions**: Always check channel permissions before operations
+- **Message formatting**: Use Slack's Block Kit for rich messages
+
+**AI Integration**
+- **Data privacy**: Never send sensitive user data to AI services
+- **Rate limiting**: Implement proper rate limiting for AI API calls
+- **Error handling**: Gracefully handle AI service failures
+
+#### Performance Guidelines
+
+**Image Optimization**
+- **Use Next.js Image**: Always use `next/image` component
+- **Quality levels**: Use appropriate quality levels (hero: 90, card: 80, thumbnail: 70, avatar: 60)
 - **Responsive images**: Provide width, height, and sizes props
+- **Format optimization**: Prefer WebP/AVIF formats with fallbacks
 
 ```typescript
 // ✅ Good
-<OptimizedImage
+import Image from 'next/image';
+
+<Image
   src="/path/to/image.jpg"
   alt="Description"
   width={800}
   height={600}
-  quality="card"
+  quality={80}
   priority={false}
+  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
 />
 
 // ❌ Bad
 <img src="/path/to/image.jpg" alt="Description" />
+```
+
+**Memory Management**
+- **Use memory leak prevention**: Import and use `useMemoryLeakPrevention` hook
+- **Clean up subscriptions**: Always clean up event listeners and subscriptions
+- **Optimize re-renders**: Use `useMemo` and `useCallback` appropriately
+
+```typescript
+// ✅ Good
+import { useMemoryLeakPrevention } from '@/lib/memory-leak-prevention';
+
+export function MyComponent() {
+  useMemoryLeakPrevention('MyComponent');
+  
+  useEffect(() => {
+    const handler = () => {};
+    window.addEventListener('resize', handler);
+    
+    return () => {
+      window.removeEventListener('resize', handler);
+    };
+  }, []);
+}
 ```
 
 ### Code Style
@@ -374,32 +496,143 @@ refactor(ui): simplify component structure
 
 ### Test Types
 
-- **Unit tests**: Test individual functions/components
-- **Integration tests**: Test API endpoints and database operations
-- **E2E tests**: Test critical user flows
-- **Manual testing**: Test UI changes and complex interactions
+- **Unit tests**: Test individual functions/components using Jest and React Testing Library
+- **Integration tests**: Test API endpoints and database operations with test database
+- **E2E tests**: Test critical user flows using Playwright
+- **Component tests**: Test React components in isolation
+- **API tests**: Test REST endpoints with proper mocking
+- **Performance tests**: Test for memory leaks and performance regressions
 
 ### Test Requirements
 
-- **New features**: Must include tests
-- **Bug fixes**: Must include regression tests
-- **Critical paths**: Always test authentication, data flow, and API endpoints
-- **Coverage**: Aim for high test coverage
+- **New features**: Must include comprehensive tests (unit + integration)
+- **Bug fixes**: Must include regression tests to prevent reoccurrence
+- **Critical paths**: Always test authentication, data flow, API endpoints, and integrations
+- **Coverage**: Maintain >80% test coverage for new code
+- **Performance**: Include performance tests for data-heavy operations
+- **Accessibility**: Test components for accessibility compliance
+
+### Testing Best Practices
+
+- **Test behavior, not implementation**: Focus on what the code does, not how
+- **Use descriptive test names**: Tests should read like specifications
+- **Mock external dependencies**: Use proper mocking for APIs and services
+- **Test error scenarios**: Include tests for error handling and edge cases
+- **Keep tests isolated**: Each test should be independent and repeatable
 
 ### Running Tests
 
 ```bash
 # Run all tests
-npm test
+bun test
 
 # Run tests in watch mode
-bun run test:watch
+bun test:watch
 
 # Run tests with coverage
-bun run test:coverage
+bun test:coverage
+
+# Run E2E tests
+bun test:e2e
 
 # Run specific test file
-npm test -- --testPathPattern=Button.test.tsx
+bun test Button.test.tsx
+
+# Run tests for specific component
+bun test --testPathPattern=components/ui
+
+# Run tests with debugging
+bun test --verbose --no-coverage
+
+# Performance and memory leak tests
+bun test:performance
+bun test:memory-leaks
+```
+
+### Test File Structure
+
+```
+src/
+├── components/
+│   ├── ui/
+│   │   ├── Button.tsx
+│   │   └── __tests__/
+│   │       └── Button.test.tsx
+├── lib/
+│   ├── utils.ts
+│   └── __tests__/
+│       └── utils.test.ts
+└── app/
+    └── api/
+        ├── auth/
+        │   ├── route.ts
+        │   └── route.test.ts
+```
+
+## �  Debugging & Troubleshooting
+
+### Common Issues
+
+**Database Connection Issues**
+```bash
+# Reset database
+bun prisma db push --force-reset
+bun prisma db seed
+
+# Check database connection
+bun prisma db pull
+```
+
+**Authentication Issues**
+```bash
+# Clear auth cache
+rm -rf .next/cache
+bun dev
+
+# Check auth configuration
+bun run debug:auth
+```
+
+**Build Issues**
+```bash
+# Clean build cache
+bun clean
+rm -rf .next node_modules/.cache
+
+# Reinstall dependencies
+rm -rf node_modules bun.lockb
+bun install
+```
+
+**Integration Issues**
+```bash
+# Test GitHub integration
+bun run debug:github
+
+# Test Slack integration  
+bun run debug:slack
+
+# Check API health
+curl http://localhost:3000/api/health
+```
+
+### Debug Tools
+
+- **Next.js DevTools**: Built-in debugging for React components
+- **Prisma Studio**: Visual database editor (`bun prisma studio`)
+- **Network Tab**: Monitor API calls and responses
+- **React DevTools**: Browser extension for React debugging
+- **Sentry**: Error tracking and performance monitoring
+
+### Logging
+
+```typescript
+// Use structured logging
+import { logger } from '@/lib/logger';
+
+logger.info('User action', { userId, action: 'login' });
+logger.error('API error', { error, endpoint: '/api/users' });
+logger.debug('Debug info', { data });
 ```
 
 ## 📚 Documentation
@@ -433,6 +666,63 @@ export async function fetchGithubActivity(
 - **Configuration**: Update configuration guides
 - **Deployment**: Update deployment instructions
 
+## � SecurityP Guidelines
+
+### Security Best Practices
+
+**Input Validation**
+- Always validate and sanitize user inputs
+- Use Zod schemas for API endpoint validation
+- Implement proper SQL injection prevention
+- Sanitize data before displaying in UI
+
+```typescript
+// ✅ Good
+import { z } from 'zod';
+
+const userSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(1).max(100),
+});
+
+export async function POST(request: Request) {
+  const body = await request.json();
+  const validatedData = userSchema.parse(body);
+  // Use validatedData safely
+}
+```
+
+**Authentication & Authorization**
+- Never store sensitive data in localStorage
+- Use secure HTTP-only cookies for sessions
+- Implement proper RBAC (Role-Based Access Control)
+- Always verify user permissions before operations
+
+**API Security**
+- Implement rate limiting on all endpoints
+- Use CORS properly for cross-origin requests
+- Never expose internal error details to clients
+- Log security events for monitoring
+
+**Data Protection**
+- Encrypt sensitive data at rest
+- Use HTTPS for all communications
+- Implement proper session management
+- Follow GDPR guidelines for user data
+
+### Security Checklist
+
+Before submitting a PR with security implications:
+
+- [ ] Input validation implemented
+- [ ] Authentication checks in place
+- [ ] Authorization verified
+- [ ] No sensitive data in logs
+- [ ] Rate limiting considered
+- [ ] Error handling doesn't leak information
+- [ ] Dependencies are up to date
+- [ ] Security tests included
+
 ## 🚀 Release Process
 
 ### Versioning
@@ -451,6 +741,72 @@ We use [Semantic Versioning](https://semver.org/):
 4. **Deploy** to production
 5. **Monitor** for issues
 
+## ⚡ Performance Guidelines
+
+### Performance Best Practices
+
+**React Performance**
+- Use `React.memo` for expensive components
+- Implement proper `useMemo` and `useCallback` usage
+- Avoid unnecessary re-renders with proper dependency arrays
+- Use React Suspense for code splitting
+
+```typescript
+// ✅ Good
+const ExpensiveComponent = React.memo(({ data }: Props) => {
+  const processedData = useMemo(() => {
+    return expensiveCalculation(data);
+  }, [data]);
+
+  return <div>{processedData}</div>;
+});
+```
+
+**Database Performance**
+- Use database indexes for frequently queried fields
+- Implement proper pagination for large datasets
+- Use database transactions for related operations
+- Monitor query performance with Prisma metrics
+
+**API Performance**
+- Implement caching strategies (Redis, in-memory)
+- Use proper HTTP caching headers
+- Implement request batching where appropriate
+- Monitor API response times
+
+**Bundle Performance**
+- Use dynamic imports for code splitting
+- Optimize images and assets
+- Minimize bundle size with tree shaking
+- Use CDN for static assets
+
+### Performance Monitoring
+
+```typescript
+// Monitor component performance
+import { usePerformanceMonitor } from '@/hooks/use-performance-monitor';
+
+export function MyComponent() {
+  const { measureRender } = usePerformanceMonitor('MyComponent');
+  
+  useEffect(() => {
+    const startTime = performance.now();
+    // Expensive operation
+    measureRender(performance.now() - startTime);
+  }, []);
+}
+```
+
+### Performance Checklist
+
+- [ ] Components are properly memoized
+- [ ] Database queries are optimized
+- [ ] Images are optimized and properly sized
+- [ ] Bundle size is within acceptable limits
+- [ ] API responses are cached appropriately
+- [ ] Memory leaks are prevented
+- [ ] Performance metrics are monitored
+
 ## 🤝 Getting Help
 
 ### Resources
@@ -460,11 +816,30 @@ We use [Semantic Versioning](https://semver.org/):
 - **Discussions**: Use GitHub Discussions
 - **Code review**: Ask in PR comments
 
-### Contact
+### Contact & Support
 
-- **Maintainers**: Tag @maintainers for urgent issues
-- **Community**: Use GitHub Discussions for general questions
-- **Security**: Email security@unifiedhq.com for security issues
+**For Contributors:**
+- **General Questions**: Use GitHub Discussions
+- **Bug Reports**: Create an issue with the bug template
+- **Feature Requests**: Create an issue with the feature template
+- **Code Review**: Comment on PRs or tag reviewers
+
+**For Maintainers:**
+- **Urgent Issues**: Tag @maintainers in issues
+- **Security Issues**: Email security@unifiedhq.com
+- **Infrastructure**: Tag @infrastructure-team
+- **Releases**: Tag @release-team
+
+**Community Channels:**
+- **Discord**: [Join our Discord](https://discord.gg/unifiedhq) (coming soon)
+- **Twitter**: [@UnifiedHQ](https://twitter.com/unifiedhq) for updates
+- **Blog**: [blog.unifiedhq.com](https://blog.unifiedhq.com) for announcements
+
+**Response Times:**
+- **Critical bugs**: 24 hours
+- **General issues**: 72 hours
+- **Feature requests**: 1 week
+- **Documentation**: 48 hours
 
 ## 🎉 Recognition
 
@@ -488,22 +863,52 @@ We recognize contributors in:
 
 ### For New Contributors
 
-- [ ] Read this contributing guide
-- [ ] Set up development environment
-- [ ] Find a good first issue
-- [ ] Create a branch
-- [ ] Make changes
-- [ ] Write tests
-- [ ] Create PR
-- [ ] Address feedback
-- [ ] Celebrate! 🎉
+**Setup Phase:**
+- [ ] Read this contributing guide completely
+- [ ] Set up development environment with all prerequisites
+- [ ] Install recommended VS Code extensions
+- [ ] Configure Git with SSH keys
+- [ ] Join community channels (Discord, GitHub Discussions)
+
+**First Contribution:**
+- [ ] Find a good first issue (labeled `good-first-issue`)
+- [ ] Comment on the issue to claim it
+- [ ] Create a feature branch with proper naming
+- [ ] Make changes following coding standards
+- [ ] Write comprehensive tests
+- [ ] Update documentation if needed
+- [ ] Run all checks locally (`bun lint`, `bun test`, `bun type-check`)
+- [ ] Create PR using the template
+- [ ] Address reviewer feedback promptly
+- [ ] Celebrate your contribution! 🎉
+
+**Ongoing Contributions:**
+- [ ] Stay updated with project changes
+- [ ] Participate in discussions and code reviews
+- [ ] Help other contributors
+- [ ] Suggest improvements and new features
 
 ### For Maintainers
 
-- [ ] Review PRs promptly
-- [ ] Provide constructive feedback
-- [ ] Help new contributors
-- [ ] Maintain code quality
-- [ ] Keep documentation updated
+**Daily Tasks:**
+- [ ] Review PRs within 24-48 hours
+- [ ] Provide constructive and helpful feedback
+- [ ] Help new contributors get started
+- [ ] Monitor issue queue and triage new issues
+- [ ] Respond to community questions
+
+**Weekly Tasks:**
+- [ ] Update dependencies and security patches
+- [ ] Review and update documentation
+- [ ] Plan upcoming features and releases
+- [ ] Monitor performance and error metrics
+- [ ] Conduct code quality reviews
+
+**Monthly Tasks:**
+- [ ] Review and update contributing guidelines
+- [ ] Analyze contributor feedback and improve processes
+- [ ] Plan community events and initiatives
+- [ ] Review security and performance metrics
+- [ ] Update project roadmap
 
 **Thank you for contributing to UnifiedHQ! 🚀**

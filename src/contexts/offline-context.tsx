@@ -119,7 +119,7 @@ export function OfflineProvider({
 
   const loadCachedPages = useCallback(async () => {
     try {
-      // This would typically query the service worker for cached URLs
+      // tODO: This would typically query the service worker for cached URLs
       // For now, we'll simulate with common pages
       const commonPages = ['/', '/dashboard', '/integrations', '/settings'];
       setCachedPages(commonPages);
@@ -130,7 +130,7 @@ export function OfflineProvider({
 
   const loadQueuedActionsCount = useCallback(async () => {
     try {
-      // This would typically query IndexedDB for queued actions
+      // TODO: This would typically query IndexedDB for queued actions
       // For now, we'll simulate
       const stored = localStorage.getItem('offline-queued-actions');
       const count = stored ? parseInt(stored, 10) : 0;
@@ -140,7 +140,7 @@ export function OfflineProvider({
     }
   }, []);
 
-  const retrySyncRef = useRef<() => Promise<void>>();
+  const retrySyncRef = useRef<(() => Promise<void>) | undefined>(undefined);
 
   retrySyncRef.current = async () => {
     if (syncInProgress || networkStatus.isOffline) {

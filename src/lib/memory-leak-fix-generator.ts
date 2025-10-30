@@ -749,21 +749,23 @@ ${cleanupCode}
 
     visit(container);
 
-    if (returnStatement?.expression) {
-      const expression = returnStatement.expression;
-      // Add to existing cleanup function
-      if (
-        ts.isArrowFunction(expression) ||
-        ts.isFunctionExpression(expression)
-      ) {
-        const cleanupFunction = expression;
-        if (cleanupFunction.body && ts.isBlock(cleanupFunction.body)) {
-          const insertPosition = cleanupFunction.body.getEnd() - 1;
-          return {
-            start: insertPosition,
-            end: insertPosition,
-            replacement: `\n      ${cleanupCode}\n    `,
-          };
+    if (returnStatement !== null) {
+      const expression = (returnStatement as ts.ReturnStatement).expression;
+      if (expression) {
+        // Add to existing cleanup function
+        if (
+          ts.isArrowFunction(expression) ||
+          ts.isFunctionExpression(expression)
+        ) {
+          const cleanupFunction = expression;
+          if (cleanupFunction.body && ts.isBlock(cleanupFunction.body)) {
+            const insertPosition = cleanupFunction.body.getEnd() - 1;
+            return {
+              start: insertPosition,
+              end: insertPosition,
+              replacement: `\n      ${cleanupCode}\n    `,
+            };
+          }
         }
       }
     }

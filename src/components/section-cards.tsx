@@ -170,8 +170,22 @@ export function SectionCards() {
             loadStats();
           } else if (data.type === 'error') {
             console.warn('⚠️ SSE error message:', data.message);
+
+            // If it's an auth error, don't retry
+            if (
+              data.code === 'AUTH_REQUIRED' ||
+              data.message?.includes('Authentication required') ||
+              data.message?.includes('Unauthorized')
+            ) {
+              console.log(
+                '🔐 Authentication required - disabling SSE for this session'
+              );
+              setConnectionState('disabled');
+              es.close(); // Close the connection
+              return;
+            }
+
             setConnectionState('error');
-            // Don't treat error messages as connection failures
           }
         } catch (error) {
           console.error('Error parsing SSE message in SectionCards:', error);
@@ -193,20 +207,23 @@ export function SectionCards() {
         if (es.readyState === EventSource.CLOSED) {
           console.error('❌ SectionCards SSE connection closed');
 
-          // Retry connection after a delay (max 3 retries)
-          if (retryCount < 3) {
+          // Don't retry if we've already tried multiple times or if it's likely an auth issue
+          if (retryCount < 2) {
+            // Reduced from 3 to 2 retries
             console.log(
-              `🔄 Retrying SSE connection (attempt ${retryCount + 1}/3)`
+              `🔄 Retrying SSE connection (attempt ${retryCount + 1}/2)`
             );
             setTimeout(
               () => {
                 connectToLiveUpdates(retryCount + 1);
               },
-              Math.pow(2, retryCount) * 1000
-            ); // Exponential backoff: 1s, 2s, 4s
+              Math.pow(2, retryCount) * 2000 // Increased delay: 2s, 4s
+            );
           } else {
-            console.error('❌ Max SSE retry attempts reached');
-            setConnectionState('error');
+            console.warn(
+              '⚠️ Max SSE retry attempts reached - SSE disabled for this session'
+            );
+            setConnectionState('disabled'); // Use 'disabled' instead of 'error'
           }
         }
       };
@@ -218,10 +235,14 @@ export function SectionCards() {
 
   useEffect(() => {
     loadStats();
-    connectToLiveUpdates();
+
+    // Delay SSE connection to allow authentication to initialize
+    const sseTimeout = setTimeout(() => {
+      connectToLiveUpdates();
+    }, 2000); // Wait 2 seconds before attempting SSE connection
 
     // Set up periodic refresh every 2 minutes for all stats (GitHub and Slack)
-    const interval = setTimeout(() => {
+    const refreshInterval = setTimeout(() => {
       console.log('🔄 Periodic stats refresh (GitHub and Slack)');
       loadStats();
     }, 120000); // 2 minutes
@@ -230,9 +251,8 @@ export function SectionCards() {
       if (eventSource) {
         eventSource.close();
       }
-      if (interval) {
-        clearTimeout(interval);
-      }
+      clearTimeout(sseTimeout);
+      clearTimeout(refreshInterval);
     };
   }, []);
 
@@ -295,6 +315,12 @@ export function SectionCards() {
                       title='Connection failed'
                     />
                   )}
+                  {connectionState === 'disabled' && (
+                    <div
+                      className='size-3 rounded-full bg-gray-400'
+                      title='Live updates disabled'
+                    />
+                  )}
                 </CardDescription>
                 <CardTitle className='text-2xl font-semibold tabular-nums @[250px]/card:text-3xl'>
                   {stats.integrations.slack.messages}
@@ -335,6 +361,12 @@ export function SectionCards() {
                     <div
                       className='size-3 rounded-full bg-red-500'
                       title='Connection failed'
+                    />
+                  )}
+                  {connectionState === 'disabled' && (
+                    <div
+                      className='size-3 rounded-full bg-gray-400'
+                      title='Live updates disabled'
                     />
                   )}
                 </CardDescription>

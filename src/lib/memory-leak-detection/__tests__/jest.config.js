@@ -6,7 +6,7 @@ module.exports = {
   displayName: 'Memory Leak Detection',
   testMatch: ['**/__tests__/**/*.test.ts'],
   transform: {
-    '^.+\\.ts$': 'ts-jest'
+    '^.+\\.ts$': 'ts-jest',
   },
   moduleFileExtensions: ['ts', 'js'],
   testEnvironment: 'node',
@@ -15,6 +15,6 @@ module.exports = {
   coverageReporters: ['text', 'lcov', 'html'],
   setupFilesAfterEnv: ['<rootDir>/test-setup.ts'],
   moduleNameMapping: {
-    '^@/(.*)$': '<rootDir>/../../../$1'
-  }
-}
+    '^@/(.*)$': '<rootDir>/../../../$1',
+  },
+};

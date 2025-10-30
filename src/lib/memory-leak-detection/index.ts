@@ -22,11 +22,13 @@ export {
   DEFAULT_CONFIGS,
 } from './config';
 
+// Import the detector class for internal use
+import { MemoryLeakDetectorImpl } from './detector';
+
 // Convenience factory function
 export function createMemoryLeakDetector(
   config?: Partial<import('./types').MemoryLeakDetectionConfig>
 ) {
-  const { MemoryLeakDetectorImpl } = require('./detector');
   return new MemoryLeakDetectorImpl(config);
 }
 
@@ -80,7 +82,7 @@ export function startRuntimeMonitoring(options?: {
 
       // Check for suspicious patterns
       if (runtimeReport.suspiciousPatterns.length > 0) {
-        options.onLeak?.(runtimeReport);
+        options?.onLeak?.(runtimeReport);
       }
     } catch (error) {
       console.error('Runtime monitoring error:', error);
