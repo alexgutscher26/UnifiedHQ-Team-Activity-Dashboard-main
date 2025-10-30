@@ -40,8 +40,8 @@ export interface RetryComponentProps {
  * Renders a retry component that displays different states based on the provided props.
  *
  * The component shows a success message if the operation is completed successfully, an error message if an error occurs,
- * a loading indicator while the operation is in progress, or the children content if no state is active.
- * It also provides retry and reset buttons based on the state and props provided.
+ * a loading indicator while the operation is in progress, or the children content if no state is active. It also provides
+ * retry and reset buttons based on the state and props provided, managing user interactions effectively.
  *
  * @param state - The current state of the component, including loading, error, attempts, retrying, and canRetry.
  * @param onRetry - Callback function to be called when the retry button is clicked.

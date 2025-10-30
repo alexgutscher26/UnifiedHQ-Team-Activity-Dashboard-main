@@ -59,6 +59,15 @@ interface SyncProgress {
   endTime?: number;
 }
 
+/**
+ * Manages the offline action status, including loading actions, syncing, and displaying status.
+ *
+ * This function initializes state variables for actions, stats, sync progress, and loading/error states.
+ * It sets up an effect to load action data periodically and provides methods to trigger sync, clear completed actions,
+ * and retry failed actions. The UI reflects the current network status and displays relevant action information.
+ *
+ * @returns {JSX.Element} The rendered component displaying offline actions and their statuses.
+ */
 export function OfflineActionStatus() {
   const { toast } = useToast();
   const networkStatus = useNetworkStatus();
@@ -78,6 +87,14 @@ export function OfflineActionStatus() {
     return () => clearInterval(interval);
   }, []);
 
+  /**
+   * Load action data from various API endpoints.
+   *
+   * This function fetches queue statistics, recent actions, and sync progress from the server. It handles errors by setting an error message and ensures that loading state is updated accordingly. Each fetch operation checks for a successful response before processing the data and updating the respective state.
+   *
+   * @returns {Promise<void>} A promise that resolves when the data loading is complete.
+   * @throws {Error} If an error occurs during the fetch operations.
+   */
   const loadActionData = async () => {
     try {
       setError(null);
@@ -112,6 +129,11 @@ export function OfflineActionStatus() {
     }
   };
 
+  /**
+   * Triggers synchronization of offline actions with the server.
+   *
+   * This function first checks the network status to ensure the user is online. If offline, it displays a toast notification indicating that synchronization cannot proceed. If online, it attempts to send a POST request to the server to trigger the sync. Upon a successful response, it notifies the user that synchronization has started and refreshes the action data after a short delay. In case of an error during the fetch operation, it displays a failure notification.
+   */
   const triggerSync = async () => {
     if (!networkStatus.isOnline) {
       toast({
@@ -147,6 +169,13 @@ export function OfflineActionStatus() {
     }
   };
 
+  /**
+   * Clears completed actions from the offline queue.
+   *
+   * This function sends a POST request to the '/api/offline/queue/cleanup' endpoint to initiate the cleanup process.
+   * If the response is successful, it displays a success toast notification and calls the loadActionData function to refresh the action data.
+   * In case of an error, it catches the exception and displays a failure toast notification.
+   */
   const clearCompletedActions = async () => {
     try {
       const response = await fetch('/api/offline/queue/cleanup', {
@@ -171,6 +200,16 @@ export function OfflineActionStatus() {
     }
   };
 
+  /**
+   * Retries a failed action by sending a POST request to the server.
+   *
+   * This function attempts to retry an action identified by the given actionId.
+   * It sends a request to the server and, upon a successful response, displays a
+   * success message and triggers the loading of action data. If the request fails,
+   * it catches the error and displays a failure message.
+   *
+   * @param actionId - The identifier of the action to be retried.
+   */
   const retryFailedAction = async (actionId: string) => {
     try {
       const response = await fetch(`/api/offline/queue/retry/${actionId}`, {
@@ -195,6 +234,16 @@ export function OfflineActionStatus() {
     }
   };
 
+  /**
+   * Get the appropriate status icon based on the provided status.
+   *
+   * The function evaluates the status and returns a corresponding icon component.
+   * It handles multiple cases including 'PENDING', 'SYNCING', 'COMPLETED', and 'FAILED',
+   * defaulting to a gray clock icon if the status does not match any known values.
+   *
+   * @param status - The status for which the icon is to be retrieved.
+   * @returns A JSX element representing the status icon.
+   */
   const getStatusIcon = (status: OfflineAction['status']) => {
     switch (status) {
       case 'PENDING':
@@ -210,6 +259,14 @@ export function OfflineActionStatus() {
     }
   };
 
+  /**
+   * Get the badge variant based on the status of an OfflineAction.
+   *
+   * The function maps specific status values to corresponding badge variants. It handles multiple cases, returning 'secondary' for both unrecognized and 'PENDING' statuses, 'default' for 'SYNCING' and 'COMPLETED', and 'destructive' for 'FAILED'.
+   *
+   * @param status - The status of the OfflineAction, which determines the badge variant.
+   * @returns The badge variant as a string based on the provided status.
+   */
   const getStatusBadgeVariant = (status: OfflineAction['status']) => {
     switch (status) {
       case 'PENDING':
@@ -225,6 +282,9 @@ export function OfflineActionStatus() {
     }
   };
 
+  /**
+   * Formats a timestamp into a locale-specific string representation.
+   */
   const formatTimestamp = (timestamp: number) => {
     const date = new Date(timestamp);
     return date.toLocaleString();
