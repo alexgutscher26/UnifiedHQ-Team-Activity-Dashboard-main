@@ -178,6 +178,17 @@ export class TimerCleanupFixGenerator {
     };
   }
 
+  /**
+   * Adds a cleanup function to an existing useEffect cleanup function.
+   *
+   * This method locates the containing function of the provided node and constructs a cleanup code string
+   * using the clear function and variable name from the TimerPattern. It then searches for an existing return
+   * statement within the containing function. If found, it adds the cleanup code to the existing cleanup function;
+   * otherwise, it throws an error indicating that no cleanup function exists.
+   *
+   * @param node - The CallExpression node for which the cleanup is being added.
+   * @param pattern - The TimerPattern containing the clear function and variable name.
+   */
   private addToExistingUseEffectCleanup(
     node: ts.CallExpression,
     pattern: TimerPattern
