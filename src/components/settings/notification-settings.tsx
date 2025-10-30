@@ -49,6 +49,14 @@ interface NotificationSettings {
   aiSummaryReminderTime: string;
 }
 
+/**
+ * Manages notification settings for the application.
+ *
+ * This component initializes notification settings, loads them from local storage, and provides functionality to save updated settings. It also handles the display of various notification preferences, including general notifications, notification channels, timing and frequency, and AI summary notifications. The component updates the UI based on the loading state and user interactions, ensuring that changes are persisted and reflected in the local storage.
+ *
+ * @param onSettingsChange - A callback function that is invoked when the settings are updated.
+ * @returns JSX.Element representing the notification settings UI.
+ */
 export function NotificationSettings({
   onSettingsChange,
 }: NotificationSettingsProps) {
