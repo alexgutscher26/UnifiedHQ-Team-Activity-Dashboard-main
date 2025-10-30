@@ -21,6 +21,16 @@ class DeploymentVerifier {
     this.results = []
   }
 
+  /**
+   * Logs a message with a specified severity level.
+   *
+   * This function generates a timestamp and a prefix based on the log level.
+   * It then logs the message to the console if the verbosity is enabled or if the log level is not 'info'.
+   * The supported log levels are 'error', 'warn', 'success', and 'info', each represented by a unique prefix.
+   *
+   * @param {string} message - The message to be logged.
+   * @param {string} [level='info'] - The severity level of the log message.
+   */
   log (message, level = 'info') {
     const timestamp = new Date().toISOString()
     const prefix =
@@ -85,6 +95,17 @@ class DeploymentVerifier {
     })
   }
 
+  /**
+   * Attempts to make a request to a specified URL with retry logic.
+   *
+   * The function will try to execute the request using `this.makeRequest` up to a specified number of retries.
+   * If the request fails, it logs a warning and waits for a backoff period before retrying.
+   * If all retries are exhausted, the error is thrown. The backoff period increases with each retry attempt.
+   *
+   * @param {string} url - The URL to which the request is made.
+   * @param {Object} [options={}] - The options to configure the request.
+   * @param {number} [retries=this.retries] - The number of retry attempts.
+   */
   async retryRequest (url, options = {}, retries = this.retries) {
     for (let i = 0; i <= retries; i++) {
       try {
@@ -100,6 +121,17 @@ class DeploymentVerifier {
     }
   }
 
+  /**
+   * Verifies the response status of a given endpoint.
+   *
+   * This function constructs a URL using the base URL and the provided path, then logs the test name.
+   * It attempts to send a request to the endpoint and checks if the response status matches the expected status.
+   * Depending on the result, it logs the outcome and updates the results array with the test details.
+   *
+   * @param {string} path - The endpoint path to be tested.
+   * @param {number} [expectedStatus=200] - The expected HTTP status code for the response.
+   * @param {string} [description=''] - A description for the test, defaults to the endpoint path.
+   */
   async verifyEndpoint (path, expectedStatus = 200, description = '') {
     const url = `${this.baseUrl}${path}`
     const testName = description || `${path} endpoint`
@@ -139,6 +171,9 @@ class DeploymentVerifier {
     }
   }
 
+  /**
+   * Verifies the health check endpoints and returns if all checks passed.
+   */
   async verifyHealthCheck () {
     this.log('🔍 Verifying health check endpoints...')
 
@@ -162,6 +197,9 @@ class DeploymentVerifier {
     return passed === healthChecks.length
   }
 
+  /**
+   * Verifies the main application pages and checks their endpoints.
+   */
   async verifyMainPages () {
     this.log('🔍 Verifying main application pages...')
 
@@ -182,6 +220,9 @@ class DeploymentVerifier {
     return passed >= pages.length * 0.75 // Allow 25% failure for optional pages
   }
 
+  /**
+   * Verifies the specified API endpoints and returns whether at least 50% are successful.
+   */
   async verifyApiEndpoints () {
     this.log('🔍 Verifying API endpoints...')
 
@@ -208,6 +249,15 @@ class DeploymentVerifier {
     return passed >= endpoints.length * 0.5 // Allow 50% failure for auth-protected endpoints
   }
 
+  /**
+   * Verifies the performance metrics by measuring the response time of a request.
+   *
+   * This function logs the start of the performance verification, then attempts to
+   * make a request using the `retryRequest` method. It calculates the response time
+   * and logs the result as either a success, warning, or error based on the response
+   * time. The results are stored in the `results` array with appropriate status and
+   * details.
+   */
   async verifyPerformance () {
     this.log('🔍 Verifying performance metrics...')
 
@@ -245,6 +295,15 @@ class DeploymentVerifier {
     }
   }
 
+  /**
+   * Verifies the presence of essential security headers in the response.
+   *
+   * This function logs the verification process and checks for specific security headers
+   * such as 'x-frame-options', 'x-content-type-options', 'x-xss-protection', and
+   * 'strict-transport-security'. It counts the number of present headers and determines
+   * if at least half of them are present to pass the security check. In case of an error
+   * during the request, it logs the error and updates the results accordingly.
+   */
   async verifySecurityHeaders () {
     this.log('🔍 Verifying security headers...')
 
@@ -288,6 +347,13 @@ class DeploymentVerifier {
     }
   }
 
+  /**
+   * Verifies the SSL certificate of the base URL.
+   *
+   * This function checks if the base URL starts with 'https://'. If not, it logs a warning and skips the SSL check.
+   * If the URL is valid, it attempts to make a request using the retryRequest function. Depending on the response,
+   * it logs the result and updates the results array with the status of the SSL certificate verification.
+   */
   async verifySSL () {
     this.log('🔍 Verifying SSL certificate...')
 
@@ -325,6 +391,11 @@ class DeploymentVerifier {
     }
   }
 
+  /**
+   * Executes a series of deployment verifications and logs the results.
+   *
+   * This function initiates the verification process for various aspects of the deployment, including health checks, main pages, API endpoints, performance, security headers, and SSL certificate validation. It iterates through each verification, executing the corresponding function and logging the outcome. In case of an error during any verification, it logs the error message and records the failure in the results.
+   */
   async runAllVerifications () {
     this.log(`🚀 Starting deployment verification for ${this.baseUrl}`)
     this.log('')
@@ -362,6 +433,14 @@ class DeploymentVerifier {
     return results
   }
 
+  /**
+   * Generate a deployment verification report based on the results of checks.
+   *
+   * This function calculates the number of passed checks and the overall percentage of success. It logs the overall status, detailed results for each check, and provides a summary message based on the percentage of passed checks. The function also categorizes the results into pass, warn, skip, or fail based on the status of each check.
+   *
+   * @param results - An array of objects representing the results of checks, each containing properties for the check's name, status, and any associated error messages.
+   * @returns A boolean indicating whether the deployment verification passed, partially passed, or failed based on the percentage of checks that passed.
+   */
   generateReport (results) {
     const passed = results.filter(r => r.passed).length
     const total = results.length
