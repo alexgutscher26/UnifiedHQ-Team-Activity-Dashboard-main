@@ -176,7 +176,13 @@ class WorkflowOptimizer {
   }
 
   /**
-   * Improve caching strategies
+   * Improve caching strategies for workflow jobs.
+   *
+   * This function analyzes the jobs in a workflow to identify and add caching steps for dependencies, Next.js builds, and TypeScript builds. It checks existing cache configurations and inserts new cache steps after the checkout step if necessary. The function returns an array of optimization messages indicating which caches were added.
+   *
+   * @param workflow - The workflow object containing jobs to optimize.
+   * @param workflowName - The name of the workflow being processed.
+   * @returns An array of optimization messages for the added caching strategies.
    */
   improveCaching (workflow, workflowName) {
     const optimizations = []
@@ -339,7 +345,15 @@ class WorkflowOptimizer {
   }
 
   /**
-   * Optimize matrix strategies
+   * Optimize matrix strategies for workflow jobs.
+   *
+   * This function iterates through the jobs in the provided workflow, applying optimizations to the matrix strategies.
+   * It optimizes Node.js versions to keep only LTS versions, adds a fail-fast strategy if not present, and sets a max-parallel limit for large matrices.
+   * The function returns an array of optimization messages for each job that was modified.
+   *
+   * @param workflow - The workflow object containing jobs to be optimized.
+   * @param workflowName - The name of the workflow being processed.
+   * @returns An array of optimization messages for the modified jobs.
    */
   optimizeMatrix (workflow, workflowName) {
     const optimizations = []
@@ -493,7 +507,12 @@ class WorkflowOptimizer {
   }
 
   /**
-   * Analyze workflow performance
+   * Analyze workflow performance.
+   *
+   * This function evaluates a specified workflow by checking its jobs for various metrics such as job count, caching, conditionals, and concurrency. It also identifies potential issues based on the analysis of these metrics, including lack of caching, concurrency control, and excessive matrix size. The results are returned in a structured analysis object.
+   *
+   * @param workflowName - The name of the workflow to analyze.
+   * @returns An object containing the analysis of the workflow, including metrics, issues, and suggestions.
    */
   analyzeWorkflow (workflowName) {
     const workflow = this.workflows[workflowName]
