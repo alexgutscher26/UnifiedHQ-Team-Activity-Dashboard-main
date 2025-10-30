@@ -363,7 +363,7 @@ jobs:
                     },
                     {
                       "title": "Branch",
-                      "value": "${{ github.event.workflow_run.head_branch || github.ref_name }}",
+                      "value": "$HEAD_BRANCH",
                       "short": true
                     },
                     {
@@ -380,6 +380,7 @@ jobs:
               ]
             }
         env:
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch || github.ref_name }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
   send-security-alert:
