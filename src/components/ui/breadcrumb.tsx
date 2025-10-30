@@ -8,6 +8,9 @@ function Breadcrumb({ ...props }: React.ComponentProps<'nav'>) {
   return <nav aria-label='breadcrumb' data-slot='breadcrumb' {...props} />;
 }
 
+/**
+ * Renders a breadcrumb list as an ordered list.
+ */
 function BreadcrumbList({ className, ...props }: React.ComponentProps<'ol'>) {
   return (
     <ol
@@ -21,6 +24,9 @@ function BreadcrumbList({ className, ...props }: React.ComponentProps<'ol'>) {
   );
 }
 
+/**
+ * Renders a breadcrumb item as a list item.
+ */
 function BreadcrumbItem({ className, ...props }: React.ComponentProps<'li'>) {
   return (
     <li
@@ -31,6 +37,9 @@ function BreadcrumbItem({ className, ...props }: React.ComponentProps<'li'>) {
   );
 }
 
+/**
+ * Renders a breadcrumb link component, optionally as a child component.
+ */
 function BreadcrumbLink({
   asChild,
   className,
@@ -49,6 +58,9 @@ function BreadcrumbLink({
   );
 }
 
+/**
+ * Renders a breadcrumb page component.
+ */
 function BreadcrumbPage({ className, ...props }: React.ComponentProps<'span'>) {
   return (
     <span
@@ -60,6 +72,9 @@ function BreadcrumbPage({ className, ...props }: React.ComponentProps<'span'>) {
   );
 }
 
+/**
+ * Renders a breadcrumb separator component.
+ */
 function BreadcrumbSeparator({
   children,
   className,
@@ -78,6 +93,9 @@ function BreadcrumbSeparator({
   );
 }
 
+/**
+ * Renders a breadcrumb ellipsis component.
+ */
 function BreadcrumbEllipsis({
   className,
   ...props
