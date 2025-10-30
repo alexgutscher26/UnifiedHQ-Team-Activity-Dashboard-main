@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 /**
  * Cache Deployment Monitoring Script

@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 /**
  * Workflow Dashboard Generator

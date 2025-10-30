@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 /**
  * Comprehensive Workflow Test Runner

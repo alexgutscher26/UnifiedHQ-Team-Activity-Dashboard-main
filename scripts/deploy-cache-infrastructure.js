@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 /**
  * Cache Infrastructure Deployment Script

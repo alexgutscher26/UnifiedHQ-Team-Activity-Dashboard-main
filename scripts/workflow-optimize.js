@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 /**
  * GitHub Workflow Performance Optimization Utility

@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 /**
  * Redis Setup and Deployment Script

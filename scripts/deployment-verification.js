@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 /**
  * Deployment Verification Script
