@@ -72,6 +72,9 @@ export function IntegrationsPage() {
     fetchSlackClientId();
 
     // Listen for storage changes (cross-tab sync)
+    /**
+     * Handles changes to storage events.
+     */
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'lastSyncTime' && e.newValue) {
         setLastSyncTime(new Date(e.newValue));
@@ -95,6 +98,13 @@ export function IntegrationsPage() {
     }
   };
 
+  /**
+   * Checks the connection status of Slack integration.
+   *
+   * This function sends a request to the Slack sync API endpoint and processes the response.
+   * If the request is successful, it updates the connection status using setSlackConnected.
+   * In case of an error during the fetch operation, it logs the error to the console.
+   */
   const checkSlackStatus = async () => {
     try {
       const response = await fetch('/api/integrations/slack/sync');
@@ -105,6 +115,14 @@ export function IntegrationsPage() {
     }
   };
 
+  /**
+   * Fetches the Slack client ID from the server.
+   *
+   * This asynchronous function makes a request to the '/api/integrations/slack/client-id' endpoint.
+   * If the response is successful, it parses the JSON data and updates the Slack client ID using
+   * the setSlackClientId function. In case of an error during the fetch operation, it logs the error
+   * message to the console.
+   */
   const fetchSlackClientId = async () => {
     try {
       const response = await fetch('/api/integrations/slack/client-id');
@@ -117,6 +135,16 @@ export function IntegrationsPage() {
     }
   };
 
+  /**
+   * Fetch and aggregate statistics from GitHub and Slack.
+   *
+   * The function retrieves data from two APIs: one for GitHub stats and another for Slack stats.
+   * It updates the selected repositories and channels based on the fetched data and calculates
+   * the total activities from both sources. Errors during the fetch process are logged to the console.
+   *
+   * @returns {Promise<void>} A promise that resolves when the stats have been fetched and processed.
+   * @throws {Error} If there is an issue with the fetch requests or data processing.
+   */
   const fetchStats = async () => {
     try {
       let totalActivities = 0;
@@ -143,6 +171,9 @@ export function IntegrationsPage() {
     }
   };
 
+  /**
+   * Initiates the GitHub connection process and handles loading state.
+   */
   const handleGithubConnect = async () => {
     setIsLoading(true);
     try {
@@ -158,6 +189,11 @@ export function IntegrationsPage() {
     }
   };
 
+  /**
+   * Handles the synchronization of GitHub data.
+   *
+   * This function initiates a sync process by setting the syncing state and progress. It makes a POST request to the GitHub sync API and updates the UI based on the response. If the sync is successful, it updates the last sync time and refreshes statistics. In case of errors, it handles token expiration and other failures with appropriate user notifications.
+   */
   const handleGithubSync = async () => {
     setIsSyncing(true);
     setSyncProgress(0);
@@ -223,6 +259,13 @@ export function IntegrationsPage() {
     }
   };
 
+  /**
+   * Handles the disconnection from GitHub.
+   *
+   * This function initiates a loading state, sends a POST request to the GitHub disconnect API, and processes the response.
+   * If the disconnection is successful, it updates the connection state and displays a success message.
+   * In case of an error, it shows an appropriate error message. The loading state is reset in the finally block.
+   */
   const handleGithubDisconnect = async () => {
     setIsLoading(true);
     try {
@@ -255,6 +298,9 @@ export function IntegrationsPage() {
     }
   };
 
+  /**
+   * Initiates the Slack connection process and handles loading state.
+   */
   const handleSlackConnect = async () => {
     setIsLoading(true);
     try {
@@ -270,6 +316,11 @@ export function IntegrationsPage() {
     }
   };
 
+  /**
+   * Handles the synchronization process with Slack.
+   *
+   * This function initiates the syncing process by setting the syncing state and progress. It simulates progress updates while making a POST request to the Slack sync API. Upon receiving a response, it logs the result and updates the last sync time if successful. In case of errors, it handles specific scenarios such as token expiration and displays appropriate messages to the user. Finally, it resets the syncing state and progress after completion.
+   */
   const handleSlackSync = async () => {
     setIsSyncing(true);
     setSyncProgress(0);
@@ -338,9 +389,9 @@ export function IntegrationsPage() {
   /**
    * Handles the disconnection of Slack integration.
    *
-   * This function initiates a loading state, sends a POST request to the Slack disconnect API, and processes the response.
-   * If the disconnection is successful, it updates the connection status, displays a success message, and triggers a storage event to refresh the sidebar.
-   * In case of an error, it shows an appropriate error message. The loading state is reset in the finally block.
+   * This function initiates a loading state and sends a POST request to the Slack disconnect API.
+   * It processes the response to update the connection status and display a success message if the disconnection is successful.
+   * In case of an error, it shows an appropriate error message. The loading state is reset in the finally block, ensuring it is cleared regardless of the outcome.
    */
   const handleSlackDisconnect = async () => {
     setIsLoading(true);

@@ -15,7 +15,11 @@ interface UseLoadingReturn {
 }
 
 /**
- * Custom hook for managing loading states with error handling
+ * Custom hook for managing loading states with error handling.
+ *
+ * This hook provides a way to manage loading states and handle errors during asynchronous operations. It initializes loading and error states based on the provided options. The `execute` function allows for executing an asynchronous function while managing the loading state and capturing any errors that occur. The `reset` function can be used to clear the loading and error states.
+ *
+ * @param {UseLoadingOptions} [options={}] - Options to configure the loading state and error handling.
  */
 export function useLoading(options: UseLoadingOptions = {}): UseLoadingReturn {
   const { initialLoading = false, onError } = options;
@@ -64,7 +68,13 @@ export function useLoading(options: UseLoadingOptions = {}): UseLoadingReturn {
 }
 
 /**
- * Hook for managing multiple loading states
+ * Hook for managing multiple loading states.
+ *
+ * This hook initializes a loading state for each key provided in the `keys` array, allowing for individual loading management.
+ * It provides functions to set the loading state for a specific key, check if a specific key is loading, determine if any keys are loading,
+ * and reset all loading states to false. The loading states are stored in a record, and updates are handled immutably.
+ *
+ * @param {string[]} keys - An array of keys representing the loading states to manage.
  */
 export function useMultipleLoading(keys: string[]) {
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
@@ -98,7 +108,11 @@ export function useMultipleLoading(keys: string[]) {
 }
 
 /**
- * Hook for managing async operations with loading and error states
+ * Hook for managing async operations with loading and error states.
+ *
+ * This hook provides a way to execute asynchronous functions while managing their loading and error states.
+ * It maintains the current data, loading status, and any error messages. The `execute` function runs the provided
+ * asynchronous function and updates the state accordingly, while the `reset` function clears the current state.
  */
 export function useAsyncOperation<T>() {
   const [data, setData] = useState<T | null>(null);

@@ -5,26 +5,11 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 /**
- * Hook for managing ARIA live region announcements with proper cleanup
- * 
- * @description Provides functionality to announce messages to screen readers
- * using ARIA live regions. Automatically manages announcement lifecycle and
- * cleans up timeouts to prevent memory leaks.
- * 
+ * Hook for managing ARIA live region announcements.
+ *
  * @returns {Object} Object containing announce function and current announcements
  * @returns {Function} returns.announce - Function to announce a message
  * @returns {string[]} returns.announcements - Array of current announcements
- * 
- * @example
- * ```tsx
- * const { announce, announcements } = useAriaLiveAnnouncer();
- * 
- * // Announce with default 'polite' priority
- * announce("Form saved successfully");
- * 
- * // Announce with 'assertive' priority for urgent messages
- * announce("Error: Please fix the required fields", "assertive");
- * ```
  */
 export const useAriaLiveAnnouncer = () => {
   const [announcements, setAnnouncements] = useState<string[]>([]);
@@ -65,30 +50,14 @@ export const useAriaLiveAnnouncer = () => {
 };
 
 /**
- * Hook for managing focus behavior and focus trapping with proper cleanup
- * 
- * @description Provides utilities for focus management including focus trapping,
- * focus restoration, and focus history. Automatically cleans up event listeners
- * to prevent memory leaks.
- * 
+ * Hook for managing focus behavior and focus trapping with proper cleanup.
+ *
+ * This hook provides utilities for focus management, including trapping focus within a specified container, restoring focus to the last saved element, and saving the current focused element. It ensures that event listeners are cleaned up to prevent memory leaks when the component unmounts.
+ *
  * @returns {Object} Object containing focus management functions
  * @returns {Function} returns.trapFocus - Traps focus within a container element
  * @returns {Function} returns.restoreFocus - Restores focus to the last saved element
  * @returns {Function} returns.saveFocus - Saves the current focused element
- * 
- * @example
- * ```tsx
- * const { trapFocus, restoreFocus, saveFocus } = useFocusManagement();
- * 
- * // Save current focus before opening modal
- * saveFocus(document.activeElement as HTMLElement);
- * 
- * // Trap focus within modal
- * const cleanup = trapFocus(modalRef.current);
- * 
- * // Restore focus when modal closes
- * restoreFocus();
- * ```
  */
 export const useFocusManagement = () => {
   const focusHistory = useRef<HTMLElement[]>([]);
@@ -108,6 +77,15 @@ export const useFocusManagement = () => {
     const firstElement = focusableElements[0];
     const lastElement = focusableElements[focusableElements.length - 1];
 
+    /**
+     * Handles the Tab key press event for navigating between elements.
+     *
+     * This function checks if the pressed key is 'Tab' and determines the navigation direction based on the shift key state.
+     * If the shift key is pressed and the currently focused element is the firstElement, it focuses on the lastElement.
+     * Conversely, if the shift key is not pressed and the currently focused element is the lastElement, it focuses on the firstElement, preventing the default tab behavior.
+     *
+     * @param e - The keyboard event triggered by the Tab key press.
+     */
     const handleTabKey = (e: KeyboardEvent) => {
       if (e.key === 'Tab') {
         if (e.shiftKey) {
@@ -127,6 +105,9 @@ export const useFocusManagement = () => {
     container.addEventListener('keydown', handleTabKey);
     firstElement?.focus();
 
+    /**
+     * Cleans up event listeners and removes the cleanup function from active traps.
+     */
     const cleanup = () => {
       container.removeEventListener('keydown', handleTabKey);
       activeTraps.current.delete(cleanup);
@@ -167,37 +148,20 @@ export const useFocusManagement = () => {
 };
 
 /**
- * Hook for handling keyboard navigation with customizable key handlers
- * 
- * @description Provides keyboard event handling for common navigation patterns.
- * Automatically manages event listener attachment/detachment to prevent memory leaks.
- * 
- * @param onEscape - Handler for Escape key press
- * @param onEnter - Handler for Enter or Space key press
- * @param onArrowUp - Handler for Arrow Up key press
- * @param onArrowDown - Handler for Arrow Down key press
- * @param onArrowLeft - Handler for Arrow Left key press
- * @param onArrowRight - Handler for Arrow Right key press
- * 
- * @returns {Object} Object containing keyboard navigation functions
- * @returns {Function} returns.handleKeyDown - Key down event handler
- * @returns {Function} returns.attachKeyboardListener - Attaches global keyboard listener
- * @returns {Function} returns.detachKeyboardListener - Detaches global keyboard listener
- * 
- * @example
- * ```tsx
- * const { attachKeyboardListener, detachKeyboardListener } = useKeyboardNavigation(
- *   () => closeModal(), // onEscape
- *   () => selectItem(), // onEnter
- *   () => navigateUp(), // onArrowUp
- *   () => navigateDown() // onArrowDown
- * );
- * 
- * useEffect(() => {
- *   attachKeyboardListener();
- *   return detachKeyboardListener;
- * }, []);
- * ```
+ * Hook for handling keyboard navigation with customizable key handlers.
+ *
+ * This hook provides keyboard event handling for common navigation patterns by attaching and detaching event listeners to manage keyboard interactions. It allows for customizable handlers for various keys, including Escape, Enter, and arrow keys, ensuring that the appropriate functions are called when these keys are pressed.
+ *
+ * @param onEscape - Handler for Escape key press.
+ * @param onEnter - Handler for Enter or Space key press.
+ * @param onArrowUp - Handler for Arrow Up key press.
+ * @param onArrowDown - Handler for Arrow Down key press.
+ * @param onArrowLeft - Handler for Arrow Left key press.
+ * @param onArrowRight - Handler for Arrow Right key press.
+ * @returns {Object} Object containing keyboard navigation functions.
+ * @returns {Function} returns.handleKeyDown - Key down event handler.
+ * @returns {Function} returns.attachKeyboardListener - Attaches global keyboard listener.
+ * @returns {Function} returns.detachKeyboardListener - Detaches global keyboard listener.
  */
 export const useKeyboardNavigation = (
   onEscape?: () => void,
@@ -261,23 +225,16 @@ export const useKeyboardNavigation = (
 };
 
 /**
- * Hook for screen reader detection and speech synthesis support
- * 
- * @description Detects screen reader usage and provides text-to-speech functionality.
- * Automatically manages speech synthesis utterances and cleans up on unmount.
- * 
+ * Hook for screen reader detection and speech synthesis support.
+ *
+ * This hook detects if a screen reader is active by checking for the presence of speech synthesis
+ * capabilities and specific user agents. It manages speech synthesis utterances and ensures cleanup
+ * of active utterances when the component using this hook unmounts. The hook returns an object
+ * containing the screen reader status and a function to announce messages to the screen reader.
+ *
  * @returns {Object} Object containing screen reader utilities
  * @returns {boolean} returns.isScreenReaderActive - Whether a screen reader is detected
  * @returns {Function} returns.announceToScreenReader - Function to speak text aloud
- * 
- * @example
- * ```tsx
- * const { isScreenReaderActive, announceToScreenReader } = useScreenReaderSupport();
- * 
- * if (isScreenReaderActive) {
- *   announceToScreenReader("Welcome to the application");
- * }
- * ```
  */
 export const useScreenReaderSupport = () => {
   const [isScreenReaderActive, setIsScreenReaderActive] = useState(false);
@@ -285,6 +242,9 @@ export const useScreenReaderSupport = () => {
 
   useEffect(() => {
     // Detect screen reader usage
+    /**
+     * Detects if a screen reader is active based on browser features and user agent.
+     */
     const detectScreenReader = () => {
       const hasScreenReader =
         window.speechSynthesis ||
@@ -388,26 +348,7 @@ export const useColorContrast = () => {
 };
 
 /**
- * Hook providing predefined skip links for keyboard navigation
- * 
- * @description Returns a list of common skip links that allow keyboard users
- * to quickly navigate to main content areas.
- * 
- * @returns {Object} Object containing skip links configuration
- * @returns {Array} returns.skipLinks - Array of skip link objects with id and label
- * 
- * @example
- * ```tsx
- * const { skipLinks } = useSkipLinks();
- * 
- * return (
- *   <nav>
- *     {skipLinks.map(link => (
- *       <a key={link.id} href={`#${link.id}`}>{link.label}</a>
- *     ))}
- *   </nav>
- * );
- * ```
+ * Hook providing predefined skip links for keyboard navigation.
  */
 export const useSkipLinks = () => {
   const skipLinks = [
@@ -420,24 +361,7 @@ export const useSkipLinks = () => {
 };
 
 /**
- * Hook for detecting high contrast mode preference
- * 
- * @description Detects if the user has enabled high contrast mode in their
- * system preferences and provides reactive updates when the preference changes.
- * 
- * @returns {Object} Object containing high contrast state
- * @returns {boolean} returns.isHighContrast - Whether high contrast mode is enabled
- * 
- * @example
- * ```tsx
- * const { isHighContrast } = useHighContrastMode();
- * 
- * return (
- *   <div className={isHighContrast ? 'high-contrast-theme' : 'normal-theme'}>
- *     Content
- *   </div>
- * );
- * ```
+ * Hook for detecting high contrast mode preference.
  */
 export const useHighContrastMode = () => {
   const [isHighContrast, setIsHighContrast] = useState(false);
@@ -446,6 +370,9 @@ export const useHighContrastMode = () => {
     const mediaQuery = window.matchMedia('(prefers-contrast: high)');
     setIsHighContrast(mediaQuery.matches);
 
+    /**
+     * Updates the high contrast state based on the media query match.
+     */
     const handleChange = (e: MediaQueryListEvent) => {
       setIsHighContrast(e.matches);
     };
@@ -458,26 +385,10 @@ export const useHighContrastMode = () => {
 };
 
 /**
- * Hook for detecting reduced motion preference
- * 
- * @description Detects if the user prefers reduced motion in their system
- * preferences and provides reactive updates when the preference changes.
- * 
- * @returns {Object} Object containing reduced motion state
- * @returns {boolean} returns.prefersReducedMotion - Whether reduced motion is preferred
- * 
- * @example
- * ```tsx
- * const { prefersReducedMotion } = useReducedMotion();
- * 
- * return (
- *   <div 
- *     className={prefersReducedMotion ? 'no-animations' : 'with-animations'}
- *   >
- *     Content
- *   </div>
- * );
- * ```
+ * Hook for detecting reduced motion preference.
+ *
+ * @returns {Object} Object containing reduced motion state.
+ * @returns {boolean} returns.prefersReducedMotion - Whether reduced motion is preferred.
  */
 export const useReducedMotion = () => {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
@@ -486,6 +397,9 @@ export const useReducedMotion = () => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     setPrefersReducedMotion(mediaQuery.matches);
 
+    /**
+     * Updates the prefersReducedMotion state based on the media query match.
+     */
     const handleChange = (e: MediaQueryListEvent) => {
       setPrefersReducedMotion(e.matches);
     };
@@ -498,25 +412,14 @@ export const useReducedMotion = () => {
 };
 
 /**
- * Hook for performing basic accessibility audits on DOM elements
- * 
- * @description Provides utilities to audit DOM elements for common accessibility
- * issues such as missing alt text, form labels, and proper heading hierarchy.
- * 
- * @returns {Object} Object containing audit utilities
- * @returns {Function} returns.auditComponent - Audits a DOM element for accessibility issues
- * 
- * @example
- * ```tsx
- * const { auditComponent } = useAccessibilityAudit();
- * 
- * useEffect(() => {
- *   const issues = auditComponent(containerRef.current);
- *   if (issues.length > 0) {
- *     console.warn('Accessibility issues found:', issues);
- *   }
- * }, []);
- * ```
+ * Hook for performing accessibility audits on DOM elements.
+ *
+ * This hook provides a utility function, auditComponent, which checks a given DOM element for common accessibility issues, including missing alt text for images, missing labels for form inputs, and proper heading hierarchy. It collects and returns an array of descriptions for any identified issues.
+ *
+ * @returns {Object} Object containing audit utilities.
+ * @returns {Function} returns.auditComponent - Audits a DOM element for accessibility issues.
+ * @param element - The HTML element to audit.
+ * @returns Array of accessibility issue descriptions.
  */
 export const useAccessibilityAudit = () => {
   /**

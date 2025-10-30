@@ -148,11 +148,17 @@ export function useNetworkStatus(
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    /**
+     * Logs the online status and updates the network status reference.
+     */
     const handleOnline = () => {
       console.log('[Network Status] Browser reports online');
       updateNetworkStatusRef.current?.(true);
     };
 
+    /**
+     * Logs the offline status and updates the network status reference.
+     */
     const handleOffline = () => {
       console.log('[Network Status] Browser reports offline');
       updateNetworkStatusRef.current?.(false);

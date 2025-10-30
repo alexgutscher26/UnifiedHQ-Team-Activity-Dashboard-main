@@ -120,7 +120,15 @@ const ROUTE_CACHE_CONFIGS: Record<string, CacheConfig> = {
 };
 
 /**
- * Generate cache key for API request
+ * Generate cache key for API request.
+ *
+ * This function constructs a cache key based on the request's URL and specified configuration.
+ * It extracts the pathname and search parameters from the request URL, and appends them to the key.
+ * Additionally, it includes headers specified in the config.varyBy array, hashing sensitive headers like
+ * authorization for security. The final cache key is generated using CacheKeyGenerator.api.
+ *
+ * @param req - The NextRequest object representing the API request.
+ * @param config - The CacheConfig object containing configuration options for caching.
  */
 function generateCacheKey(req: NextRequest, config: CacheConfig): string {
   const url = new URL(req.url);
@@ -227,7 +235,17 @@ function setCacheHeaders(
 }
 
 /**
- * Check if request should skip cache
+ * Check if request should skip cache.
+ *
+ * This function determines whether to skip caching based on several conditions:
+ * if caching is explicitly disabled in the config, if the request method is not GET,
+ * if a no-cache header is present, or if the request includes authorization in a
+ * development environment with a specific configuration. If none of these conditions
+ * are met, caching is allowed.
+ *
+ * @param req - The request object of type NextRequest.
+ * @param config - The configuration object of type CacheConfig.
+ * @returns A boolean indicating whether the cache should be skipped.
  */
 function shouldSkipCache(req: NextRequest, config: CacheConfig): boolean {
   // Skip cache if explicitly configured
@@ -261,7 +279,16 @@ function shouldSkipCache(req: NextRequest, config: CacheConfig): boolean {
 }
 
 /**
- * Main caching middleware function
+ * Main caching middleware function that handles caching logic for requests.
+ *
+ * This function checks if caching should be skipped based on the request and configuration.
+ * If caching is applicable, it attempts to retrieve a cached response from Redis.
+ * Depending on the cache strategy, it may serve cached content, stale content, or fetch fresh data
+ * while also handling potential errors gracefully.
+ *
+ * @param req - The NextRequest object representing the incoming request.
+ * @param handler - A function that processes the request and returns a Promise of NextResponse.
+ * @returns A Promise that resolves to the NextResponse object.
  */
 export async function withCache(
   req: NextRequest,
@@ -366,7 +393,15 @@ export async function withCache(
 }
 
 /**
- * Cache response data
+ * Cache response data.
+ *
+ * This function caches the response data by extracting the body and relevant headers from the provided NextResponse object.
+ * It constructs a cacheData object containing the body, headers, status, and a timestamp, and attempts to store it in Redis using the specified cacheKey and CacheConfig.
+ * If Redis is unavailable, it logs a warning and continues without caching.
+ *
+ * @param cacheKey - The key under which the response data will be cached.
+ * @param response - The NextResponse object containing the data to be cached.
+ * @param config - The CacheConfig object that includes the time-to-live (ttl) for the cache.
  */
 async function cacheResponse(
   cacheKey: string,
@@ -446,7 +481,7 @@ export class CacheWarmer {
   }
 
   /**
-   * Warm cache for user-specific data
+   * Warms cache for user-specific data by fetching from predefined endpoints.
    */
   static async warmUserCache(userId: string): Promise<void> {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -461,7 +496,7 @@ export class CacheWarmer {
   }
 
   /**
-   * Warm cache for dashboard data
+   * Warms the cache for dashboard data by fetching from predefined endpoints.
    */
   static async warmDashboardCache(): Promise<void> {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -492,7 +527,7 @@ export class CacheInvalidator {
   }
 
   /**
-   * Invalidate user-specific cache
+   * Invalidate user-specific cache.
    */
   static async invalidateUserCache(userId: string): Promise<void> {
     try {
@@ -504,7 +539,7 @@ export class CacheInvalidator {
   }
 
   /**
-   * Invalidate GitHub cache
+   * Invalidate GitHub cache based on the provided identifier.
    */
   static async invalidateGitHubCache(identifier?: string): Promise<void> {
     const pattern = identifier
@@ -524,7 +559,7 @@ export class CacheInvalidator {
   }
 
   /**
-   * Invalidate AI summary cache
+   * Invalidate AI summary cache based on the provided identifier.
    */
   static async invalidateAISummaryCache(identifier?: string): Promise<void> {
     const pattern = identifier
