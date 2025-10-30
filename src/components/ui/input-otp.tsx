@@ -6,6 +6,9 @@ import { MinusIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
+/**
+ * Renders an OTP input component with optional class names.
+ */
 function InputOTP({
   className,
   containerClassName,
@@ -26,6 +29,9 @@ function InputOTP({
   );
 }
 
+/**
+ * Renders an input OTP group component.
+ */
 function InputOTPGroup({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -36,6 +42,9 @@ function InputOTPGroup({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * Renders an input slot for OTP entry with visual feedback.
+ */
 function InputOTPSlot({
   index,
   className,
@@ -66,6 +75,9 @@ function InputOTPSlot({
   );
 }
 
+/**
+ * Renders a separator for OTP input with optional props.
+ */
 function InputOTPSeparator({ ...props }: React.ComponentProps<'div'>) {
   return (
     <div data-slot='input-otp-separator' role='separator' {...props}>
