@@ -430,6 +430,8 @@ jobs:
 
       - name: Create security incident issue
         uses: actions/github-script@v7
+        env:
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch || github.ref_name }}
         with:
           script: |
             const title = `🔒 Security Alert - ${{ github.event.workflow_run.name }} Failed`;
@@ -437,7 +439,7 @@ jobs:
 
             **Workflow:** ${{ github.event.workflow_run.name }}
             **Status:** ${{ needs.determine-notification-context.outputs.workflow-conclusion }}
-            **Branch:** ${{ github.event.workflow_run.head_branch || github.ref_name }}
+            **Branch:** ${process.env.HEAD_BRANCH}
             **Commit:** ${{ github.event.workflow_run.head_sha || github.sha }}
             **Workflow Run:** https://github.com/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}
 
