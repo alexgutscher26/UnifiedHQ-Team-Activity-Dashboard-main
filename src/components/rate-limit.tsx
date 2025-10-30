@@ -18,6 +18,16 @@ interface RateLimitBannerProps {
   className?: string;
 }
 
+/**
+ * Renders a banner indicating that the rate limit has been exceeded.
+ *
+ * The RateLimitBanner component subscribes to the rate limit manager to receive updates on the rate limit state.
+ * If the user is rate limited, it displays a message along with a countdown timer and a progress bar indicating
+ * the time remaining until the user can make requests again. The formatTime function is used to convert seconds
+ * into a more readable format.
+ *
+ * @param {RateLimitBannerProps} props - The properties for the RateLimitBanner component.
+ */
 export function RateLimitBanner({ className }: RateLimitBannerProps) {
   const [rateLimitState, setRateLimitState] = useState<RateLimitState>({
     isRateLimited: false,
@@ -32,6 +42,9 @@ export function RateLimitBanner({ className }: RateLimitBannerProps) {
 
   if (!rateLimitState.isRateLimited) return null;
 
+  /**
+   * Formats a given time in seconds into a string representation of minutes and seconds.
+   */
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -116,6 +129,9 @@ export function RateLimitOverlay({ className }: RateLimitOverlayProps) {
 
   if (!rateLimitState.isRateLimited) return null;
 
+  /**
+   * Formats a given time in seconds into a string representation of minutes and seconds.
+   */
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -196,6 +212,9 @@ export function RateLimitOverlay({ className }: RateLimitOverlayProps) {
 }
 
 // Hook for rate limit state
+/**
+ * Manages and returns the current rate limit state.
+ */
 export function useRateLimit() {
   const [rateLimitState, setRateLimitState] = useState<RateLimitState>({
     isRateLimited: false,

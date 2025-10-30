@@ -23,6 +23,16 @@ interface MemoryMonitorProps {
   className?: string;
 }
 
+/**
+ * Monitors memory usage and detects potential memory leaks in a React application.
+ *
+ * This component initializes memory monitoring, updates the memory report at regular intervals, and provides a user interface to display memory statistics. It also allows for manual cleanup of memory leaks and displays alerts for potential issues. The visibility of the monitor can be toggled, and it only operates in development mode.
+ *
+ * @param {Object} props - The properties for the MemoryMonitor component.
+ * @param {boolean} [props.show=false] - Determines if the memory monitor should be visible initially.
+ * @param {string} [props.className] - Additional class names for styling the component.
+ * @returns {JSX.Element|null} The rendered MemoryMonitor component or null if not in development mode.
+ */
 export function MemoryMonitor({ show = false, className }: MemoryMonitorProps) {
   const [report, setReport] = useState<any>(null);
   const [isVisible, setIsVisible] = useState(show);
@@ -30,6 +40,9 @@ export function MemoryMonitor({ show = false, className }: MemoryMonitorProps) {
   // Monitor memory in development
   useMemoryMonitoring(5000);
 
+  /**
+   * Updates the report with the current memory report.
+   */
   const updateReport = () => {
     const memoryReport = getMemoryReport();
     setReport(memoryReport);
@@ -43,11 +56,17 @@ export function MemoryMonitor({ show = false, className }: MemoryMonitorProps) {
     }
   }, [isVisible]);
 
+  /**
+   * Cleans up memory leaks and updates the report.
+   */
   const handleCleanup = () => {
     cleanupAllMemoryLeaks();
     updateReport();
   };
 
+  /**
+   * Converts a byte value into a human-readable string format.
+   */
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
