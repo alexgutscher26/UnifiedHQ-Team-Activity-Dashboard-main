@@ -345,18 +345,32 @@ class WorkflowMonitorCLI {
       const keys = key.split('.')
       let current = this.config
 
+      // Prevent prototype pollution: block dangerous keys in property path
+      const dangerousKeys = ['__proto__', 'constructor', 'prototype']
       for (let i = 0; i < keys.length - 1; i++) {
+        if (dangerousKeys.includes(keys[i])) {
+          throw new Error(
+            `Prototype pollution attempt blocked: "${keys[i]}" is not allowed in configuration keys`
+          )
+        }
         if (!current[keys[i]]) {
           current[keys[i]] = {}
         }
         current = current[keys[i]]
       }
+      // Prevent prototype pollution: block dangerous keys for final value assignment
+      const lastKey = keys[keys.length - 1]
+      if (dangerousKeys.includes(lastKey)) {
+        throw new Error(
+          `Prototype pollution attempt blocked: "${lastKey}" is not allowed in configuration keys`
+        )
+      }
 
       // Try to parse value as JSON, fallback to string
       try {
-        current[keys[keys.length - 1]] = JSON.parse(value)
+        current[lastKey] = JSON.parse(value)
       } catch {
-        current[keys[keys.length - 1]] = value
+        current[lastKey] = value
       }
 
       fs.writeFileSync(this.configPath, JSON.stringify(this.config, null, 2))

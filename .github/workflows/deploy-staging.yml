@@ -1,8 +1,6 @@
 name: Deploy to Staging
 permissions:
-  contents: write
-  statuses: write
-  actions: write
+  contents: read
 
 on:
   push:
