@@ -1,5 +1,8 @@
 name: Deploy to Staging
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main]
@@ -257,6 +260,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [deploy]
     if: always()
+    permissions:
+      actions: write
     steps:
       - name: Delete build artifacts
         uses: actions/github-script@v7
