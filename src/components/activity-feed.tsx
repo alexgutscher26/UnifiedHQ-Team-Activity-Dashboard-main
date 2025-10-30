@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { safeLogger, sanitizeError } from '@/lib/safe-logger';
 import { Activity } from '@/types/components';
 import {
   IconBrandSlack,
@@ -219,7 +220,7 @@ export function ActivityFeed() {
 
       // Test if EventSource is supported
       if (typeof EventSource === 'undefined') {
-        console.error('❌ EventSource not supported in this browser');
+        safeLogger.error('❌ EventSource not supported in this browser');
         toast({
           title: 'Browser Not Supported',
           description: 'Your browser does not support live updates.',
@@ -269,7 +270,7 @@ export function ActivityFeed() {
               break;
 
             case 'error':
-              console.error('SSE error:', data.message);
+              safeLogger.error('SSE error:', data.message);
 
               // If it's an auth error, don't show toast
               if (
@@ -310,7 +311,7 @@ export function ActivityFeed() {
               break;
           }
         } catch (error) {
-          console.error('Error parsing SSE message:', error);
+          safeLogger.error('Error parsing SSE message:', sanitizeError(error));
         }
       };
 
@@ -334,7 +335,7 @@ export function ActivityFeed() {
         // The component will continue to work with periodic refresh
       };
     } catch (error) {
-      console.error('Failed to connect to live updates:', error);
+      safeLogger.error('Failed to connect to live updates:', sanitizeError(error));
       setIsLiveConnected(false);
     }
   };
@@ -359,17 +360,18 @@ export function ActivityFeed() {
           console.warn('User not authenticated - activities unavailable');
           setActivities([]); // Set empty array for unauthenticated users
         } else if (response.status === 500) {
-          console.error('Server error fetching activities');
+          safeLogger.error('Server error fetching activities');
           setActivities([]);
         } else {
-          console.error(
-            `Failed to fetch activities: ${response.status} ${response.statusText}`
-          );
+          safeLogger.error('Failed to fetch activities:', {
+            status: response.status,
+            statusText: response.statusText
+          });
           setActivities([]);
         }
       }
     } catch (error) {
-      console.error('Error fetching activities:', error);
+      safeLogger.error('Error fetching activities:', sanitizeError(error));
       setActivities([]); // Ensure activities is always an array
     } finally {
       setIsLoading(false);

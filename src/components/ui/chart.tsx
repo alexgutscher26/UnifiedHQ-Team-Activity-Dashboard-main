@@ -75,6 +75,44 @@ function ChartContainer({
   );
 }
 
+/**
+ * Sanitizes a CSS color value to prevent XSS attacks
+ */
+function sanitizeColor(color: string): string | null {
+  if (typeof color !== 'string') {
+    return null;
+  }
+
+  // Allow hex colors, rgb/rgba, hsl/hsla, and named colors
+  const colorRegex = /^(#[0-9a-fA-F]{3,8}|rgb\([^)]+\)|rgba\([^)]+\)|hsl\([^)]+\)|hsla\([^)]+\)|[a-zA-Z]+)$/;
+
+  if (!colorRegex.test(color.trim())) {
+    console.warn(`Invalid color value detected and sanitized: ${color}`);
+    return null;
+  }
+
+  return color.trim();
+}
+
+/**
+ * Sanitizes a CSS property key to prevent injection attacks
+ */
+function sanitizeKey(key: string): string | null {
+  if (typeof key !== 'string') {
+    return null;
+  }
+
+  // Only allow alphanumeric characters, hyphens, and underscores
+  const keyRegex = /^[a-zA-Z0-9_-]+$/;
+
+  if (!keyRegex.test(key)) {
+    console.warn(`Invalid CSS key detected and sanitized: ${key}`);
+    return null;
+  }
+
+  return key;
+}
+
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   const colorConfig = Object.entries(config).filter(
     ([, config]) => config.theme || config.color
@@ -84,25 +122,66 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null;
   }
 
+  // Sanitize the chart ID to prevent CSS injection
+  const sanitizedId = id.replace(/[^a-zA-Z0-9_-]/g, '');
+
+  if (!sanitizedId) {
+    console.warn('Invalid chart ID provided');
+    return null;
+  }
+
+  const cssContent = Object.entries(THEMES)
+    .map(([theme, prefix]) => {
+      const sanitizedPrefix = prefix.replace(/[^a-zA-Z0-9._-\s]/g, '');
+
+      const cssRules = colorConfig
+        .map(([key, itemConfig]) => {
+          const sanitizedKey = sanitizeKey(key);
+          if (!sanitizedKey) {
+            return null;
+          }
+
+          const color =
+            itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
+            itemConfig.color;
+
+          if (!color) {
+            return null;
+          }
+
+          const sanitizedColor = sanitizeColor(color);
+          if (!sanitizedColor) {
+            return null;
+          }
+
+          return `  --color-${sanitizedKey}: ${sanitizedColor};`;
+        })
+        .filter(Boolean)
+        .join('\n');
+
+      if (!cssRules) {
+        return null;
+      }
+
+      return `${sanitizedPrefix} [data-chart="${sanitizedId}"] {\n${cssRules}\n}`;
+    })
+    .filter(Boolean)
+    .join('\n');
+
+  if (!cssContent) {
+    return null;
+  }
+
   return (
     <style
+      // Using dangerouslySetInnerHTML for dynamic CSS generation is necessary for chart theming.
+      // Security measures: All inputs are sanitized using regex validation to prevent XSS attacks.
+      // - Chart ID is sanitized to alphanumeric + hyphens/underscores only
+      // - CSS keys are validated against safe character set
+      // - Color values are validated against CSS color format regex
+      // eslint-disable-next-line react/no-danger
       dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
-${colorConfig
-  .map(([key, itemConfig]) => {
-    const color =
-      itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
-      itemConfig.color;
-    return color ? `  --color-${key}: ${color};` : null;
-  })
-  .join('\n')}
-}
-`
-          )
-          .join('\n'),
+        __html: cssContent,
       }}
     />
   );
@@ -366,8 +445,8 @@ function getPayloadConfigFromPayload(
 
   const payloadPayload =
     'payload' in payload &&
-    typeof payload.payload === 'object' &&
-    payload.payload !== null
+      typeof payload.payload === 'object' &&
+      payload.payload !== null
       ? payload.payload
       : undefined;
 

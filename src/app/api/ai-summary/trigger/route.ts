@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { safeLogger, sanitizeError } from '@/lib/safe-logger';
 
 /**
  * Manual trigger for AI summary generation
@@ -6,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 export async function POST(request: NextRequest) {
   try {
-    console.log('[AI Summary Trigger] Manual trigger initiated');
+    safeLogger.log('[AI Summary Trigger] Manual trigger initiated');
 
     // Call the cron endpoint internally
     const cronUrl = new URL('/api/ai-summary/cron', request.url);
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
     const cronResult = await cronResponse.json();
 
     if (cronResponse.ok) {
-      console.log('[AI Summary Trigger] Cron job completed successfully');
+      safeLogger.log('[AI Summary Trigger] Cron job completed successfully');
       return NextResponse.json({
         success: true,
         message: 'AI summary generation triggered successfully',
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
         timestamp: new Date().toISOString(),
       });
     } else {
-      console.error('[AI Summary Trigger] Cron job failed:', cronResult);
+      safeLogger.error('[AI Summary Trigger] Cron job failed:', cronResult);
       return NextResponse.json(
         {
           success: false,
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error('[AI Summary Trigger] Error:', error);
+    safeLogger.error('[AI Summary Trigger] Error:', sanitizeError(error));
     return NextResponse.json(
       {
         success: false,

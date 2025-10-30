@@ -1,9 +1,72 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import { WifiOff, RefreshCw, Home, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 export default function OfflinePage() {
+  const [lastUpdated, setLastUpdated] = useState<string>('');
+  const [isCheckingConnection, setIsCheckingConnection] = useState(false);
+
+  // Update last updated time
+  const updateLastUpdated = () => {
+    setLastUpdated(new Date().toLocaleString());
+  };
+
+  // Check connection periodically
+  const checkConnection = async () => {
+    if (isCheckingConnection) return;
+
+    setIsCheckingConnection(true);
+
+    try {
+      if (navigator.onLine) {
+        // Try to fetch a small resource to verify connectivity
+        const response = await fetch('/api/health', {
+          method: 'HEAD',
+          cache: 'no-cache',
+          signal: AbortSignal.timeout(5000) // 5 second timeout
+        });
+
+        if (response.ok) {
+          // Connection restored, redirect to home
+          window.location.href = '/';
+          return;
+        }
+      }
+    } catch (error) {
+      // Still offline or fetch failed
+      console.log('Connection check failed:', error);
+    } finally {
+      setIsCheckingConnection(false);
+    }
+
+    // Schedule next check
+    setTimeout(checkConnection, 5000);
+  };
+
+  // Handle online event
+  const handleOnline = () => {
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 1000);
+  };
+
+  useEffect(() => {
+    // Initialize
+    updateLastUpdated();
+    checkConnection();
+
+    // Listen for online events
+    window.addEventListener('online', handleOnline);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('online', handleOnline);
+    };
+  }, []);
+
   return (
     <div className='min-h-screen bg-background flex items-center justify-center p-4'>
       <div className='max-w-md w-full text-center space-y-6'>
@@ -35,7 +98,7 @@ export default function OfflinePage() {
           <div className='flex items-center gap-2 text-sm'>
             <Clock className='w-4 h-4 text-muted-foreground' />
             <span className='text-muted-foreground'>
-              Last updated: <span id='last-updated'>Loading...</span>
+              Last updated: <span>{lastUpdated || 'Loading...'}</span>
             </span>
           </div>
 

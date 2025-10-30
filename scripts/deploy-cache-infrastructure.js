@@ -6,6 +6,7 @@
 require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { safeLogger, sanitizeError } = require('./safe-logger');
 
 class CacheInfrastructureDeployment {
   constructor(options = {}) {
@@ -31,11 +32,11 @@ class CacheInfrastructureDeployment {
    * @throws Error If the deployment fails at any step.
    */
   async deploy() {
-    console.log('🚀 Starting Cache Infrastructure Deployment');
-    console.log('='.repeat(60));
-    console.log(`Environment: ${this.config.environment}`);
-    console.log(`Timestamp: ${new Date().toISOString()}`);
-    console.log('');
+    safeLogger.log('🚀 Starting Cache Infrastructure Deployment');
+    safeLogger.log('='.repeat(60));
+    safeLogger.log('Environment:', this.config.environment);
+    safeLogger.log('Timestamp:', new Date().toISOString());
+    safeLogger.log('');
 
     try {
       this.deploymentStatus = 'running';
@@ -165,7 +166,7 @@ class CacheInfrastructureDeployment {
       step.endTime = Date.now();
       step.duration = step.endTime - step.startTime;
 
-      console.log(`   ❌ Environment validation failed: ${error.message}`);
+      safeLogger.error(`   ❌ Environment validation failed:`, sanitizeError(error));
       throw error;
     } finally {
       this.deploymentSteps.push(step);
@@ -208,7 +209,7 @@ class CacheInfrastructureDeployment {
       step.endTime = Date.now();
       step.duration = step.endTime - step.startTime;
 
-      console.log(`   ❌ Redis setup failed: ${error.message}`);
+      safeLogger.error(`   ❌ Redis setup failed:`, sanitizeError(error));
       throw error;
     } finally {
       this.deploymentSteps.push(step);
@@ -265,7 +266,7 @@ class CacheInfrastructureDeployment {
       step.endTime = Date.now();
       step.duration = step.endTime - step.startTime;
 
-      console.log(`   ❌ Application deployment failed: ${error.message}`);
+      safeLogger.error(`   ❌ Application deployment failed:`, sanitizeError(error));
       throw error;
     } finally {
       this.deploymentSteps.push(step);
@@ -321,15 +322,15 @@ class CacheInfrastructureDeployment {
       step.duration = step.endTime - step.startTime;
       step.healthData = healthData;
 
-      console.log(`   ✅ Health checks completed (${step.duration}ms)`);
-      console.log(`   📊 Overall health: ${healthData.overall}`);
+      safeLogger.log(`   ✅ Health checks completed (${step.duration}ms)`);
+      safeLogger.log(`   📊 Overall health:`, healthData.overall);
     } catch (error) {
       step.status = 'failed';
       step.error = error.message;
       step.endTime = Date.now();
       step.duration = step.endTime - step.startTime;
 
-      console.log(`   ❌ Health checks failed: ${error.message}`);
+      safeLogger.error(`   ❌ Health checks failed:`, sanitizeError(error));
       throw error;
     } finally {
       this.deploymentSteps.push(step);
@@ -383,7 +384,7 @@ class CacheInfrastructureDeployment {
       step.endTime = Date.now();
       step.duration = step.endTime - step.startTime;
 
-      console.log(`   ❌ Monitoring failed: ${error.message}`);
+      safeLogger.error(`   ❌ Monitoring failed:`, sanitizeError(error));
       // Don't throw error for monitoring failure - it's not critical
     } finally {
       this.deploymentSteps.push(step);
