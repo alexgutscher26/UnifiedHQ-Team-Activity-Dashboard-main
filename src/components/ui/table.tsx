@@ -4,6 +4,9 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
+/**
+ * Renders a table component with optional className and props.
+ */
 function Table({ className, ...props }: React.ComponentProps<'table'>) {
   return (
     <div
@@ -19,6 +22,9 @@ function Table({ className, ...props }: React.ComponentProps<'table'>) {
   );
 }
 
+/**
+ * Renders a table header element with optional className and props.
+ */
 function TableHeader({ className, ...props }: React.ComponentProps<'thead'>) {
   return (
     <thead
@@ -29,6 +35,9 @@ function TableHeader({ className, ...props }: React.ComponentProps<'thead'>) {
   );
 }
 
+/**
+ * Renders a table body element with optional className and props.
+ */
 function TableBody({ className, ...props }: React.ComponentProps<'tbody'>) {
   return (
     <tbody
@@ -39,6 +48,9 @@ function TableBody({ className, ...props }: React.ComponentProps<'tbody'>) {
   );
 }
 
+/**
+ * Renders a table footer with optional className and props.
+ */
 function TableFooter({ className, ...props }: React.ComponentProps<'tfoot'>) {
   return (
     <tfoot
@@ -52,6 +64,9 @@ function TableFooter({ className, ...props }: React.ComponentProps<'tfoot'>) {
   );
 }
 
+/**
+ * Renders a table row with optional className and additional props.
+ */
 function TableRow({ className, ...props }: React.ComponentProps<'tr'>) {
   return (
     <tr
@@ -65,6 +80,9 @@ function TableRow({ className, ...props }: React.ComponentProps<'tr'>) {
   );
 }
 
+/**
+ * Renders a table header cell with customizable class names and props.
+ */
 function TableHead({ className, ...props }: React.ComponentProps<'th'>) {
   return (
     <th
@@ -91,6 +109,9 @@ function TableCell({ className, ...props }: React.ComponentProps<'td'>) {
   );
 }
 
+/**
+ * Renders a caption element for a table with optional className and props.
+ */
 function TableCaption({
   className,
   ...props
