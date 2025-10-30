@@ -87,6 +87,19 @@ function TestComponent() {
 let passed = 0
 let failed = 0
 
+/**
+ * Validates a test case by attempting to generate a memory leak fix.
+ *
+ * This function logs the testing process of a given test case, creates a memory leak fix generator using the test case's source code and leak file,
+ * and attempts to generate a fix. It logs the success or failure of the operation, including details about the generated fix or any errors encountered.
+ * In case of an exception, it logs the error message and marks the test case as failed.
+ *
+ * @param {Object} testCase - The test case object containing the source code and leak information.
+ * @param {string} testCase.name - The name of the test case.
+ * @param {string} testCase.sourceCode - The source code to be tested.
+ * @param {Object} testCase.leak - The leak information.
+ * @param {string} testCase.leak.file - The file associated with the memory leak.
+ */
 function validateTestCase (testCase) {
   try {
     console.log(`📝 Testing ${testCase.name}...`)

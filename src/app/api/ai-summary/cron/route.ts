@@ -94,6 +94,13 @@ export async function POST(request: NextRequest) {
       `📊 Found ${usersWithActivity.length} users with recent activity`
     );
 
+    // Warm cache for users before processing
+    const userIds = usersWithActivity.map(user => user.id);
+    if (userIds.length > 0) {
+      console.log('🔥 Warming cache for scheduled summary generation...');
+      await AISummaryService.warmCacheForUsers(userIds);
+    }
+
     const results = {
       processed: 0,
       generated: 0,
@@ -138,10 +145,11 @@ export async function POST(request: NextRequest) {
           },
         };
 
-        // Generate AI summary
+        // Generate AI summary with caching for cron jobs
         const aiSummary = await AISummaryService.generateSummary(
           user.id,
-          summaryData
+          summaryData,
+          { useCache: true, forceRegenerate: false }
         );
 
         // Save to database

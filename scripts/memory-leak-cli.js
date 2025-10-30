@@ -61,6 +61,9 @@ function logInfo(message) {
 }
 
 // Format leak report for display
+/**
+ * Formats a leak report for display.
+ */
 function formatLeakReport(report) {
 =======
   cyan: '\x1b[36m'
@@ -115,6 +118,15 @@ function formatLeakReport (report) {
 }
 
 // Generate detailed report
+/**
+ * Generate a detailed report of memory leak detection results.
+ *
+ * This function processes an array of reports, logging a summary of the total issues categorized by severity levels.
+ * It also groups the issues by file and displays each report along with any suggested fixes.
+ * If no reports are provided, a success message is logged indicating no memory leaks were detected.
+ *
+ * @param reports - An array of report objects containing memory leak details.
+ */
 function generateDetailedReport(reports) {
   if (reports.length === 0) {
     logSuccess('No memory leaks detected!');
@@ -379,6 +391,19 @@ function generateHTMLReport (reports) {
 
 // Apply fixes automatically
 <<<<<<< HEAD
+/**
+ * Applies suggested fixes to reports based on provided options.
+ *
+ * This function filters the reports to identify those that have suggested fixes and do not require manual review.
+ * If no fixable reports are found, a warning is logged. If the dryRun option is enabled, it displays the fixes that would be applied without making any changes.
+ * Otherwise, it logs a warning indicating that the actual fix application is not yet implemented.
+ *
+ * @param {Array} reports - The array of reports to process.
+ * @param {Object} [options={}] - Options to customize the behavior of the function.
+ * @param {boolean} [options.dryRun=false] - If true, only simulates the application of fixes.
+ * @param {boolean} [options.backup=true] - If true, creates a backup before applying fixes.
+ * @param {boolean} [options.interactive=false] - If true, enables interactive mode for user input.
+ */
 async function applyFixes(reports, options = {}) {
   const { dryRun = false, backup = true, interactive = false } = options;
 
