@@ -16,6 +16,8 @@ concurrency:
 jobs:
   prettier-check:
     name: Prettier Format Check
+    permissions:
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -56,6 +58,8 @@ jobs:
 
   eslint-check:
     name: ESLint Quality Check
+    permissions:
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -96,6 +100,8 @@ jobs:
 
   typescript-check:
     name: TypeScript Strict Mode Check
+    permissions:
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -139,6 +145,8 @@ jobs:
 
   test-validation:
     name: Test Validation
+    permissions:
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
