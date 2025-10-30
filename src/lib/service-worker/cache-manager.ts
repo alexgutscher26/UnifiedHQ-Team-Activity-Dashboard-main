@@ -237,7 +237,7 @@ export class CacheManager {
     if (cachedResponse) {
       this.recordHit(config.name);
       // Don't await the network promise - let it update in background
-      networkPromise;
+      
       return cachedResponse;
     }
 

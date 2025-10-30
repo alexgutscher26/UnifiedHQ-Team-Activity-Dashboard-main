@@ -285,7 +285,7 @@ async function staleWhileRevalidateStrategy (request, config) {
   // Return cached version immediately if available
   if (cachedResponse) {
     // Don't await the network promise - let it update in background
-    networkPromise
+    
     return cachedResponse
   }
 
