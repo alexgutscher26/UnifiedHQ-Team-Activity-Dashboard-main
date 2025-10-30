@@ -1,0 +1,434 @@
+name: Performance Testing
+
+on:
+  pull_request:
+    branches: [main, develop]
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lighthouse-audit:
+    name: Lighthouse Performance Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: |
+            .next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lockb') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lockb') }}-
+
+      - name: Create .env file for build
+        run: |
+          echo "DATABASE_URL=postgresql://test:test@localhost:5432/test" >> .env
+          echo "REDIS_URL=redis://localhost:6379" >> .env
+          echo "BETTER_AUTH_SECRET=test-secret" >> .env
+          echo "BETTER_AUTH_URL=http://localhost:3000" >> .env
+
+      - name: Generate Prisma client
+        run: bunx prisma generate
+
+      - name: Build application
+        run: bun run build
+
+      - name: Start application
+        run: |
+          bun run start &
+          sleep 10
+          curl --retry 10 --retry-delay 3 --retry-connrefused http://localhost:3000
+
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          configPath: './.lighthouserc.json'
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: Upload Lighthouse results
+        uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: lighthouse-results
+          path: |
+            .lighthouseci/
+          retention-days: 7
+
+  bundle-analysis:
+    name: Bundle Size Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install bundle analyzer
+        run: bun add --dev @next/bundle-analyzer
+
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: |
+            .next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lockb') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lockb') }}-
+
+      - name: Create .env file for build
+        run: |
+          echo "DATABASE_URL=postgresql://test:test@localhost:5432/test" >> .env
+          echo "REDIS_URL=redis://localhost:6379" >> .env
+          echo "BETTER_AUTH_SECRET=test-secret" >> .env
+          echo "BETTER_AUTH_URL=http://localhost:3000" >> .env
+
+      - name: Generate Prisma client
+        run: bunx prisma generate
+
+      - name: Build with bundle analysis
+        run: ANALYZE=true bun run build -- --webpack
+
+      - name: Analyze bundle size
+        run: |
+          echo "## Bundle Analysis Results" > bundle-analysis.md
+          echo "" >> bundle-analysis.md
+
+          # Get bundle sizes
+          if [ -f ".next/analyze/client.html" ]; then
+            echo "✅ Client bundle analysis generated" >> bundle-analysis.md
+          else
+            echo "❌ Client bundle analysis failed" >> bundle-analysis.md
+          fi
+
+          if [ -f ".next/analyze/server.html" ]; then
+            echo "✅ Server bundle analysis generated" >> bundle-analysis.md
+          else
+            echo "❌ Server bundle analysis failed" >> bundle-analysis.md
+          fi
+
+          # Calculate total bundle size
+          TOTAL_SIZE=$(du -sh .next/static | cut -f1)
+          echo "" >> bundle-analysis.md
+          echo "**Total Static Assets Size:** $TOTAL_SIZE" >> bundle-analysis.md
+
+          # Check for large chunks
+          echo "" >> bundle-analysis.md
+          echo "### Large Chunks (>500KB):" >> bundle-analysis.md
+          find .next/static -name "*.js" -size +500k -exec ls -lh {} \; | awk '{print "- " $9 ": " $5}' >> bundle-analysis.md || echo "No large chunks found" >> bundle-analysis.md
+
+      - name: Upload bundle analysis
+        uses: actions/upload-artifact@v5
+        with:
+          name: bundle-analysis
+          path: |
+            .next/analyze/
+            bundle-analysis.md
+          retention-days: 7
+
+      - name: Comment bundle analysis on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let comment = '## 📊 Bundle Analysis Results\n\n';
+
+            try {
+              const analysis = fs.readFileSync('bundle-analysis.md', 'utf8');
+              comment += analysis;
+            } catch (error) {
+              comment += '❌ Bundle analysis failed to generate results.';
+            }
+
+            comment += '\n\n---\n*Bundle analysis completed in workflow run #${{ github.run_number }}*';
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  memory-profiling:
+    name: Memory Leak Detection
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run memory leak detection
+        run: |
+          echo "Running memory leak detection..."
+          bun run memory-leak:scan
+
+          echo "Running memory leak linting..."
+          bun run lint:memory-leaks
+
+      - name: Generate memory report
+        run: |
+          echo "## Memory Leak Detection Results" > memory-report.md
+          echo "" >> memory-report.md
+
+          # Run memory leak report
+          bun run memory-leak:report >> memory-report.md || echo "Memory leak report generation failed" >> memory-report.md
+
+      - name: Upload memory analysis
+        uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: memory-analysis
+          path: |
+            memory-report.md
+            memory-leak-report.json
+          retention-days: 7
+
+      - name: Comment memory analysis on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let comment = '## 🧠 Memory Leak Detection Results\n\n';
+
+            try {
+              const report = fs.readFileSync('memory-report.md', 'utf8');
+              comment += report;
+            } catch (error) {
+              comment += '❌ Memory leak detection failed to generate results.';
+            }
+
+            comment += '\n\n---\n*Memory analysis completed in workflow run #${{ github.run_number }}*';
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  performance-regression:
+    name: Performance Regression Detection
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    needs: [lighthouse-audit, bundle-analysis]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Download current Lighthouse results
+        uses: actions/download-artifact@v6
+        with:
+          name: lighthouse-results
+          path: ./current-results
+
+      - name: Download current bundle analysis
+        uses: actions/download-artifact@v6
+        with:
+          name: bundle-analysis
+          path: ./current-bundle
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Checkout main branch for baseline
+        run: |
+          git fetch origin main
+          git checkout origin/main
+
+      - name: Cache dependencies (baseline)
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-baseline-${{ hashFiles('**/bun.lockb', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies (baseline)
+        run: bun install --frozen-lockfile
+
+      - name: Create .env file for baseline build
+        run: |
+          echo "DATABASE_URL=postgresql://test:test@localhost:5432/test" >> .env
+          echo "REDIS_URL=redis://localhost:6379" >> .env
+          echo "BETTER_AUTH_SECRET=test-secret" >> .env
+          echo "BETTER_AUTH_URL=http://localhost:3000" >> .env
+
+      - name: Generate Prisma client (baseline)
+        run: bunx prisma generate
+
+      - name: Build baseline
+        run: bun run build
+
+      - name: Get baseline bundle size
+        run: |
+          BASELINE_SIZE=$(du -sh .next/static | cut -f1)
+          echo "BASELINE_SIZE=$BASELINE_SIZE" >> $GITHUB_ENV
+
+      - name: Compare performance metrics
+        run: |
+          echo "## 📈 Performance Regression Analysis" > performance-comparison.md
+          echo "" >> performance-comparison.md
+
+          # Bundle size comparison
+          echo "### Bundle Size Comparison" >> performance-comparison.md
+          echo "- **Baseline (main):** $BASELINE_SIZE" >> performance-comparison.md
+
+          if [ -f "./current-bundle/bundle-analysis.md" ]; then
+            CURRENT_SIZE=$(grep "Total Static Assets Size" ./current-bundle/bundle-analysis.md | cut -d: -f2 | xargs)
+            echo "- **Current PR:** $CURRENT_SIZE" >> performance-comparison.md
+            
+            # Simple size comparison (this is basic - in production you'd want more sophisticated comparison)
+            echo "" >> performance-comparison.md
+            echo "### Analysis" >> performance-comparison.md
+            if [[ "$CURRENT_SIZE" > "$BASELINE_SIZE" ]]; then
+              echo "⚠️ **Bundle size increased** - Please review if this increase is justified." >> performance-comparison.md
+            else
+              echo "✅ **Bundle size maintained or decreased** - Good job!" >> performance-comparison.md
+            fi
+          else
+            echo "- **Current PR:** Analysis failed" >> performance-comparison.md
+          fi
+
+          echo "" >> performance-comparison.md
+          echo "### Lighthouse Metrics" >> performance-comparison.md
+          if [ -d "./current-results" ]; then
+            echo "✅ Lighthouse audit completed - Check artifacts for detailed results" >> performance-comparison.md
+          else
+            echo "❌ Lighthouse audit failed" >> performance-comparison.md
+          fi
+
+      - name: Comment performance comparison on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let comment = '';
+
+            try {
+              const comparison = fs.readFileSync('performance-comparison.md', 'utf8');
+              comment = comparison;
+            } catch (error) {
+              comment = '## 📈 Performance Regression Analysis\n\n❌ Performance comparison failed to generate results.';
+            }
+
+            comment += '\n\n---\n*Performance regression analysis completed in workflow run #${{ github.run_number }}*';
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  performance-gate:
+    name: Performance Quality Gate
+    runs-on: ubuntu-latest
+    needs: [lighthouse-audit, bundle-analysis, memory-profiling]
+    if: always()
+    steps:
+      - name: Check performance results
+        run: |
+          echo "Checking performance quality gate..."
+
+          # Check if all performance jobs succeeded
+          if [[ "${{ needs.lighthouse-audit.result }}" != "success" ]]; then
+            echo "❌ Lighthouse audit failed"
+            exit 1
+          fi
+
+          if [[ "${{ needs.bundle-analysis.result }}" != "success" ]]; then
+            echo "❌ Bundle analysis failed"
+            exit 1
+          fi
+
+          if [[ "${{ needs.memory-profiling.result }}" != "success" ]]; then
+            echo "❌ Memory profiling failed"
+            exit 1
+          fi
+
+          echo "✅ All performance checks passed"
+
+      - name: Comment performance gate result on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const success = '${{ job.status }}' === 'success';
+            const comment = success 
+              ? '✅ **Performance Quality Gate Passed**\n\nAll performance checks completed successfully!'
+              : '❌ **Performance Quality Gate Failed**\n\nOne or more performance checks failed. Please review the workflow logs.';
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

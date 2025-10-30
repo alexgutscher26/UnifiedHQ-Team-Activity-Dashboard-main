@@ -20,8 +20,11 @@ class RateLimitManager {
 
   private listeners: Array<(state: RateLimitState) => void> = [];
   private countdownInterval: NodeJS.Timeout | null = null;
+  private isDestroyed = false;
 
   setRateLimit(retryAfter: number) {
+    if (this.isDestroyed) return;
+
     const retryAt = Date.now() + retryAfter * 1000;
     this.state = {
       isRateLimited: true,
@@ -34,6 +37,8 @@ class RateLimitManager {
   }
 
   clearRateLimit() {
+    if (this.isDestroyed) return;
+
     this.state = {
       isRateLimited: false,
       retryAfter: 0,
@@ -53,23 +58,50 @@ class RateLimitManager {
   }
 
   subscribe(listener: (state: RateLimitState) => void) {
+    if (this.isDestroyed) {
+      return () => {}; // Return no-op unsubscribe function
+    }
+
     this.listeners.push(listener);
     return () => {
       this.listeners = this.listeners.filter(l => l !== listener);
     };
   }
 
+  destroy() {
+    this.isDestroyed = true;
+
+    // Clear any active intervals
+    if (this.countdownInterval) {
+      clearInterval(this.countdownInterval);
+      this.countdownInterval = null;
+    }
+
+    // Clear all listeners
+    this.listeners = [];
+
+    // Reset state
+    this.state = {
+      isRateLimited: false,
+      retryAfter: 0,
+      retryAt: null,
+    };
+  }
+
   private notifyListeners() {
+    if (this.isDestroyed) return;
     this.listeners.forEach(listener => listener(this.state));
   }
 
   private startCountdown() {
+    if (this.isDestroyed) return;
+
     if (this.countdownInterval) {
       clearInterval(this.countdownInterval);
     }
 
     this.countdownInterval = setInterval(() => {
-      if (!this.state.retryAt) return;
+      if (this.isDestroyed || !this.state.retryAt) return;
 
       const now = Date.now();
       const remaining = Math.ceil((this.state.retryAt - now) / 1000);
@@ -96,12 +128,16 @@ class ToastManager {
   }> = [];
 
   private listeners: Array<(toasts: typeof this.toasts) => void> = [];
+  private timeouts: Map<string, NodeJS.Timeout> = new Map();
+  private isDestroyed = false;
 
   show(
     message: string,
     type: 'error' | 'warning' | 'info' | 'success' = 'info',
     duration = 5000
   ) {
+    if (this.isDestroyed) return '';
+
     const id = `toast_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const toast = { id, message, type, duration };
 
@@ -109,30 +145,83 @@ class ToastManager {
     this.notifyListeners();
 
     if (duration > 0) {
-      setTimeout(() => this.remove(id), duration);
+      const timeoutId = setTimeout(() => {
+        this.remove(id);
+      }, duration);
+
+      this.timeouts.set(id, timeoutId);
     }
 
     return id;
   }
 
   remove(id: string) {
+    if (this.isDestroyed) return;
+
+    // Clear associated timeout
+    const timeoutId = this.timeouts.get(id);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      this.timeouts.delete(id);
+    }
+
     this.toasts = this.toasts.filter(toast => toast.id !== id);
     this.notifyListeners();
   }
 
   subscribe(listener: (toasts: typeof this.toasts) => void) {
+    if (this.isDestroyed) {
+      return () => {}; // Return no-op unsubscribe function
+    }
+
     this.listeners.push(listener);
     return () => {
       this.listeners = this.listeners.filter(l => l !== listener);
     };
   }
 
+  destroy() {
+    this.isDestroyed = true;
+
+    // Clear all timeouts
+    this.timeouts.forEach(timeoutId => {
+      clearTimeout(timeoutId);
+    });
+    this.timeouts.clear();
+
+    // Clear all listeners
+    this.listeners = [];
+
+    // Clear all toasts
+    this.toasts = [];
+  }
+
   private notifyListeners() {
+    if (this.isDestroyed) return;
     this.listeners.forEach(listener => listener([...this.toasts]));
   }
 }
 
 export const toastManager = new ToastManager();
+
+// Cleanup function for proper resource management
+export const cleanupAuthClient = () => {
+  rateLimitManager.destroy();
+  toastManager.destroy();
+};
+
+// Cleanup on page unload (browser environment)
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', cleanupAuthClient);
+
+  // Also cleanup on page visibility change (when tab becomes hidden)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      // Don't fully destroy, but clear rate limits and excess toasts
+      rateLimitManager.clearRateLimit();
+    }
+  });
+}
 
 export const authClient = createAuthClient({
   baseURL:

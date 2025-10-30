@@ -1,0 +1,149 @@
+{
+  "monitoring": {
+    "enabled": true,
+    "schedule": {
+      "daily_report": "0 9 * * *",
+      "weekly_report": "0 10 * * 0",
+      "monthly_report": "0 11 1 * *"
+    },
+    "thresholds": {
+      "success_rate": {
+        "critical": 80,
+        "warning": 90,
+        "target": 95
+      },
+      "duration": {
+        "warning": 600,
+        "critical": 1800
+      },
+      "failure_count": {
+        "warning": 5,
+        "critical": 10
+      }
+    },
+    "retention": {
+      "metrics_days": 90,
+      "reports_count": 10,
+      "artifacts_days": 90
+    }
+  },
+  "notifications": {
+    "slack": {
+      "enabled": true,
+      "channels": {
+        "general": "#dev-notifications",
+        "alerts": "#dev-alerts",
+        "reports": "#dev-reports"
+      },
+      "mention_on_critical": true,
+      "mention_users": ["@channel"]
+    },
+    "github": {
+      "create_issues": true,
+      "labels": ["workflow-report", "monitoring", "automated"],
+      "assignees": [],
+      "close_old_issues": true
+    }
+  },
+  "workflows": {
+    "ci": {
+      "name": "CI Pipeline",
+      "priority": "high",
+      "success_rate_target": 98,
+      "duration_target": 300,
+      "alerts": {
+        "failure_threshold": 3,
+        "duration_threshold": 600
+      }
+    },
+    "security": {
+      "name": "Security Scanning",
+      "priority": "critical",
+      "success_rate_target": 100,
+      "duration_target": 180,
+      "alerts": {
+        "failure_threshold": 1,
+        "duration_threshold": 300
+      }
+    },
+    "deploy-staging": {
+      "name": "Staging Deployment",
+      "priority": "high",
+      "success_rate_target": 95,
+      "duration_target": 240,
+      "alerts": {
+        "failure_threshold": 2,
+        "duration_threshold": 480
+      }
+    },
+    "deploy-production": {
+      "name": "Production Deployment",
+      "priority": "critical",
+      "success_rate_target": 100,
+      "duration_target": 300,
+      "alerts": {
+        "failure_threshold": 1,
+        "duration_threshold": 600
+      }
+    },
+    "performance": {
+      "name": "Performance Testing",
+      "priority": "medium",
+      "success_rate_target": 90,
+      "duration_target": 420,
+      "alerts": {
+        "failure_threshold": 5,
+        "duration_threshold": 900
+      }
+    },
+    "dependencies": {
+      "name": "Dependency Management",
+      "priority": "medium",
+      "success_rate_target": 85,
+      "duration_target": 120,
+      "alerts": {
+        "failure_threshold": 10,
+        "duration_threshold": 300
+      }
+    }
+  },
+  "analytics": {
+    "enabled": true,
+    "collection_period_days": 30,
+    "trend_analysis": true,
+    "pattern_detection": true,
+    "performance_benchmarking": true,
+    "automated_recommendations": true
+  },
+  "dashboard": {
+    "enabled": true,
+    "auto_generate": true,
+    "update_frequency": "daily",
+    "include_charts": true,
+    "include_trends": true,
+    "include_recommendations": true
+  },
+  "integrations": {
+    "sentry": {
+      "enabled": false,
+      "dsn": "",
+      "environment": "production"
+    },
+    "datadog": {
+      "enabled": false,
+      "api_key": "",
+      "app_key": ""
+    },
+    "prometheus": {
+      "enabled": false,
+      "endpoint": "",
+      "metrics_prefix": "github_workflows"
+    }
+  },
+  "optimization": {
+    "cache_analysis": true,
+    "parallel_job_recommendations": true,
+    "resource_usage_tracking": true,
+    "cost_optimization": true
+  }
+}

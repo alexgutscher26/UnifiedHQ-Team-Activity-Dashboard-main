@@ -86,7 +86,10 @@ export class MemoryLeakDetector {
     this.activeWebSockets.add(webSocket);
     return () => {
       this.activeWebSockets.delete(webSocket);
-      if (webSocket.readyState === WebSocket.OPEN || webSocket.readyState === WebSocket.CONNECTING) {
+      if (
+        webSocket.readyState === WebSocket.OPEN ||
+        webSocket.readyState === WebSocket.CONNECTING
+      ) {
         webSocket.close();
       }
     };
@@ -151,7 +154,10 @@ export class MemoryLeakDetector {
     // Cleanup WebSockets
     this.activeWebSockets.forEach(webSocket => {
       try {
-        if (webSocket.readyState === WebSocket.OPEN || webSocket.readyState === WebSocket.CONNECTING) {
+        if (
+          webSocket.readyState === WebSocket.OPEN ||
+          webSocket.readyState === WebSocket.CONNECTING
+        ) {
           webSocket.close();
         }
       } catch (error) {
@@ -165,7 +171,10 @@ export class MemoryLeakDetector {
       try {
         unsubscribe();
       } catch (error) {
-        console.error('[Memory] Error cleaning up observable subscription:', error);
+        console.error(
+          '[Memory] Error cleaning up observable subscription:',
+          error
+        );
       }
     });
     this.activeObservableSubscriptions.clear();
@@ -517,8 +526,12 @@ export function useSafeEventSource(
   options?: EventSourceInit
 ) {
   const detector = MemoryLeakDetector.getInstance();
-  const [eventSource, setEventSource] = React.useState<EventSource | null>(null);
-  const [connectionState, setConnectionState] = React.useState<'connecting' | 'open' | 'closed'>('closed');
+  const [eventSource, setEventSource] = React.useState<EventSource | null>(
+    null
+  );
+  const [connectionState, setConnectionState] = React.useState<
+    'connecting' | 'open' | 'closed'
+  >('closed');
   const [error, setError] = React.useState<Event | null>(null);
 
   useEffect(() => {
@@ -539,7 +552,7 @@ export function useSafeEventSource(
       setError(null);
     };
 
-    es.onerror = (event) => {
+    es.onerror = event => {
       setError(event);
       setConnectionState('closed');
     };
@@ -551,19 +564,19 @@ export function useSafeEventSource(
     };
   }, [url, options]);
 
-  const addEventListener = useCallback((
-    type: string,
-    listener: (event: MessageEvent) => void
-  ) => {
-    if (!eventSource) return () => { };
+  const addEventListener = useCallback(
+    (type: string, listener: (event: MessageEvent) => void) => {
+      if (!eventSource) return () => {};
 
-    eventSource.addEventListener(type, listener);
-    return () => {
-      if (eventSource) {
-        eventSource.removeEventListener(type, listener);
-      }
-    };
-  }, [eventSource]);
+      eventSource.addEventListener(type, listener);
+      return () => {
+        if (eventSource) {
+          eventSource.removeEventListener(type, listener);
+        }
+      };
+    },
+    [eventSource]
+  );
 
   const close = useCallback(() => {
     if (eventSource) {
@@ -577,7 +590,7 @@ export function useSafeEventSource(
     connectionState,
     error,
     addEventListener,
-    close
+    close,
   };
 }
 
@@ -588,7 +601,9 @@ export function useSafeWebSocket(
 ) {
   const detector = MemoryLeakDetector.getInstance();
   const [webSocket, setWebSocket] = React.useState<WebSocket | null>(null);
-  const [connectionState, setConnectionState] = React.useState<'connecting' | 'open' | 'closing' | 'closed'>('closed');
+  const [connectionState, setConnectionState] = React.useState<
+    'connecting' | 'open' | 'closing' | 'closed'
+  >('closed');
   const [error, setError] = React.useState<Event | null>(null);
 
   useEffect(() => {
@@ -613,7 +628,7 @@ export function useSafeWebSocket(
       setConnectionState('closed');
     };
 
-    ws.onerror = (event) => {
+    ws.onerror = event => {
       setError(event);
     };
 
@@ -624,25 +639,31 @@ export function useSafeWebSocket(
     };
   }, [url, protocols]);
 
-  const send = useCallback((data: string | ArrayBufferLike | Blob | ArrayBufferView) => {
-    if (webSocket && webSocket.readyState === WebSocket.OPEN) {
-      webSocket.send(data);
-    }
-  }, [webSocket]);
+  const send = useCallback(
+    (data: string | ArrayBufferLike | Blob | ArrayBufferView) => {
+      if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+        webSocket.send(data);
+      }
+    },
+    [webSocket]
+  );
 
-  const close = useCallback((code?: number, reason?: string) => {
-    if (webSocket) {
-      webSocket.close(code, reason);
-      setConnectionState('closing');
-    }
-  }, [webSocket]);
+  const close = useCallback(
+    (code?: number, reason?: string) => {
+      if (webSocket) {
+        webSocket.close(code, reason);
+        setConnectionState('closing');
+      }
+    },
+    [webSocket]
+  );
 
   return {
     webSocket,
     connectionState,
     error,
     send,
-    close
+    close,
   };
 }
 
@@ -661,12 +682,15 @@ export function useSafeObservableSubscription<T>(
     subscriptionIdRef.current = subscriptionId;
 
     try {
-      const unsubscribe = subscribe((newValue) => {
+      const unsubscribe = subscribe(newValue => {
         setValue(newValue);
         setError(null);
       });
 
-      const cleanup = detector.trackObservableSubscription(subscriptionId, unsubscribe);
+      const cleanup = detector.trackObservableSubscription(
+        subscriptionId,
+        unsubscribe
+      );
 
       return () => {
         cleanup();
@@ -674,7 +698,7 @@ export function useSafeObservableSubscription<T>(
       };
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Subscription error'));
-      return () => { };
+      return () => {};
     }
   }, deps);
 
@@ -694,11 +718,14 @@ export function useSafeAuthSubscription<T>(
     const subscriptionId = `auth_subscription_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     subscriptionIdRef.current = subscriptionId;
 
-    const unsubscribe = manager.subscribe((newValue) => {
+    const unsubscribe = manager.subscribe(newValue => {
       setValue(newValue);
     });
 
-    const cleanup = detector.trackObservableSubscription(subscriptionId, unsubscribe);
+    const cleanup = detector.trackObservableSubscription(
+      subscriptionId,
+      unsubscribe
+    );
 
     return () => {
       cleanup();

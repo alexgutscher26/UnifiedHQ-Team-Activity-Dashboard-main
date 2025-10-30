@@ -30,10 +30,10 @@ import { useToast } from '@/hooks/use-toast';
 
 /**
  * Determines the appropriate icon component to display for an activity based on its source and type.
- * 
+ *
  * @param activity - The activity object containing source and metadata information
  * @returns The corresponding Tabler icon component for the activity
- * 
+ *
  * @example
  * ```tsx
  * const Icon = getActivityIcon(activity);
@@ -71,10 +71,10 @@ const getActivityIcon = (activity: Activity) => {
 
 /**
  * Determines the appropriate color class for an activity based on its source and event type.
- * 
+ *
  * @param activity - The activity object containing source and metadata information
  * @returns A Tailwind CSS color class string for styling the activity icon
- * 
+ *
  * @example
  * ```tsx
  * const colorClass = getActivityColor(activity);
@@ -112,10 +112,10 @@ const getActivityColor = (activity: Activity) => {
 
 /**
  * Formats a timestamp into a human-readable relative time string.
- * 
+ *
  * @param timestamp - The timestamp to format, either as a Date object or ISO string
  * @returns A formatted string like "Just now", "2 hours ago", or "3 days ago"
- * 
+ *
  * @example
  * ```tsx
  * formatTimestamp(new Date()) // "Just now"
@@ -142,7 +142,7 @@ const formatTimestamp = (timestamp: Date | string) => {
 
 /**
  * ActivityFeed component displays a real-time feed of team activities from connected integrations.
- * 
+ *
  * Features:
  * - Real-time updates via EventSource/SSE connection
  * - Manual refresh with sync capabilities for GitHub and Slack
@@ -150,16 +150,16 @@ const formatTimestamp = (timestamp: Date | string) => {
  * - Live connection status indicator
  * - External links to original activities
  * - Auto-refresh every 60 seconds
- * 
+ *
  * The component automatically connects to live updates on mount and handles cleanup
  * of EventSource connections and intervals to prevent memory leaks.
- * 
+ *
  * @returns JSX element containing the activity feed card with header, content, and controls
- * 
+ *
  * @example
  * ```tsx
  * import { ActivityFeed } from '@/components/activity-feed';
- * 
+ *
  * export default function Dashboard() {
  *   return (
  *     <div className="grid gap-6">
@@ -220,14 +220,14 @@ export function ActivityFeed() {
 
   /**
    * Establishes a Server-Sent Events (SSE) connection for real-time activity updates.
-   * 
+   *
    * Handles:
    * - EventSource connection management with cleanup
    * - Connection timeout and error handling
    * - Message parsing for different event types (connected, error, heartbeat, activity_update)
    * - Toast notifications for connection status and errors
    * - Automatic activity refresh on sync completion events
-   * 
+   *
    * The connection includes credentials and implements a 10-second timeout for initial connection.
    * On successful connection, it listens for various message types and updates the UI accordingly.
    */
@@ -357,10 +357,10 @@ export function ActivityFeed() {
 
   /**
    * Fetches the latest activities from the API endpoint.
-   * 
+   *
    * Makes a GET request to `/api/activities` and updates the activities state.
    * Handles errors gracefully by logging them and always sets loading to false.
-   * 
+   *
    * @async
    * @returns Promise that resolves when the fetch operation completes
    */
@@ -371,10 +371,23 @@ export function ActivityFeed() {
         const data = await response.json();
         setActivities(data.activities || []);
       } else {
-        console.error('Failed to fetch activities');
+        // Handle different error status codes
+        if (response.status === 401) {
+          console.warn('User not authenticated - activities unavailable');
+          setActivities([]); // Set empty array for unauthenticated users
+        } else if (response.status === 500) {
+          console.error('Server error fetching activities');
+          setActivities([]);
+        } else {
+          console.error(
+            `Failed to fetch activities: ${response.status} ${response.statusText}`
+          );
+          setActivities([]);
+        }
       }
     } catch (error) {
       console.error('Error fetching activities:', error);
+      setActivities([]); // Ensure activities is always an array
     } finally {
       setIsLoading(false);
     }
@@ -382,10 +395,10 @@ export function ActivityFeed() {
 
   /**
    * Handles scroll events to manage fade effect visibility at top and bottom of the activity list.
-   * 
+   *
    * Calculates scroll position and updates fade states to show/hide gradient overlays
    * that indicate more content is available above or below the current view.
-   * 
+   *
    * @param e - React scroll event containing scroll position information
    */
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -399,13 +412,13 @@ export function ActivityFeed() {
 
   /**
    * Handles manual refresh of activities by triggering sync operations for connected integrations.
-   * 
+   *
    * Performs the following operations:
    * 1. Triggers GitHub and Slack sync operations in parallel
    * 2. Checks sync results and handles token expiration errors
    * 3. Refreshes the activity list after sync completion
    * 4. Shows appropriate toast notifications for success/error states
-   * 
+   *
    * @async
    * @returns Promise that resolves when all sync operations and activity refresh complete
    */
@@ -592,10 +605,10 @@ export function ActivityFeed() {
 
                 /**
                  * Constructs the external URL for an activity to link to the original source.
-                 * 
+                 *
                  * For GitHub activities, links to commits, pull requests, or issues.
                  * For Slack activities, constructs deep links to specific messages.
-                 * 
+                 *
                  * @returns The external URL string or null if no URL can be constructed
                  */
                 const getExternalUrl = () => {

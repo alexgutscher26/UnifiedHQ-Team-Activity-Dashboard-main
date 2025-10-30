@@ -1,0 +1,58 @@
+name: Status Check
+'on':
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+jobs:
+  status-check:
+    name: Required Status Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path:
+            - .next/cache
+          key: >-
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lockb') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts',
+            '**/*.tsx') }}
+          restore-keys:
+            - ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lockb') }}-
+            - ${{ runner.os }}-nextjs-
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Run comprehensive checks
+        run: bun run review:check
+      - name: Verify build success
+        run: |
+          echo "DATABASE_URL=postgresql://test:test@localhost:5432/test" >> .env
+          echo "REDIS_URL=redis://localhost:6379" >> .env
+          echo "BETTER_AUTH_SECRET=test-secret" >> .env
+          echo "BETTER_AUTH_URL=http://localhost:3000" >> .env
+          bunx prisma generate
+          bun run build
+      - name: Status check passed
+        run: echo "✅ All required checks passed"
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true

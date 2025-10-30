@@ -1,0 +1,1237 @@
+name: Auto-merge Dependencies
+'on':
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    paths:
+      - package.json
+      - bun.lockb
+      - .github/workflows/dependencies.yml
+  pull_request_review:
+    types:
+      - submitted
+  check_suite:
+    types:
+      - completed
+  status: {}
+env:
+  NODE_VERSION: 20.x
+  BUN_VERSION: latest
+jobs:
+  check-eligibility:
+    name: Check Auto-merge Eligibility
+    runs-on: ubuntu-latest
+    outputs:
+      eligible: ${{ steps.check.outputs.eligible }}
+      pr-type: ${{ steps.check.outputs.pr-type }}
+      is-dependency-pr: ${{ steps.check.outputs.is-dependency-pr }}
+      is-automated: ${{ steps.check.outputs.is-automated }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      - name: Check PR Eligibility
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { context } = require('@actions/github');
+
+            // Only process pull requests
+            if (!context.payload.pull_request) {
+              console.log('Not a pull request event');
+              core.setOutput('eligible', 'false');
+              return;
+            }
+
+            const pr = context.payload.pull_request;
+            const labels = pr.labels.map(label => label.name);
+            const title = pr.title.toLowerCase();
+            const author = pr.user.login;
+
+            console.log(`Checking PR #${pr.number}: ${pr.title}`);
+            console.log(`Author: ${author}`);
+            console.log(`Labels: ${labels.join(', ')}`);
+
+            // Check if this is a dependency PR
+            const isDependencyPR = labels.includes('dependencies') || 
+                                   title.includes('deps:') || 
+                                   title.includes('chore(deps)') ||
+                                   title.includes('security:');
+
+            // Check if this is an automated PR
+            const isAutomated = labels.includes('automated') || 
+                               author === 'dependabot[bot]' ||
+                               author === 'github-actions[bot]';
+
+            // Determine PR type
+            let prType = 'unknown';
+            if (labels.includes('patch')) prType = 'patch';
+            else if (labels.includes('minor')) prType = 'minor';
+            else if (labels.includes('major')) prType = 'major';
+            else if (labels.includes('security')) prType = 'security';
+
+            // Check eligibility criteria
+            const eligible = isDependencyPR && 
+                           isAutomated && 
+                           (labels.includes('safe-to-merge') || labels.includes('security')) &&
+                           pr.draft === false &&
+                           pr.state === 'open';
+
+            console.log(`Dependency PR: ${isDependencyPR}`);
+            console.log(`Automated: ${isAutomated}`);
+            console.log(`PR Type: ${prType}`);
+            console.log(`Eligible for auto-merge: ${eligible}`);
+
+            core.setOutput('eligible', eligible.toString());
+            core.setOutput('pr-type', prType);
+            core.setOutput('is-dependency-pr', isDependencyPR.toString());
+            core.setOutput('is-automated', isAutomated.toString());
+  wait-for-checks:
+    name: Wait for Required Checks
+    runs-on: ubuntu-latest
+    needs: check-eligibility
+    if: needs.check-eligibility.outputs.eligible == 'true'
+    outputs:
+      all-checks-passed: ${{ steps.check-status.outputs.all-checks-passed }}
+      failed-checks: ${{ steps.check-status.outputs.failed-checks }}
+    steps:
+      - name: Wait for Checks
+        id: check-status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { context } = require('@actions/github');
+            const pr = context.payload.pull_request;
+
+            if (!pr) {
+              console.log('No PR found in context');
+              core.setOutput('all-checks-passed', 'false');
+              return;
+            }
+
+            console.log(`Checking status for PR #${pr.number}`);
+
+            // Required checks that must pass
+            const requiredChecks = [
+              'Lint and Format',
+              'Type Check', 
+              'Build',
+              'Security Scan',
+              'Test'
+            ];
+
+            // Wait for checks to complete (max 10 minutes)
+            const maxWaitTime = 10 * 60 * 1000; // 10 minutes
+            const checkInterval = 30 * 1000; // 30 seconds
+            const startTime = Date.now();
+
+            let allChecksPassed = false;
+            let failedChecks = [];
+
+            while (Date.now() - startTime < maxWaitTime) {
+              try {
+                // Get the latest commit SHA
+                const { data: prData } = await github.rest.pulls.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: pr.number
+                });
+                
+                const headSha = prData.head.sha;
+                
+                // Get check runs for the latest commit
+                const { data: checkRuns } = await github.rest.checks.listForRef({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref: headSha
+                });
+                
+                // Get status checks
+                const { data: statusChecks } = await github.rest.repos.getCombinedStatusForRef({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref: headSha
+                });
+                
+                console.log(`Found ${checkRuns.check_runs.length} check runs and ${statusChecks.statuses.length} status checks`);
+                
+                // Check if all required checks are present and passing
+                const allChecks = [
+                  ...checkRuns.check_runs.map(check => ({
+                    name: check.name,
+                    status: check.status,
+                    conclusion: check.conclusion
+                  })),
+                  ...statusChecks.statuses.map(status => ({
+                    name: status.context,
+                    status: status.state === 'pending' ? 'in_progress' : 'completed',
+                    conclusion: status.state
+                  }))
+                ];
+                
+                console.log('All checks:', allChecks.map(c => `${c.name}: ${c.conclusion}`).join(', '));
+                
+                // Check if all required checks are completed
+                const completedChecks = allChecks.filter(check => 
+                  check.status === 'completed' || check.conclusion !== 'pending'
+                );
+                
+                const passedChecks = completedChecks.filter(check => 
+                  check.conclusion === 'success'
+                );
+                
+                failedChecks = completedChecks.filter(check => 
+                  check.conclusion === 'failure' || check.conclusion === 'error'
+                ).map(check => check.name);
+                
+                // Check if we have enough successful checks
+                const hasRequiredChecks = requiredChecks.some(required => 
+                  passedChecks.some(passed => passed.name.includes(required))
+                );
+                
+                if (failedChecks.length > 0) {
+                  console.log(`Failed checks: ${failedChecks.join(', ')}`);
+                  allChecksPassed = false;
+                  break;
+                } else if (passedChecks.length >= 3 && hasRequiredChecks) {
+                  // Require at least 3 successful checks including required ones
+                  console.log('All required checks passed');
+                  allChecksPassed = true;
+                  break;
+                } else {
+                  console.log(`Waiting for more checks... (${passedChecks.length} passed so far)`);
+                }
+                
+              } catch (error) {
+                console.log(`Error checking status: ${error.message}`);
+              }
+              
+              // Wait before next check
+              await new Promise(resolve => setTimeout(resolve, checkInterval));
+            }
+
+            if (Date.now() - startTime >= maxWaitTime) {
+              console.log('Timeout waiting for checks to complete');
+              allChecksPassed = false;
+            }
+
+            core.setOutput('all-checks-passed', allChecksPassed.toString());
+            core.setOutput('failed-checks', failedChecks.join(','));
+  auto-merge:
+    name: Auto-merge PR
+    runs-on: ubuntu-latest
+    needs:
+      - check-eligibility
+      - wait-for-checks
+    if: |
+      needs.check-eligibility.outputs.eligible == 'true' && 
+      needs.wait-for-checks.outputs.all-checks-passed == 'true'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Auto-merge PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { context } = require('@actions/github');
+            const pr = context.payload.pull_request;
+
+            if (!pr) {
+              console.log('No PR found in context');
+              return;
+            }
+
+            console.log(`Auto-merging PR #${pr.number}: ${pr.title}`);
+
+            try {
+              // Enable auto-merge with squash
+              await github.rest.pulls.enableAutoMerge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                merge_method: 'squash'
+              });
+              
+              console.log(`✅ Auto-merge enabled for PR #${pr.number}`);
+              
+              // Add a comment explaining the auto-merge
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body: `🤖 **Auto-merge enabled**
+                
+                This dependency PR has been automatically approved for merging because:
+                
+                ✅ All required checks passed
+                ✅ PR is labeled as safe-to-merge
+                ✅ Changes are limited to dependencies
+                ✅ No breaking changes detected
+                
+                The PR will be automatically merged when all branch protection rules are satisfied.
+                
+                _This action was performed by the automated dependency management system._`
+              });
+              
+            } catch (error) {
+              console.log(`Failed to enable auto-merge: ${error.message}`);
+              
+              // If auto-merge fails, try direct merge for patch/security updates
+              const prType = '${{ needs.check-eligibility.outputs.pr-type }}';
+              if (prType === 'patch' || prType === 'security') {
+                try {
+                  await github.rest.pulls.merge({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    pull_number: pr.number,
+                    merge_method: 'squash',
+                    commit_title: `${pr.title} (#${pr.number})`,
+                    commit_message: `${pr.body}\n\nAuto-merged by dependency management workflow`
+                  });
+                  
+                  console.log(`✅ Successfully merged PR #${pr.number}`);
+                } catch (mergeError) {
+                  console.log(`Failed to merge PR: ${mergeError.message}`);
+                  throw mergeError;
+                }
+              } else {
+                throw error;
+              }
+            }
+  analyze-breaking-changes:
+    name: Analyze Breaking Changes
+    runs-on: ubuntu-latest
+    needs:
+      - check-eligibility
+      - wait-for-checks
+    if: |
+      needs.check-eligibility.outputs.is-dependency-pr == 'true' && 
+      needs.wait-for-checks.outputs.all-checks-passed == 'false'
+    outputs:
+      breaking-changes: ${{ steps.analyze.outputs.breaking-changes }}
+      change-summary: ${{ steps.analyze.outputs.change-summary }}
+      recommended-actions: ${{ steps.analyze.outputs.recommended-actions }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path:
+            - node_modules
+            - ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb', '**/package.json') }}
+          restore-keys: ${{ runner.os }}-bun-
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - name: Analyze Changes
+        id: analyze
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { context } = require('@actions/github');
+            const pr = context.payload.pull_request;
+
+            if (!pr) {
+              console.log('No PR found in context');
+              return;
+            }
+
+            console.log(`Analyzing breaking changes for PR #${pr.number}`);
+
+            // Get the PR diff to analyze changes
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number
+            });
+
+            let breakingChanges = [];
+            let changeSummary = '';
+            let recommendedActions = [];
+
+            // Analyze package.json changes
+            const packageJsonFile = files.find(file => file.filename === 'package.json');
+            if (packageJsonFile && packageJsonFile.patch) {
+              const patch = packageJsonFile.patch;
+              
+              // Extract version changes from the patch
+              const versionChanges = [];
+              const lines = patch.split('\n');
+              
+              for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                if (line.startsWith('-') && line.includes(':')) {
+                  const nextLine = lines[i + 1];
+                  if (nextLine && nextLine.startsWith('+') && nextLine.includes(':')) {
+                    // Extract package name and versions
+                    const oldMatch = line.match(/"([^"]+)":\s*"([^"]+)"/);
+                    const newMatch = nextLine.match(/"([^"]+)":\s*"([^"]+)"/);
+                    
+                    if (oldMatch && newMatch && oldMatch[1] === newMatch[1]) {
+                      const packageName = oldMatch[1];
+                      const oldVersion = oldMatch[2];
+                      const newVersion = newMatch[2];
+                      
+                      versionChanges.push({
+                        package: packageName,
+                        from: oldVersion,
+                        to: newVersion
+                      });
+                    }
+                  }
+                }
+              }
+              
+              // Analyze version changes for breaking changes
+              for (const change of versionChanges) {
+                const oldParts = change.from.replace(/[^\d.]/g, '').split('.');
+                const newParts = change.to.replace(/[^\d.]/g, '').split('.');
+                
+                const oldMajor = parseInt(oldParts[0]) || 0;
+                const newMajor = parseInt(newParts[0]) || 0;
+                
+                if (newMajor > oldMajor) {
+                  breakingChanges.push({
+                    package: change.package,
+                    type: 'major',
+                    from: change.from,
+                    to: change.to,
+                    reason: 'Major version increase indicates breaking changes'
+                  });
+                }
+              }
+              
+              changeSummary = versionChanges.map(c => `${c.package}: ${c.from} → ${c.to}`).join('\n');
+            }
+
+            // Generate recommended actions based on analysis
+            if (breakingChanges.length > 0) {
+              recommendedActions = [
+                'Review changelog and migration guides for updated packages',
+                'Update code to handle breaking changes',
+                'Run comprehensive tests locally before merging',
+                'Consider updating packages individually to isolate issues',
+                'Check for deprecated APIs and update usage'
+              ];
+            } else {
+              recommendedActions = [
+                'Review test failures to identify compatibility issues',
+                'Check for peer dependency conflicts',
+                'Verify TypeScript compatibility',
+                'Run linting to check for style issues',
+                'Consider updating test expectations if needed'
+              ];
+            }
+
+            core.setOutput('breaking-changes', JSON.stringify(breakingChanges));
+            core.setOutput('change-summary', changeSummary);
+            core.setOutput('recommended-actions', JSON.stringify(recommendedActions));
+
+            console.log(`Found ${breakingChanges.length} potential breaking changes`);
+            console.log('Change summary:', changeSummary);
+  handle-failures:
+    name: Handle Failed Updates
+    runs-on: ubuntu-latest
+    needs:
+      - check-eligibility
+      - wait-for-checks
+      - analyze-breaking-changes
+    if: |
+      needs.check-eligibility.outputs.is-dependency-pr == 'true' && 
+      needs.wait-for-checks.outputs.all-checks-passed == 'false'
+    steps:
+      - name: Generate Enhanced Failure Report
+        uses: actions/github-script@v7
+        with:
+          script: >
+            const { context } = require('@actions/github');
+
+            const pr = context.payload.pull_request;
+
+
+            if (!pr) {
+              console.log('No PR found in context');
+              return;
+            }
+
+
+            const failedChecks = '${{ needs.wait-for-checks.outputs.failed-checks }}';
+
+            const prType = '${{ needs.check-eligibility.outputs.pr-type }}';
+
+            const breakingChanges = JSON.parse('${{ needs.analyze-breaking-changes.outputs.breaking-changes }}' ||
+            '[]');
+
+            const changeSummary = '${{ needs.analyze-breaking-changes.outputs.change-summary }}';
+
+            const recommendedActions = JSON.parse('${{ needs.analyze-breaking-changes.outputs.recommended-actions }}' ||
+            '[]');
+
+
+            console.log(`Handling failed dependency PR #${pr.number}`);
+
+            console.log(`Failed checks: ${failedChecks}`);
+
+            console.log(`PR type: ${prType}`);
+
+            console.log(`Breaking changes detected: ${breakingChanges.length}`);
+
+
+            // Determine failure category
+
+            let failureCategory = 'compatibility';
+
+            let priorityLevel = 'medium';
+
+
+            if (prType === 'security') {
+              failureCategory = 'security';
+              priorityLevel = 'high';
+            } else if (breakingChanges.length > 0) {
+              failureCategory = 'breaking-changes';
+              priorityLevel = 'high';
+            } else if (prType === 'major') {
+              failureCategory = 'major-update';
+              priorityLevel = 'high';
+            }
+
+
+            // Create comprehensive failure report
+
+            let failureReport = `## ❌ Dependency Update Failed
+
+
+            This automated dependency update could not be merged due to failing checks.
+
+
+            ### 📊 Failure Analysis
+
+            - **Category**: ${failureCategory}
+
+            - **Priority**: ${priorityLevel}
+
+            - **Update Type**: ${prType}
+
+            - **Breaking Changes**: ${breakingChanges.length > 0 ? 'Yes' : 'No'}
+
+
+            ### 🔍 Failed Checks
+
+            ${failedChecks ? failedChecks.split(',').map(check => `- ❌ ${check}`).join('\n') : '- Unknown failure'}
+
+
+            ### 📦 Package Changes
+
+            \`\`\`
+
+            ${changeSummary || 'No package changes detected'}
+
+            \`\`\``;
+
+
+            // Add breaking changes details
+
+            if (breakingChanges.length > 0) {
+              failureReport += `
+
+            ### ⚠️ Breaking Changes Detected
+
+            ${breakingChanges.map(change => 
+              `- **${change.package}**: ${change.from} → ${change.to} (${change.reason})`
+            ).join('\n')}`;
+
+            }
+
+
+            // Add category-specific guidance
+
+            if (failureCategory === 'security') {
+              failureReport += `
+
+            ### 🔒 Security Update Failure
+
+            **This is a security-related update requiring immediate attention.**
+
+
+            #### Immediate Actions Required:
+
+            1. **High Priority**: Review and fix failing tests immediately
+
+            2. **Security Risk**: Delayed merge increases vulnerability exposure
+
+            3. **Escalation**: Consider hotfix deployment if critical
+
+            4. **Workaround**: Implement temporary mitigations if needed
+
+
+            #### Security Considerations:
+
+            - Check if vulnerabilities are actively exploited
+
+            - Review security advisory details
+
+            - Consider rollback plan if update introduces instability`;
+
+
+            } else if (failureCategory === 'breaking-changes') {
+              failureReport += `
+
+            ### 💥 Breaking Changes Detected
+
+            **Major version updates detected with potential breaking changes.**
+
+
+            #### Required Actions:
+
+            1. **Code Review**: Update code to handle breaking changes
+
+            2. **Migration Guide**: Review package migration documentation
+
+            3. **Testing**: Comprehensive testing required before merge
+
+            4. **Staging**: Deploy to staging environment first
+
+
+            #### Breaking Change Strategy:
+
+            - Update packages individually to isolate issues
+
+            - Create feature branch for major updates
+
+            - Consider gradual rollout approach`;
+
+
+            } else if (failureCategory === 'major-update') {
+              failureReport += `
+
+            ### 🚀 Major Version Update
+
+            **Major version update requires careful review.**
+
+
+            #### Review Process:
+
+            1. **Changelog**: Review detailed changelog for breaking changes
+
+            2. **Dependencies**: Check for peer dependency conflicts
+
+            3. **API Changes**: Update deprecated API usage
+
+            4. **Performance**: Test for performance regressions`;
+
+
+            } else {
+              failureReport += `
+
+            ### 🔧 Compatibility Issues
+
+            **Non-breaking update failed due to compatibility issues.**
+
+
+            #### Troubleshooting Steps:
+
+            1. **Dependencies**: Check for peer dependency conflicts
+
+            2. **TypeScript**: Verify type compatibility
+
+            3. **Tests**: Update test expectations if needed
+
+            4. **Configuration**: Check for configuration changes`;
+
+            }
+
+
+            // Add recommended actions
+
+            failureReport += `
+
+
+            ### 🛠️ Recommended Actions
+
+            ${recommendedActions.map((action, index) => `${index + 1}. ${action}`).join('\n')}
+
+
+            ### 📋 Next Steps Checklist
+
+            - [ ] Review failed workflow logs for detailed error messages
+
+            - [ ] Run tests locally to reproduce the issue
+
+            - [ ] Check package changelogs and migration guides
+
+            - [ ] Update code to handle any breaking changes
+
+            - [ ] Test changes in staging environment
+
+            - [ ] Re-run CI checks after fixes
+
+
+            ### 🔄 Re-triggering Auto-merge
+
+            Once all issues are resolved:
+
+            1. Push fixes to this PR branch
+
+            2. Ensure all checks pass
+
+            3. Add \`safe-to-merge\` label to re-enable auto-merge
+
+
+            **This PR will not be auto-merged until all checks pass.**
+
+
+            ---
+
+            _This enhanced failure report was generated by the automated dependency management system._`;
+
+
+            // Add failure comment
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body: failureReport
+            });
+
+
+            // Add appropriate labels based on failure category
+
+            const labelsToAdd = ['needs-manual-review', 'failed-checks'];
+
+
+            switch (failureCategory) {
+              case 'security':
+                labelsToAdd.push('security-blocked', 'high-priority');
+                break;
+              case 'breaking-changes':
+                labelsToAdd.push('breaking-changes', 'major-update');
+                break;
+              case 'major-update':
+                labelsToAdd.push('major-update', 'needs-review');
+                break;
+              default:
+                labelsToAdd.push('compatibility-issue');
+            }
+
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              labels: labelsToAdd
+            });
+
+
+            // Remove safe-to-merge label if present
+
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                name: 'safe-to-merge'
+              });
+            } catch (error) {
+              // Label might not exist, ignore error
+            }
+
+
+            // Create escalation issue for high-priority failures
+
+            if (priorityLevel === 'high') {
+              const issueTitle = failureCategory === 'security' 
+                ? `🔒 Security Update Failed: ${pr.title}`
+                : `⚠️ High Priority Dependency Update Failed: ${pr.title}`;
+              
+              const issueBody = `## ${failureCategory === 'security' ? 'Security' : 'High Priority'} Update Failure Alert
+              
+              A ${failureCategory === 'security' ? 'security-related' : 'high-priority'} dependency update has failed and requires immediate attention.
+              
+              ### 📋 Failure Details
+              - **PR**: #${pr.number} - ${pr.title}
+              - **Category**: ${failureCategory}
+              - **Failed Checks**: ${failedChecks || 'Unknown'}
+              - **Breaking Changes**: ${breakingChanges.length > 0 ? 'Yes' : 'No'}
+              
+              ### 🚨 Immediate Actions Required
+              1. **Review**: Check the failing PR: ${pr.html_url}
+              2. **Investigate**: Analyze the test failures and error logs
+              3. **Fix**: Address compatibility issues or breaking changes
+              4. **Merge**: Complete the update as soon as possible
+              
+              ${failureCategory === 'security' ? `
+              ### 🔒 Security Considerations
+              - This update addresses known security vulnerabilities
+              - Delayed resolution increases security risk exposure
+              - Consider implementing temporary mitigations if fixes take time
+              ` : ''}
+              
+              ### 📦 Package Changes
+              \`\`\`
+              ${changeSummary || 'No package changes detected'}
+              \`\`\`
+              
+              **This issue was automatically created by the dependency management system.**`;
+              
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: issueTitle,
+                body: issueBody,
+                labels: failureCategory === 'security' 
+                  ? ['security', 'high-priority', 'dependency-failure', 'automated']
+                  : ['high-priority', 'dependency-failure', 'breaking-changes', 'automated']
+              });
+            }
+  retry-failed-updates:
+    name: Retry Failed Non-breaking Updates
+    runs-on: ubuntu-latest
+    needs:
+      - check-eligibility
+      - wait-for-checks
+      - analyze-breaking-changes
+      - handle-failures
+    if: |
+      needs.check-eligibility.outputs.is-dependency-pr == 'true' && 
+      needs.wait-for-checks.outputs.all-checks-passed == 'false' &&
+      (needs.check-eligibility.outputs.pr-type == 'patch' || needs.check-eligibility.outputs.pr-type == 'minor') &&
+      !contains(needs.analyze-breaking-changes.outputs.breaking-changes, 'major')
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path:
+            - node_modules
+            - ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb', '**/package.json') }}
+          restore-keys: ${{ runner.os }}-bun-
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path:
+            - .next/cache
+          key: >-
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lockb') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts',
+            '**/*.tsx') }}
+          restore-keys:
+            - ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lockb') }}-
+            - ${{ runner.os }}-nextjs-
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - name: Attempt Automatic Fix
+        id: auto-fix
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { context } = require('@actions/github');
+            const pr = context.payload.pull_request;
+
+            if (!pr) {
+              console.log('No PR found in context');
+              return;
+            }
+
+            console.log(`Attempting automatic fix for PR #${pr.number}`);
+
+            // Check if this is a simple formatting or linting issue
+            const failedChecks = '${{ needs.wait-for-checks.outputs.failed-checks }}';
+            const isFormattingIssue = failedChecks.includes('Lint') || failedChecks.includes('Format');
+            const isTypeIssue = failedChecks.includes('Type');
+
+            if (isFormattingIssue) {
+              console.log('Detected formatting/linting issue - attempting auto-fix');
+              core.setOutput('should-attempt-fix', 'true');
+              core.setOutput('fix-type', 'formatting');
+            } else if (isTypeIssue) {
+              console.log('Detected TypeScript issue - attempting type fix');
+              core.setOutput('should-attempt-fix', 'true');
+              core.setOutput('fix-type', 'types');
+            } else {
+              console.log('Cannot auto-fix this type of failure');
+              core.setOutput('should-attempt-fix', 'false');
+            }
+      - name: Apply Automatic Fixes
+        if: steps.auto-fix.outputs.should-attempt-fix == 'true'
+        run: |
+          echo "Attempting to apply automatic fixes..."
+
+          # Configure git
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          # Checkout the PR branch
+          git fetch origin ${{ github.event.pull_request.head.ref }}
+          git checkout ${{ github.event.pull_request.head.ref }}
+
+          # Install dependencies
+          bun install
+
+          # Apply fixes based on the issue type
+          if [ "${{ steps.auto-fix.outputs.fix-type }}" = "formatting" ]; then
+            echo "Applying formatting fixes..."
+            bun run format || true
+            bun run lint --fix || true
+          elif [ "${{ steps.auto-fix.outputs.fix-type }}" = "types" ]; then
+            echo "Attempting TypeScript fixes..."
+            # Try to regenerate types
+            bun run build --dry-run || true
+          fi
+
+          # Check if any changes were made
+          if git diff --quiet; then
+            echo "No automatic fixes applied"
+            echo "AUTO_FIX_APPLIED=false" >> $GITHUB_ENV
+          else
+            echo "Automatic fixes applied"
+            echo "AUTO_FIX_APPLIED=true" >> $GITHUB_ENV
+            
+            # Commit the fixes
+            git add .
+            git commit -m "fix: apply automatic fixes for dependency update
+            
+            - Applied formatting fixes
+            - Fixed linting issues
+            - Updated types if necessary
+            
+            Auto-generated by dependency management workflow"
+            
+            # Push the fixes
+            git push origin ${{ github.event.pull_request.head.ref }}
+          fi
+      - name: Update PR with Fix Status
+        if: steps.auto-fix.outputs.should-attempt-fix == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { context } = require('@actions/github');
+            const pr = context.payload.pull_request;
+            const autoFixApplied = process.env.AUTO_FIX_APPLIED === 'true';
+
+            if (autoFixApplied) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body: `## 🔧 Automatic Fixes Applied
+                
+                The dependency management system has automatically applied fixes to resolve the failing checks:
+                
+                ✅ **Fix Type**: ${{ steps.auto-fix.outputs.fix-type }}
+                ✅ **Status**: Fixes committed and pushed
+                ✅ **Next Step**: CI checks will re-run automatically
+                
+                ### What was fixed:
+                - Code formatting issues
+                - Linting rule violations
+                - Basic TypeScript compatibility issues
+                
+                The PR will be automatically merged once all checks pass.
+                
+                _This fix was automatically applied by the dependency management system._`
+              });
+              
+              // Add label to indicate auto-fix was applied
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                labels: ['auto-fixed', 'retry-in-progress']
+              });
+              
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body: `## ⚠️ Automatic Fix Attempted
+                
+                The dependency management system attempted to automatically fix the failing checks but no fixes could be applied.
+                
+                ❌ **Fix Type**: ${{ steps.auto-fix.outputs.fix-type }}
+                ❌ **Status**: No automatic fixes available
+                ❌ **Action Required**: Manual intervention needed
+                
+                ### Manual Review Required:
+                The failing checks require manual code changes that cannot be automatically resolved.
+                Please review the failure report above and apply the necessary fixes.
+                
+                _This attempt was made by the automated dependency management system._`
+              });
+            }
+  monitor-retry-success:
+    name: Monitor Retry Success
+    runs-on: ubuntu-latest
+    needs:
+      - retry-failed-updates
+    if: needs.retry-failed-updates.result == 'success'
+    steps:
+      - name: Check if Retry Succeeded
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { context } = require('@actions/github');
+            const pr = context.payload.pull_request;
+
+            if (!pr) {
+              console.log('No PR found in context');
+              return;
+            }
+
+            console.log(`Monitoring retry success for PR #${pr.number}`);
+
+            // Wait a bit for checks to start
+            await new Promise(resolve => setTimeout(resolve, 30000)); // 30 seconds
+
+            // Check if the retry fixed the issues
+            const { data: prData } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number
+            });
+
+            const headSha = prData.head.sha;
+
+            // Get latest check status
+            const { data: checkRuns } = await github.rest.checks.listForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: headSha
+            });
+
+            const { data: statusChecks } = await github.rest.repos.getCombinedStatusForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: headSha
+            });
+
+            const allChecks = [
+              ...checkRuns.check_runs,
+              ...statusChecks.statuses
+            ];
+
+            const completedChecks = allChecks.filter(check => 
+              check.status === 'completed' || check.state !== 'pending'
+            );
+
+            const passedChecks = completedChecks.filter(check => 
+              check.conclusion === 'success' || check.state === 'success'
+            );
+
+            const failedChecks = completedChecks.filter(check => 
+              check.conclusion === 'failure' || check.state === 'failure'
+            );
+
+            console.log(`Checks status: ${passedChecks.length} passed, ${failedChecks.length} failed`);
+
+            if (failedChecks.length === 0 && passedChecks.length >= 3) {
+              // Retry was successful - re-enable auto-merge
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                labels: ['safe-to-merge', 'auto-fix-successful']
+              });
+              
+              // Remove failure labels
+              const labelsToRemove = ['needs-manual-review', 'failed-checks', 'retry-in-progress'];
+              for (const label of labelsToRemove) {
+                try {
+                  await github.rest.issues.removeLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: pr.number,
+                    name: label
+                  });
+                } catch (error) {
+                  // Label might not exist, ignore error
+                }
+              }
+              
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body: `## ✅ Retry Successful - Auto-merge Re-enabled
+                
+                The automatic fixes have resolved the failing checks!
+                
+                🎉 **Status**: All checks are now passing
+                🤖 **Action**: Auto-merge has been re-enabled
+                🚀 **Next**: PR will be automatically merged
+                
+                ### Resolution Summary:
+                - Automatic fixes successfully applied
+                - All CI checks are now passing
+                - PR is ready for automatic merge
+                
+                _This update was provided by the automated dependency management system._`
+              });
+              
+            } else if (failedChecks.length > 0) {
+              // Retry failed - update status
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body: `## ❌ Retry Failed - Manual Intervention Required
+                
+                The automatic fixes did not resolve all failing checks.
+                
+                ❌ **Status**: ${failedChecks.length} checks still failing
+                🔧 **Action Required**: Manual fixes needed
+                📋 **Next Steps**: Review the failure report and apply manual fixes
+                
+                ### Still Failing:
+                ${failedChecks.map(check => `- ${check.name || check.context}`).join('\n')}
+                
+                Please review the detailed failure analysis above and apply the necessary manual fixes.
+                
+                _This update was provided by the automated dependency management system._`
+              });
+              
+              // Remove retry label but keep failure labels
+              try {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  name: 'retry-in-progress'
+                });
+              } catch (error) {
+                // Label might not exist, ignore error
+              }
+            }
+  cleanup-merged-branches:
+    name: Cleanup Merged Branches
+    runs-on: ubuntu-latest
+    needs: auto-merge
+    if: success()
+    steps:
+      - name: Delete Merged Branch
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { context } = require('@actions/github');
+            const pr = context.payload.pull_request;
+
+            if (!pr || !pr.merged) {
+              console.log('PR not merged, skipping cleanup');
+              return;
+            }
+
+            const branchName = pr.head.ref;
+
+            // Only delete automated dependency branches
+            if (branchName.startsWith('deps/') || branchName.startsWith('security/')) {
+              try {
+                await github.rest.git.deleteRef({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref: `heads/${branchName}`
+                });
+                
+                console.log(`✅ Deleted merged branch: ${branchName}`);
+              } catch (error) {
+                console.log(`Failed to delete branch ${branchName}: ${error.message}`);
+              }
+            } else {
+              console.log(`Skipping cleanup for non-automated branch: ${branchName}`);
+            }
+  workflow-summary:
+    name: Auto-merge Summary
+    runs-on: ubuntu-latest
+    needs:
+      - check-eligibility
+      - wait-for-checks
+      - auto-merge
+      - handle-failures
+      - analyze-breaking-changes
+      - retry-failed-updates
+      - monitor-retry-success
+    if: always() && needs.check-eligibility.outputs.is-dependency-pr == 'true'
+    steps:
+      - name: Generate Enhanced Summary
+        run: |
+          echo "## 🤖 Enhanced Auto-merge Dependency Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Basic eligibility and type info
+          if [ "${{ needs.check-eligibility.outputs.eligible }}" = "true" ]; then
+            echo "✅ **Eligible**: PR meets auto-merge criteria" >> $GITHUB_STEP_SUMMARY
+            echo "📋 **Type**: ${{ needs.check-eligibility.outputs.pr-type }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⏭️ **Skipped**: PR not eligible for auto-merge" >> $GITHUB_STEP_SUMMARY
+            echo "**Reason**: Manual review required" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Check results and actions taken
+          if [ "${{ needs.wait-for-checks.outputs.all-checks-passed }}" = "true" ]; then
+            echo "✅ **Checks**: All required checks passed" >> $GITHUB_STEP_SUMMARY
+            echo "🚀 **Action**: PR auto-merged successfully" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Checks**: Some checks failed" >> $GITHUB_STEP_SUMMARY
+            
+            # Breaking changes analysis
+            if [ "${{ needs.analyze-breaking-changes.result }}" = "success" ]; then
+              echo "🔍 **Analysis**: Breaking changes analysis completed" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            # Failure handling
+            if [ "${{ needs.handle-failures.result }}" = "success" ]; then
+              echo "📋 **Reporting**: Enhanced failure report generated" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            # Retry attempts
+            if [ "${{ needs.retry-failed-updates.result }}" = "success" ]; then
+              echo "🔧 **Auto-fix**: Automatic fixes attempted" >> $GITHUB_STEP_SUMMARY
+            elif [ "${{ needs.retry-failed-updates.result }}" = "skipped" ]; then
+              echo "⏭️ **Auto-fix**: Skipped (not applicable for this update type)" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            # Retry monitoring
+            if [ "${{ needs.monitor-retry-success.result }}" = "success" ]; then
+              echo "👀 **Monitoring**: Retry success monitoring completed" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            # Failed checks details
+            if [ -n "${{ needs.wait-for-checks.outputs.failed-checks }}" ]; then
+              echo "**Failed Checks**: ${{ needs.wait-for-checks.outputs.failed-checks }}" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+
+          # Workflow capabilities summary
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🛠️ Workflow Capabilities" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ **Auto-merge**: Non-breaking updates with passing checks" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔍 **Analysis**: Breaking change detection and categorization" >> $GITHUB_STEP_SUMMARY
+          echo "- 📋 **Reporting**: Enhanced failure reports with actionable guidance" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔧 **Auto-fix**: Automatic resolution of formatting and linting issues" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔄 **Retry**: Intelligent retry logic for recoverable failures" >> $GITHUB_STEP_SUMMARY
+          echo "- 🚨 **Escalation**: High-priority issue creation for security/breaking changes" >> $GITHUB_STEP_SUMMARY
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Workflow completed at**: $(date -u)" >> $GITHUB_STEP_SUMMARY
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true

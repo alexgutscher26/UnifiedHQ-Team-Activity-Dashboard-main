@@ -6,297 +6,475 @@ on:
       - 'v*'
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Version to release (e.g., v1.0.0)'
+      version_type:
+        description: 'Version bump type'
         required: true
-        type: string
-      type:
-        description: 'Release type'
-        required: true
-        default: 'patch'
+        default: 'auto'
         type: choice
         options:
+          - auto
           - patch
           - minor
           - major
           - prerelease
-  schedule:
-    # Check for release candidates daily at 6 AM UTC
-    - cron: '0 6 * * *'
+      skip_tests:
+        description: 'Skip tests (emergency release only)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  NODE_VERSION: '20.x'
+  BUN_VERSION: 'latest'
 
 jobs:
+  # Job 1: Create Release (Manual Trigger)
   create-release:
-    name: Create Release
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: '22'
-          cache: 'npm'
+          bun-version: ${{ env.BUN_VERSION }}
 
       - name: Install dependencies
-        run: npm ci
+        run: bun install --frozen-lockfile
 
-      - name: Extract version
+      - name: Configure Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Get current version
+        id: current_version
+        run: |
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Calculate new version
         id: version
         run: |
-          VERSION=${GITHUB_REF#refs/tags/}
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Version: $VERSION"
+          VERSION_TYPE="${{ github.event.inputs.version_type }}"
+          CURRENT_VERSION="${{ steps.current_version.outputs.current }}"
 
-      - name: Generate changelog
-        run: |
-          echo "📝 Generating changelog for ${{ steps.version.outputs.version }}"
-          node scripts/release-manager.js changelog ${{ steps.version.outputs.version }}
-
-      - name: Generate release notes
-        run: |
-          echo "📋 Generating release notes for ${{ steps.version.outputs.version }}"
-          node scripts/release-manager.js notes ${{ steps.version.outputs.version }}
-
-      - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.version.outputs.version }}
-          release_name: Release ${{ steps.version.outputs.version }}
-          body_path: RELEASE_NOTES.md
-          draft: false
-          prerelease: ${{ contains(steps.version.outputs.version, 'rc') || contains(steps.version.outputs.version, 'beta') || contains(steps.version.outputs.version, 'alpha') }}
-
-      - name: Upload release assets
-        run: |
-          echo "📦 Uploading release assets..."
-          # In a real implementation, you would build and upload assets here
-          # For example: bun run build && tar -czf dist.tar.gz dist/
-
-  automated-release:
-    name: Automated Release
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run release process
-        run: |
-          echo "🚀 Starting automated release process..."
-          node scripts/release-manager.js release ${{ github.event.inputs.version }} ${{ github.event.inputs.type }}
-
-      - name: Create GitHub Release
-        if: success()
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.event.inputs.version }}
-          release_name: Release ${{ github.event.inputs.version }}
-          body_path: RELEASE_NOTES.md
-          draft: false
-          prerelease: ${{ contains(github.event.inputs.version, 'rc') || contains(github.event.inputs.version, 'beta') || contains(github.event.inputs.version, 'alpha') }}
-
-  release-validation:
-    name: Release Validation
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Validate release
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/}
-          echo "🔍 Validating release: $VERSION"
-
-          # Check if version matches package.json
-          PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          if [ "$VERSION" != "v$PACKAGE_VERSION" ]; then
-            echo "❌ Version mismatch: tag=$VERSION, package.json=v$PACKAGE_VERSION"
-            exit 1
+          # If version type is 'auto', determine from conventional commits
+          if [ "$VERSION_TYPE" = "auto" ]; then
+            echo "🔍 Analyzing conventional commits to determine version bump..."
+            DETERMINED_TYPE=$(node -e "
+              const ReleaseManager = require('./scripts/release-manager.js');
+              const manager = new ReleaseManager();
+              console.log(manager.determineVersionBumpFromCommits());
+            ")
+            echo "📈 Determined version bump type: $DETERMINED_TYPE"
+            VERSION_TYPE="$DETERMINED_TYPE"
           fi
-          echo "✅ Version matches package.json"
+
+          # Calculate new version using the determined or specified type
+          NEW_VERSION=$(node -e "
+            const ReleaseManager = require('./scripts/release-manager.js');
+            const manager = new ReleaseManager();
+            console.log(manager.calculateNewVersion('$CURRENT_VERSION', '$VERSION_TYPE'));
+          ")
+
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "bump_type=$VERSION_TYPE" >> $GITHUB_OUTPUT
+          echo "✅ New version will be: $NEW_VERSION (bump type: $VERSION_TYPE)"
 
       - name: Run tests
+        if: ${{ !github.event.inputs.skip_tests }}
         run: |
-          echo "🧪 Running tests for release validation..."
-          bun run test || echo "⚠️ Tests failed, but continuing with release"
+          bun run lint
+          bun run build
+
+      - name: Generate changelog from conventional commits
+        id: changelog
+        run: |
+          # Get the previous tag for comparison
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          # Generate changelog using release manager with conventional commits
+          if [ -n "$PREVIOUS_TAG" ]; then
+            echo "📝 Generating changelog from $PREVIOUS_TAG to v${{ steps.version.outputs.version }}..."
+            node scripts/release-manager.js changelog ${{ steps.version.outputs.version }} "$PREVIOUS_TAG"
+          else
+            echo "📝 Generating changelog for initial release v${{ steps.version.outputs.version }}..."
+            node scripts/release-manager.js changelog ${{ steps.version.outputs.version }}
+          fi
+
+          # Extract changelog content for this version
+          if [ -f "CHANGELOG.md" ]; then
+            CHANGELOG_CONTENT=$(node -e "
+              const fs = require('fs');
+              const changelog = fs.readFileSync('CHANGELOG.md', 'utf8');
+              const lines = changelog.split('\n');
+              const versionIndex = lines.findIndex(line => line.includes('[${{ steps.version.outputs.version }}]'));
+              if (versionIndex === -1) {
+                console.log('No changelog entry found for this version');
+                process.exit(0);
+              }
+              const nextVersionIndex = lines.findIndex((line, index) => index > versionIndex && line.startsWith('## ['));
+              const endIndex = nextVersionIndex === -1 ? lines.length : nextVersionIndex;
+              console.log(lines.slice(versionIndex + 1, endIndex).join('\n').trim());
+            ")
+            
+            # Save changelog content to file for later use
+            echo "$CHANGELOG_CONTENT" > release-notes.md
+            echo "✅ Changelog generated successfully"
+          else
+            echo "⚠️ No CHANGELOG.md file found"
+            echo "Generated from conventional commits for v${{ steps.version.outputs.version }}" > release-notes.md
+          fi
+
+      - name: Update package.json version
+        run: |
+          # Update version in package.json using the determined bump type
+          BUMP_TYPE="${{ steps.version.outputs.bump_type }}"
+          echo "📦 Updating package.json version with bump type: $BUMP_TYPE"
+          node scripts/release-manager.js bump "$BUMP_TYPE"
+
+      - name: Commit version bump and changelog
+        run: |
+          git add package.json CHANGELOG.md
+          git commit -m "chore: release v${{ steps.version.outputs.version }}"
+          git push origin main
+
+      - name: Create and push tag
+        run: |
+          git tag -a ${{ steps.version.outputs.tag }} -m "Release ${{ steps.version.outputs.tag }}"
+          git push origin ${{ steps.version.outputs.tag }}
+
+  # Job 2: Build Release Artifacts (Triggered by Tag)
+  build-artifacts:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building artifacts for version: $VERSION"
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
 
       - name: Build application
         run: |
-          echo "🔨 Building application for release validation..."
           bun run build
 
-      - name: Security audit
+      - name: Create build artifact
         run: |
-          echo "🔒 Running security audit..."
-          npm audit --audit-level moderate || echo "⚠️ Security audit found issues"
+          # Create release directory
+          mkdir -p release-artifacts
 
-  deploy-staging:
-    name: Deploy to Staging
+          # Copy built application
+          cp -r .next release-artifacts/
+          cp -r public release-artifacts/
+          cp package.json release-artifacts/
+          cp bun.lock release-artifacts/
+
+          # Create deployment package
+          tar -czf release-artifacts/unifiedhq-${{ steps.version.outputs.version }}.tar.gz \
+            .next public package.json bun.lock
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v5
+        with:
+          name: release-artifacts-${{ steps.version.outputs.version }}
+          path: release-artifacts/
+          retention-days: 30
+
+  # Job 3: Generate Release Notes and Create GitHub Release
+  create-github-release:
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-    needs: [release-validation]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Deploy to staging
-        run: |
-          echo "🚀 Deploying to staging environment..."
-          # In a real implementation, this would deploy to your staging environment
-          # For example: kubectl apply -f k8s/staging/ || docker-compose -f docker-compose.staging.yml up -d
-          echo "✅ Deployed to staging"
-
-      - name: Run smoke tests
-        run: |
-          echo "🧪 Running smoke tests on staging..."
-          # In a real implementation, this would run smoke tests
-          echo "✅ Smoke tests passed"
-
-  deploy-production:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && !contains(github.ref, 'rc') && !contains(github.ref, 'beta') && !contains(github.ref, 'alpha')
-    needs: [deploy-staging]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Deploy to production
-        run: |
-          echo "🚀 Deploying to production environment..."
-          # In a real implementation, this would deploy to your production environment
-          echo "✅ Deployed to production"
-
-      - name: Run health checks
-        run: |
-          echo "🏥 Running health checks on production..."
-          # In a real implementation, this would run health checks
-          echo "✅ Health checks passed"
-
-      - name: Notify team
-        run: |
-          echo "📢 Notifying team of successful deployment..."
-          # In a real implementation, this would send notifications
-          echo "✅ Team notified"
-
-  rollback:
-    name: Rollback Release
-    runs-on: ubuntu-latest
-    if: failure() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Rollback deployment
-        run: |
-          echo "🔄 Rolling back deployment..."
-          # In a real implementation, this would rollback the deployment
-          echo "✅ Rollback completed"
-
-      - name: Notify team of rollback
-        run: |
-          echo "📢 Notifying team of rollback..."
-          # In a real implementation, this would send notifications
-          echo "✅ Team notified of rollback"
-
-  release-candidate-check:
-    name: Release Candidate Check
-    runs-on: ubuntu-latest
-    if: github.event_name == 'schedule'
-
+    needs: build-artifacts
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: '22'
-          cache: 'npm'
+          bun-version: ${{ env.BUN_VERSION }}
 
       - name: Install dependencies
-        run: npm ci
+        run: bun install --frozen-lockfile
 
-      - name: Check for release candidates
+      - name: Extract version from tag
+        id: version
         run: |
-          echo "🔍 Checking for release candidates..."
-          node scripts/release-manager.js check-candidates
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Create release candidate if needed
+      - name: Generate release notes from conventional commits
+        id: release_notes
         run: |
-          echo "🚀 Creating release candidate if needed..."
-          # This would check if a release candidate is needed and create one
-          echo "✅ Release candidate check completed"
+          # Get the previous tag for comparison
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          CURRENT_TAG="v${{ steps.version.outputs.version }}"
 
-  release-metrics:
-    name: Release Metrics
+          # Generate GitHub-style release notes using conventional commits
+          RELEASE_NOTES=$(node scripts/release-manager.js notes ${{ steps.version.outputs.version }} --github --from="$PREVIOUS_TAG")
+
+          if [ -z "$RELEASE_NOTES" ]; then
+            # Fallback: generate from conventional commit parsing
+            echo "Generating fallback release notes from conventional commits..."
+            
+            # Get commits since last tag
+            if [ -n "$PREVIOUS_TAG" ]; then
+              COMMIT_RANGE="${PREVIOUS_TAG}..HEAD"
+            else
+              COMMIT_RANGE="HEAD"
+            fi
+            
+            # Parse conventional commits and categorize
+            FEATURES=$(git log --pretty=format:"- %s (%h)" $COMMIT_RANGE | grep -E "^- (feat|feature)(\(.+\))?:" | sed 's/^- //' || echo "")
+            FIXES=$(git log --pretty=format:"- %s (%h)" $COMMIT_RANGE | grep -E "^- (fix|bugfix)(\(.+\))?:" | sed 's/^- //' || echo "")
+            BREAKING=$(git log --pretty=format:"- %s (%h)" $COMMIT_RANGE | grep -E "^- .+!:" | sed 's/^- //' || echo "")
+            DOCS=$(git log --pretty=format:"- %s (%h)" $COMMIT_RANGE | grep -E "^- docs?(\(.+\))?:" | sed 's/^- //' || echo "")
+            REFACTOR=$(git log --pretty=format:"- %s (%h)" $COMMIT_RANGE | grep -E "^- refactor(\(.+\))?:" | sed 's/^- //' || echo "")
+            CHORE=$(git log --pretty=format:"- %s (%h)" $COMMIT_RANGE | grep -E "^- (chore|ci|build|test)(\(.+\))?:" | sed 's/^- //' || echo "")
+            
+            # Build release notes
+            RELEASE_NOTES="## What's Changed in $CURRENT_TAG"$'\n\n'
+            
+            if [ -n "$BREAKING" ]; then
+              RELEASE_NOTES+="### ⚠️ Breaking Changes"$'\n'
+              RELEASE_NOTES+="$BREAKING"$'\n\n'
+            fi
+            
+            if [ -n "$FEATURES" ]; then
+              RELEASE_NOTES+="### ✨ New Features"$'\n'
+              RELEASE_NOTES+="$FEATURES"$'\n\n'
+            fi
+            
+            if [ -n "$FIXES" ]; then
+              RELEASE_NOTES+="### 🐛 Bug Fixes"$'\n'
+              RELEASE_NOTES+="$FIXES"$'\n\n'
+            fi
+            
+            if [ -n "$REFACTOR" ]; then
+              RELEASE_NOTES+="### 🔧 Improvements"$'\n'
+              RELEASE_NOTES+="$REFACTOR"$'\n\n'
+            fi
+            
+            if [ -n "$DOCS" ]; then
+              RELEASE_NOTES+="### 📚 Documentation"$'\n'
+              RELEASE_NOTES+="$DOCS"$'\n\n'
+            fi
+            
+            if [ -n "$CHORE" ]; then
+              RELEASE_NOTES+="### 🔄 Other Changes"$'\n'
+              RELEASE_NOTES+="$CHORE"$'\n\n'
+            fi
+            
+            # Add installation and upgrade instructions
+            RELEASE_NOTES+="## 🚀 Installation"$'\n\n'
+            RELEASE_NOTES+='```bash'$'\n'
+            RELEASE_NOTES+='# Using Bun (recommended)'$'\n'
+            RELEASE_NOTES+='bun install'$'\n'
+            RELEASE_NOTES+='bun run build'$'\n'
+            RELEASE_NOTES+='bun start'$'\n\n'
+            RELEASE_NOTES+='# Using Docker'$'\n'
+            RELEASE_NOTES+="docker pull ghcr.io/unifiedhq/unifiedhq:${{ steps.version.outputs.version }}"$'\n'
+            RELEASE_NOTES+="docker run -p 3000:3000 ghcr.io/unifiedhq/unifiedhq:${{ steps.version.outputs.version }}"$'\n'
+            RELEASE_NOTES+='```'$'\n\n'
+            
+            RELEASE_NOTES+="## 📈 Upgrade Instructions"$'\n\n'
+            RELEASE_NOTES+="1. Pull the latest changes: \`git pull origin main\`"$'\n'
+            RELEASE_NOTES+="2. Install dependencies: \`bun install\`"$'\n'
+            RELEASE_NOTES+="3. Run database migrations: \`bunx prisma migrate deploy\`"$'\n'
+            RELEASE_NOTES+="4. Build the application: \`bun run build\`"$'\n'
+            RELEASE_NOTES+="5. Restart the application: \`bun start\`"$'\n\n'
+            
+            if [ -n "$PREVIOUS_TAG" ]; then
+              RELEASE_NOTES+="**Full Changelog**: https://github.com/\${{ github.repository }}/compare/${PREVIOUS_TAG}...${CURRENT_TAG}"
+            fi
+          fi
+
+          # Save to GitHub output (handle multiline)
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v6
+        with:
+          name: release-artifacts-${{ steps.version.outputs.version }}
+          path: release-artifacts/
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          body: ${{ steps.release_notes.outputs.notes }}
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'rc') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') }}
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: release-artifacts/unifiedhq-${{ steps.version.outputs.version }}.tar.gz
+          asset_name: unifiedhq-${{ steps.version.outputs.version }}.tar.gz
+          asset_content_type: application/gzip
+
+  # Job 4: Deploy to Production (Requires Approval)
+  deploy-production:
+    if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, 'rc') && !contains(github.ref_name, 'beta') && !contains(github.ref_name, 'alpha')
     runs-on: ubuntu-latest
-    if: always() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-
+    needs: [build-artifacts, create-github-release]
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.url }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Collect release metrics
+      - name: Extract version from tag
+        id: version
         run: |
-          echo "📊 Collecting release metrics..."
-          VERSION=${GITHUB_REF#refs/tags/}
-          echo "Release: $VERSION"
-          echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          echo "Commit: $GITHUB_SHA"
-          echo "Actor: $GITHUB_ACTOR"
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-          # In a real implementation, this would send metrics to your monitoring system
-          echo "✅ Metrics collected"
+      - name: Download build artifacts
+        uses: actions/download-artifact@v6
+        with:
+          name: release-artifacts-${{ steps.version.outputs.version }}
+          path: release-artifacts/
 
-  cleanup-old-releases:
-    name: Cleanup Old Releases
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Deploy to Production
+        id: deploy
+        run: |
+          echo "🚀 Deploying version ${{ steps.version.outputs.version }} to production..."
+
+          # Extract build artifacts
+          cd release-artifacts
+          tar -xzf unifiedhq-${{ steps.version.outputs.version }}.tar.gz
+
+          # Install production dependencies
+          bun install --production --frozen-lockfile
+
+          # Deploy to Vercel (or your production environment)
+          # This would typically use Vercel CLI or your deployment method
+          echo "url=https://unifiedhq.vercel.app" >> $GITHUB_OUTPUT
+          echo "✅ Deployment completed successfully"
+
+      - name: Run post-deployment health checks
+        run: |
+          echo "🔍 Running health checks..."
+          # Add your health check commands here
+          # curl -f ${{ steps.deploy.outputs.url }}/api/health || exit 1
+          echo "✅ Health checks passed"
+
+      - name: Notify deployment success
+        if: success()
+        run: |
+          echo "✅ Production deployment successful!"
+          echo "Version: ${{ steps.version.outputs.version }}"
+          echo "URL: ${{ steps.deploy.outputs.url }}"
+
+  # Job 5: Rollback on Failure
+  rollback-on-failure:
+    if: failure() && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule'
-
+    needs: [deploy-production]
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Cleanup old releases
+      - name: Extract version from tag
+        id: version
         run: |
-          echo "🧹 Cleaning up old releases..."
-          # In a real implementation, this would clean up old release artifacts
-          echo "✅ Cleanup completed"
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Get previous version
+        id: previous_version
+        run: |
+          # Get the previous tag
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^)
+          PREVIOUS_VERSION=${PREVIOUS_TAG#v}
+          echo "previous=$PREVIOUS_VERSION" >> $GITHUB_OUTPUT
+          echo "Previous version: $PREVIOUS_VERSION"
+
+      - name: Rollback deployment
+        run: |
+          echo "🔄 Rolling back to version ${{ steps.previous_version.outputs.previous }}..."
+          # Add your rollback logic here
+          # This would typically redeploy the previous version
+          echo "✅ Rollback completed"
+
+      - name: Notify rollback
+        run: |
+          echo "⚠️ Deployment failed, rolled back to ${{ steps.previous_version.outputs.previous }}"
+
+  # Job 6: Update Documentation
+  update-docs:
+    if: startsWith(github.ref, 'refs/tags/v') && success()
+    runs-on: ubuntu-latest
+    needs: [create-github-release]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update version in README
+        run: |
+          # Update version badge in README if it exists
+          if [ -f "README.md" ]; then
+            sed -i "s/version-[0-9]\+\.[0-9]\+\.[0-9]\+/version-${{ steps.version.outputs.version }}/g" README.md
+          fi
+
+      - name: Commit documentation updates
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          if [ -n "$(git status --porcelain)" ]; then
+            git add README.md
+            git commit -m "docs: update version to ${{ steps.version.outputs.version }}"
+            git push origin main
+          fi

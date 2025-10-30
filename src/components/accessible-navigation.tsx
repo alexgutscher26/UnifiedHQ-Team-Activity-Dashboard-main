@@ -230,15 +230,17 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
 
     return (
       <li key={item.id} role='none'>
-        <div
+        <button
           role='menuitem'
           tabIndex={isActive ? 0 : -1}
           aria-current={item.current ? 'page' : undefined}
           aria-expanded={hasChildren ? isExpanded : undefined}
           aria-disabled={item.disabled}
+          disabled={item.disabled}
           className={cn(
-            'flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors',
+            'w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors',
             'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+            'border-none bg-transparent text-left',
             isActive && 'bg-accent text-accent-foreground',
             item.current && 'bg-primary text-primary-foreground',
             item.disabled && 'opacity-50 cursor-not-allowed',
@@ -265,7 +267,7 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
               )}
             </span>
           )}
-        </div>
+        </button>
         {hasChildren && isExpanded && (
           <ul role='menu' className='mt-1 space-y-1'>
             {item.children!.map(child => renderNavItem(child, level + 1))}

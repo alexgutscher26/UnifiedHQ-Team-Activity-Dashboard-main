@@ -1,0 +1,28 @@
+# Act configuration for local GitHub workflow testing
+# This file configures the act tool for testing workflows locally
+
+# Platform mappings - use Docker images that closely match GitHub Actions runners
+--platform ubuntu-latest=catthehacker/ubuntu:act-latest
+--platform ubuntu-22.04=catthehacker/ubuntu:act-22.04
+--platform ubuntu-20.04=catthehacker/ubuntu:act-20.04
+
+# Artifact server configuration
+--artifact-server-path /tmp/artifacts
+
+# Environment file for local testing
+--env-file .env.local
+
+# Container options
+--container-options --rm
+
+# Use GitHub token if available (for API rate limits)
+# --secret GITHUB_TOKEN=your_token_here
+
+# Verbose output for debugging
+# --verbose
+
+# Reuse containers for faster subsequent runs
+--reuse
+
+# Bind mount the workspace
+--bind

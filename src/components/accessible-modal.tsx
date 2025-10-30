@@ -457,18 +457,16 @@ export const AccessiblePopover: React.FC<AccessiblePopoverProps> = ({
 
   return (
     <div className={cn('relative', className)}>
-      <div
+      <button
         ref={triggerRef}
         onClick={handleTriggerClick}
         onKeyDown={handleKeyDown}
-        role='button'
-        tabIndex={0}
         aria-expanded={isOpen}
         aria-haspopup='true'
-        className='inline-block'
+        className='inline-block border-none bg-transparent p-0 m-0'
       >
         {children}
-      </div>
+      </button>
 
       {isOpen && (
         <div

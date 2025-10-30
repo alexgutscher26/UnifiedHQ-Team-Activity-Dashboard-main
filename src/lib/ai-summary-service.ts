@@ -1,10 +1,11 @@
 /**
  * AI Summary Service using OpenRouter
- * Provides intelligent summarization of team activity data
+ * Provides intelligent summarization of team activity data with Redis caching
  */
 
 import { Activity } from '@/types/components';
 import { generateWithOpenRouter } from '@/lib/openrouter-client';
+import { RedisCache, CacheKeyGenerator, TTLManager } from '@/lib/redis';
 
 export interface AISummaryData {
   activities: Activity[];
@@ -45,15 +46,32 @@ export class AISummaryService {
   private static readonly DEFAULT_MODEL = 'openai/gpt-4o-mini';
   private static readonly MAX_TOKENS = 2000;
   private static readonly TEMPERATURE = 0.7;
+  private static readonly CACHE_TTL = TTLManager.getTTL('AI_SUMMARY'); // 1 hour
 
   /**
-   * Generate AI summary from team activity data
+   * Generate AI summary from team activity data with caching
    */
   static async generateSummary(
     userId: string,
-    data: AISummaryData
+    data: AISummaryData,
+    options: { forceRegenerate?: boolean; useCache?: boolean } = {}
   ): Promise<AISummary> {
+    const { forceRegenerate = false, useCache = true } = options;
+
     try {
+      // Generate cache key based on user, time range, and activity data
+      const cacheKey = this.generateCacheKey(userId, data);
+
+      // Try to get cached summary if not forcing regeneration
+      if (useCache && !forceRegenerate) {
+        const cachedSummary = await RedisCache.get<AISummary>(cacheKey);
+        if (cachedSummary) {
+          console.log(`📋 Using cached AI summary for user ${userId}`);
+          return cachedSummary;
+        }
+      }
+
+      console.log(`🤖 Generating new AI summary for user ${userId}`);
       const prompt = this.buildPrompt(data);
 
       // Use clean OpenRouter client
@@ -85,7 +103,7 @@ export class AISummaryService {
 
       const parsedSummary = this.parseSummaryResponse(content);
 
-      return {
+      const aiSummary: AISummary = {
         id: `summary_${userId}_${Date.now()}`,
         userId,
         title: parsedSummary.title || 'Daily Team Summary',
@@ -103,6 +121,14 @@ export class AISummaryService {
           tokensUsed: response.usage?.total_tokens || 0,
         },
       };
+
+      // Cache the generated summary
+      if (useCache) {
+        await RedisCache.set(cacheKey, aiSummary, this.CACHE_TTL);
+        console.log(`💾 Cached AI summary for user ${userId}`);
+      }
+
+      return aiSummary;
     } catch (error) {
       console.error('Error generating AI summary:', error);
       throw new Error('Failed to generate AI summary');
@@ -324,6 +350,127 @@ Always respond with valid JSON format as requested.`;
     } catch (error) {
       console.error('OpenRouter connection validation failed:', error);
       return false;
+    }
+  }
+
+  /**
+   * Generate cache key for AI summary based on user and data characteristics
+   */
+  private static generateCacheKey(userId: string, data: AISummaryData): string {
+    // Create a hash of the activity data to ensure cache invalidation when data changes
+    const activityHash = this.hashActivityData(data);
+    const timeRangeKey = `${data.timeRange.start.getTime()}-${data.timeRange.end.getTime()}`;
+
+    return CacheKeyGenerator.aiSummary(
+      userId,
+      'summary',
+      timeRangeKey,
+      activityHash
+    );
+  }
+
+  /**
+   * Create a hash of activity data for cache key generation
+   */
+  private static hashActivityData(data: AISummaryData): string {
+    const activityIds = data.activities
+      .map(a => a.id)
+      .sort()
+      .join(',');
+    const contextHash = JSON.stringify({
+      repos: data.teamContext?.repositories.sort(),
+      channels: data.teamContext?.channels.sort(),
+      count: data.activities.length,
+    });
+
+    // Simple hash function for cache key
+    return Buffer.from(activityIds + contextHash)
+      .toString('base64')
+      .slice(0, 16);
+  }
+
+  /**
+   * Invalidate cached summaries for a user
+   */
+  static async invalidateUserCache(userId: string): Promise<void> {
+    try {
+      const pattern = CacheKeyGenerator.aiSummary(userId, '*');
+      const deletedCount = await RedisCache.deleteByPattern(pattern);
+      console.log(
+        `🗑️ Invalidated ${deletedCount} cached AI summaries for user ${userId}`
+      );
+    } catch (error) {
+      console.error('Error invalidating user AI summary cache:', error);
+    }
+  }
+
+  /**
+   * Invalidate all AI summary caches
+   */
+  static async invalidateAllCache(): Promise<void> {
+    try {
+      const pattern = CacheKeyGenerator.aiSummary('*', '*');
+      const deletedCount = await RedisCache.deleteByPattern(pattern);
+      console.log(`🗑️ Invalidated ${deletedCount} cached AI summaries`);
+    } catch (error) {
+      console.error('Error invalidating all AI summary cache:', error);
+    }
+  }
+
+  /**
+   * Warm cache for scheduled summary generation
+   */
+  static async warmCacheForUsers(userIds: string[]): Promise<void> {
+    console.log(`🔥 Warming AI summary cache for ${userIds.length} users`);
+
+    for (const userId of userIds) {
+      try {
+        // This would typically be called before scheduled generation
+        // to pre-populate cache with user activity data
+        const cacheKey = CacheKeyGenerator.user(userId, 'activity_data');
+
+        // Check if we already have cached activity data
+        const cachedData = await RedisCache.get(cacheKey);
+        if (!cachedData) {
+          console.log(`🔥 Pre-warming activity data cache for user ${userId}`);
+          // The actual activity data would be fetched and cached here
+          // This is a placeholder for the warming logic
+        }
+      } catch (error) {
+        console.error(`Error warming cache for user ${userId}:`, error);
+      }
+    }
+  }
+
+  /**
+   * Get cache statistics for monitoring
+   */
+  static async getCacheStats(): Promise<{
+    totalKeys: number;
+    userCaches: Record<string, number>;
+  }> {
+    try {
+      const pattern = CacheKeyGenerator.aiSummary('*', '*');
+      const keys = await RedisCache.getKeysByPattern(pattern);
+
+      const userCaches: Record<string, number> = {};
+
+      for (const key of keys) {
+        // Extract user ID from cache key
+        const parts = key.split(':');
+        if (parts.length >= 3) {
+          const userId = parts[2];
+          userCaches[userId] = (userCaches[userId] || 0) + 1;
+        }
+      }
+
+      return {
+        totalKeys: keys.length,
+        userCaches,
+      };
+    } catch (error) {
+      console.error('Error getting AI summary cache stats:', error);
+      return { totalKeys: 0, userCaches: {} };
     }
   }
 

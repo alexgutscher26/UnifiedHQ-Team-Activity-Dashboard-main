@@ -167,10 +167,11 @@ export async function GET(request: NextRequest) {
               },
             };
 
-            // Generate AI summary
+            // Generate AI summary with caching
             const aiSummary = await AISummaryService.generateSummary(
               userId,
-              summaryData
+              summaryData,
+              { useCache: true, forceRegenerate: false }
             );
 
             // Save to database
@@ -378,10 +379,11 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    // Generate AI summary
+    // Generate AI summary with caching (force regenerate if requested)
     const aiSummary = await AISummaryService.generateSummary(
       userId,
-      summaryData
+      summaryData,
+      { useCache: true, forceRegenerate }
     );
 
     // Save to database

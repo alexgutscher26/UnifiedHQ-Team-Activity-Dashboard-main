@@ -5,6 +5,17 @@ import { Activity } from '@/types/components';
 
 const prisma = new PrismaClient();
 
+/**
+ * Handles the POST request for automated AI summary generation.
+ *
+ * This function verifies the request as a cron job, checks authentication, and validates the connection to the AI service.
+ * It retrieves users with recent activity but no recent summaries, processes each user to generate summaries,
+ * and logs the results. It also handles monitoring data storage and error management throughout the process.
+ *
+ * @param request - The NextRequest object containing the request data.
+ * @returns A JSON response indicating the success of the operation along with results and summary data.
+ * @throws Error If there is an issue during the summary generation or monitoring data storage.
+ */
 export async function POST(request: NextRequest) {
   // Verify this is a cron job request
   const authHeader = request.headers.get('authorization');
@@ -94,6 +105,13 @@ export async function POST(request: NextRequest) {
       `📊 Found ${usersWithActivity.length} users with recent activity`
     );
 
+    // Warm cache for users before processing
+    const userIds = usersWithActivity.map(user => user.id);
+    if (userIds.length > 0) {
+      console.log('🔥 Warming cache for scheduled summary generation...');
+      await AISummaryService.warmCacheForUsers(userIds);
+    }
+
     const results = {
       processed: 0,
       generated: 0,
@@ -138,10 +156,11 @@ export async function POST(request: NextRequest) {
           },
         };
 
-        // Generate AI summary
+        // Generate AI summary with caching for cron jobs
         const aiSummary = await AISummaryService.generateSummary(
           user.id,
-          summaryData
+          summaryData,
+          { useCache: true, forceRegenerate: false }
         );
 
         // Save to database
