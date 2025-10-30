@@ -25,7 +25,12 @@ class CacheInfrastructureDeployment {
   }
 
   /**
-   * Run complete cache infrastructure deployment
+   * Run complete cache infrastructure deployment.
+   *
+   * This function orchestrates the deployment process by validating the environment configuration, setting up Redis if not skipped, deploying the application, running health checks, and starting monitoring based on the configuration. It generates a deployment report upon successful completion or a failure report if an error occurs during the process.
+   *
+   * @returns A report detailing the deployment results.
+   * @throws Error If the deployment fails at any step.
    */
   async deploy() {
     console.log('🚀 Starting Cache Infrastructure Deployment');
@@ -170,7 +175,9 @@ class CacheInfrastructureDeployment {
   }
 
   /**
-   * Setup Redis infrastructure
+   * Sets up Redis infrastructure by executing a setup script.
+   *
+   * This function logs the start of the Redis setup process, initializes a step object to track the setup's status, and attempts to run the Redis setup script. If the script fails, an error is thrown, and the step status is updated accordingly. Regardless of success or failure, the step details are pushed to the deploymentSteps array for tracking.
    */
   async setupRedis() {
     console.log('\n🔧 Step 2: Setting up Redis Infrastructure...');
@@ -211,7 +218,12 @@ class CacheInfrastructureDeployment {
   }
 
   /**
-   * Deploy application with caching enabled
+   * Deploys the application with caching enabled.
+   *
+   * This function handles the deployment process by first building the application using the command 'bun run build'.
+   * It checks the build result and throws an error if the build fails. Depending on the environment configuration,
+   * it either simulates starting a development server or initiates the deployment process for production.
+   * The function tracks the deployment step's status, duration, and any errors encountered during the process.
    */
   async deployApplication() {
     console.log('\n🚀 Step 3: Deploying Application...');
@@ -263,7 +275,12 @@ class CacheInfrastructureDeployment {
   }
 
   /**
-   * Run health checks
+   * Run health checks for the application services.
+   *
+   * This function initiates a series of health checks by first waiting for the services to be ready, then testing the main health endpoint and the cache health endpoint. If any of the checks fail, an error is thrown. The results, including the duration of the checks and health data, are logged and stored in the deployment steps.
+   *
+   * @returns {Promise<void>} A promise that resolves when health checks are completed.
+   * @throws Error If any health check fails.
    */
   async runHealthChecks() {
     console.log('\n🏥 Step 4: Running Health Checks...');
@@ -322,7 +339,12 @@ class CacheInfrastructureDeployment {
   }
 
   /**
-   * Start deployment monitoring
+   * Start deployment monitoring.
+   *
+   * This function initiates the monitoring process for deployment by logging the start of the operation,
+   * setting up the monitoring parameters, and executing the monitoring script. It tracks the status,
+   * duration, and output of the monitoring process, handling any errors that may occur without
+   * interrupting the overall deployment flow. The results are stored in the deploymentSteps array.
    */
   async startMonitoring() {
     console.log('\n📊 Step 5: Starting Deployment Monitoring...');
@@ -371,7 +393,12 @@ class CacheInfrastructureDeployment {
   }
 
   /**
-   * Generate deployment report
+   * Generate deployment report.
+   *
+   * This function generates a detailed report of the deployment process, including the status, environment,
+   * start and end times, total duration, and a summary of the steps taken. It calculates the number of successful
+   * and failed steps, as well as the success rate. The report is then saved as a JSON file in the 'reports'
+   * directory, creating the directory if it does not exist.
    */
   async generateDeploymentReport() {
     console.log('\n📄 Step 6: Generating Deployment Report...');
@@ -430,7 +457,7 @@ class CacheInfrastructureDeployment {
   }
 
   /**
-   * Generate failure report
+   * Generates a failure report for a deployment.
    */
   async generateFailureReport(error) {
     const report = {
@@ -462,7 +489,7 @@ class CacheInfrastructureDeployment {
   }
 
   /**
-   * Run a script file
+   * Run a script file with optional arguments.
    */
   async runScript(scriptName, args = []) {
     const scriptPath = path.join(__dirname, scriptName);
@@ -470,7 +497,7 @@ class CacheInfrastructureDeployment {
   }
 
   /**
-   * Run a command and return result
+   * Executes a command and returns the result as a promise.
    */
   async runCommand(command) {
     return new Promise((resolve, reject) => {
@@ -485,7 +512,7 @@ class CacheInfrastructureDeployment {
   }
 
   /**
-   * Sleep utility
+   * Returns a promise that resolves after a specified number of milliseconds.
    */
   sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
