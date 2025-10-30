@@ -218,7 +218,11 @@ export class PreloadManager {
   }
 
   /**
-   * Setup idle detection for triggering background preloading
+   * Setup idle detection for triggering background preloading.
+   *
+   * This function initializes an idle timer that resets on user activity. If the user is idle for the specified timeout, it triggers background preloading of critical data and navigation recommendations. The recommendations are then preloaded if available. The function listens for various user events to reset the timer and ensure preloading occurs only during idle periods.
+   *
+   * @param {number} [idleTimeout=5000] - The duration in milliseconds before considering the user idle.
    */
   setupIdlePreloading(idleTimeout = 5000): void {
     let idleTimer: number | null = null;
