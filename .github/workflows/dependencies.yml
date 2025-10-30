@@ -3,6 +3,9 @@
 # Runs weekly to check for updates and create PRs for non-breaking changes
 
 name: 'Dependency Management'
+permissions:
+  contents: read
+  pull-requests: write
 
 on:
   schedule:
