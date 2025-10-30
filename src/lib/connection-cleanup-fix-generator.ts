@@ -127,6 +127,9 @@ export class ConnectionCleanupFixGenerator {
     };
   }
 
+  /**
+   * Analyzes a subscription pattern from a CallExpression node.
+   */
   private analyzeSubscriptionPattern(
     node: ts.CallExpression,
     leakType: string
