@@ -281,9 +281,7 @@ export class CacheWarming {
   /**
    * Background cache refresh for expiring entries
    */
-  static async refreshExpiringCache(
-    thresholdSeconds: number = 300
-  ): Promise<void> {
+  static async refreshExpiringCache(thresholdSeconds = 300): Promise<void> {
     try {
       console.log('Starting background cache refresh for expiring entries');
 

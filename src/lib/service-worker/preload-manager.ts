@@ -220,7 +220,7 @@ export class PreloadManager {
   /**
    * Setup idle detection for triggering background preloading
    */
-  setupIdlePreloading(idleTimeout: number = 5000): void {
+  setupIdlePreloading(idleTimeout = 5000): void {
     let idleTimer: number | null = null;
 
     const resetIdleTimer = () => {
