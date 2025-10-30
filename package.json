@@ -83,7 +83,7 @@
     "@dnd-kit/core": "latest",
     "@dnd-kit/modifiers": "latest",
     "@dnd-kit/sortable": "latest",
-    "@dnd-kit/utilities": "latest",
+    "@dnd-kit/utilities": "^3.2.2",
     "@dymo-api/better-auth": "^1.2.21",
     "@hookform/resolvers": "^5.2.2",
     "@modelcontextprotocol/sdk": "^1.19.1",
