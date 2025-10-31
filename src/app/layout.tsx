@@ -58,9 +58,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * Animated Loading Dots Component
- * 
- * Displays three bouncing dots with staggered animation timing.
+ * Renders three animated loading dots.
  */
 function LoadingDots() {
   return (
@@ -73,9 +71,7 @@ function LoadingDots() {
 }
 
 /**
- * Loading Message Component
- * 
- * Displays the loading text and description.
+ * Renders a loading message component.
  */
 function LoadingMessage() {
   return (
@@ -124,9 +120,7 @@ function LoadingScreen() {
 }
 
 /**
- * Theme and Context Providers Component
- * 
- * Groups all theme-related providers to reduce nesting in main layout.
+ * Wraps children with theme and context providers.
  */
 function ThemeProviders({ children }: { children: React.ReactNode }) {
   return (
@@ -137,9 +131,7 @@ function ThemeProviders({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Service and Network Providers Component
- * 
- * Groups service worker and network-related providers.
+ * Renders service worker and network-related providers.
  */
 function ServiceProviders({ children }: { children: React.ReactNode }) {
   return (
@@ -152,9 +144,7 @@ function ServiceProviders({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Global UI Components
- * 
- * Groups all global UI components that should be rendered at the root level.
+ * Renders all global UI components at the root level.
  */
 function GlobalComponents() {
   return (
@@ -170,8 +160,6 @@ function GlobalComponents() {
 }
 
 /**
- * Application Content Wrapper
- * 
  * Wraps the main application content with error boundary and suspense.
  */
 function AppContent({ children }: { children: React.ReactNode }) {
@@ -183,11 +171,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Root Layout Component
- * 
- * The main layout wrapper for the entire UnifiedHQ application.
- * Provides essential providers, error boundaries, and global components
- * that are needed across all pages.
+ * Main layout wrapper for the UnifiedHQ application.
  */
 export default function RootLayout({
   children,
