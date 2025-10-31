@@ -30,6 +30,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useNetworkStatusContext } from '@/contexts/network-status-context';
 import { cn } from '@/lib/utils';
 
+
 interface CachedActivityData {
   activities: Activity[];
   timestamp: number;
@@ -186,22 +187,20 @@ export function OfflineFirstActivityFeed() {
   const [showBottomFade, setShowBottomFade] = useState(false);
   const [isLiveConnected, setIsLiveConnected] = useState(false);
   const [eventSource, setEventSource] = useState<EventSource | null>(null);
-  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(
-    null
-  );
+
 
   useEffect(() => {
     loadActivities();
+    let interval: NodeJS.Timeout | null = null;
+
     if (networkStatus.isOnline) {
       connectToLiveUpdates();
 
       // Set up auto-refresh every 60 seconds when online
-      const interval = setInterval(() => {
+      interval = setInterval(() => {
         console.log('🔄 Auto-refreshing activities...');
         loadActivities();
       }, 60000);
-
-      setRefreshInterval(interval);
     }
 
     return () => {
@@ -214,10 +213,9 @@ export function OfflineFirstActivityFeed() {
       });
 
       // Clean up refresh interval
-      if (refreshInterval) {
-        clearInterval(refreshInterval);
+      if (interval) {
+        clearInterval(interval);
       }
-      setRefreshInterval(null);
     };
   }, [networkStatus.isOnline]);
 

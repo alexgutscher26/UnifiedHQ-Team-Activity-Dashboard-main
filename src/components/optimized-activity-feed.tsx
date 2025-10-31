@@ -277,9 +277,7 @@ export function OptimizedActivityFeed() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLiveConnected, setIsLiveConnected] = useState(false);
   const [eventSource, setEventSource] = useState<EventSource | null>(null);
-  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(
-    null
-  );
+
 
   // Search and filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -495,8 +493,6 @@ export function OptimizedActivityFeed() {
       fetchActivities();
     }, 60000);
 
-    setRefreshInterval(interval);
-
     return () => {
       // Clean up EventSource connection
       setEventSource(currentEventSource => {
@@ -510,7 +506,6 @@ export function OptimizedActivityFeed() {
       if (interval) {
         clearInterval(interval);
       }
-      setRefreshInterval(null);
     };
   }, [fetchActivities, connectToLiveUpdates]);
 

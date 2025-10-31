@@ -1,4 +1,5 @@
 import type React from 'react';
+import { redirect } from 'next/navigation';
 import { AppSidebar } from '@/components/app-sidebar';
 import { SiteHeader } from '@/components/site-header';
 import { IntegrationsPage } from '@/components/integrations-page';
@@ -7,6 +8,12 @@ import { getCurrentUser } from '@/lib/get-user';
 
 export default async function Page() {
   const user = await getCurrentUser();
+
+  // Redirect to auth if user is not authenticated
+  if (!user) {
+    redirect('/auth/signin');
+  }
+
   return (
     <SidebarProvider
       style={

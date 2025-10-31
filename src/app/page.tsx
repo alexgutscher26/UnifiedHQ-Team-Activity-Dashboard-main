@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { UserProfile } from '@/components/user-profile';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,11 +10,18 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Github, Mail, Lock } from 'lucide-react';
+import { getCurrentUser } from '@/lib/get-user';
 
 /**
  * Renders the Home component for the Better Auth Demo application.
  */
-export default function Home() {
+export default async function Home() {
+  const user = await getCurrentUser();
+
+  // Redirect authenticated users to dashboard
+  if (user) {
+    redirect('/dashboard');
+  }
   return (
     <div className='min-h-screen bg-background'>
       <div className='container mx-auto px-4 py-8'>

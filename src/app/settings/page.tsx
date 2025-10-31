@@ -1,4 +1,5 @@
 import type React from 'react';
+import { redirect } from 'next/navigation';
 import { AppSidebar } from '@/components/app-sidebar';
 import { SiteHeader } from '@/components/site-header';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
@@ -8,6 +9,11 @@ import { SettingsContent } from '@/components/settings-content';
 
 export default async function SettingsPage() {
   const user = await getCurrentUser();
+
+  // Redirect to auth if user is not authenticated
+  if (!user) {
+    redirect('/auth/signin');
+  }
 
   return (
     <DashboardErrorBoundary>
