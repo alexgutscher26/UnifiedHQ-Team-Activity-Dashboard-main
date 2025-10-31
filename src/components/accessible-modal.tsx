@@ -346,13 +346,16 @@ export const AccessibleTooltip: React.FC<AccessibleTooltipProps> = ({
 
   return (
     <button
-      type="button"
-      className={cn('relative inline-block border-none bg-transparent p-0 m-0 cursor-default', className)}
+      type='button'
+      className={cn(
+        'relative inline-block border-none bg-transparent p-0 m-0 cursor-default',
+        className
+      )}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onFocus={handleFocus}
       onBlur={handleBlur}
-      onKeyDown={(e) => {
+      onKeyDown={e => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           handleFocus();
@@ -363,19 +366,19 @@ export const AccessibleTooltip: React.FC<AccessibleTooltipProps> = ({
       {children}
       {open && (
         <div
-          id="tooltip-content"
+          id='tooltip-content'
           role='tooltip'
           className={cn(
             'absolute z-50 px-3 py-2 text-sm text-primary-foreground bg-primary rounded-md shadow-lg',
             'animate-in fade-in-0 zoom-in-95',
             side === 'top' &&
-            'bottom-full left-1/2 transform -translate-x-1/2 mb-2',
+              'bottom-full left-1/2 transform -translate-x-1/2 mb-2',
             side === 'bottom' &&
-            'top-full left-1/2 transform -translate-x-1/2 mt-2',
+              'top-full left-1/2 transform -translate-x-1/2 mt-2',
             side === 'left' &&
-            'right-full top-1/2 transform -translate-y-1/2 mr-2',
+              'right-full top-1/2 transform -translate-y-1/2 mr-2',
             side === 'right' &&
-            'left-full top-1/2 transform -translate-y-1/2 ml-2'
+              'left-full top-1/2 transform -translate-y-1/2 ml-2'
           )}
         >
           {content}
@@ -383,13 +386,13 @@ export const AccessibleTooltip: React.FC<AccessibleTooltipProps> = ({
             className={cn(
               'absolute w-2 h-2 bg-primary transform rotate-45',
               side === 'top' &&
-              'top-full left-1/2 transform -translate-x-1/2 -mt-1',
+                'top-full left-1/2 transform -translate-x-1/2 -mt-1',
               side === 'bottom' &&
-              'bottom-full left-1/2 transform -translate-x-1/2 -mb-1',
+                'bottom-full left-1/2 transform -translate-x-1/2 -mb-1',
               side === 'left' &&
-              'left-full top-1/2 transform -translate-y-1/2 -ml-1',
+                'left-full top-1/2 transform -translate-y-1/2 -ml-1',
               side === 'right' &&
-              'right-full top-1/2 transform -translate-y-1/2 -mr-1'
+                'right-full top-1/2 transform -translate-y-1/2 -mr-1'
             )}
           />
         </div>
