@@ -60,10 +60,10 @@ const inputGroupAddonVariants = cva(
 );
 
 /**
- * Renders an input group addon component.
+ * Renders an input group addon component with optional click handling.
  *
  * This component creates an accessible addon for input groups, allowing for alignment and additional props.
- * It can optionally handle click events to focus on the nearest input element unless the click originated from a button within the group.
+ * It handles click events to focus on the nearest input element unless the click originated from a button within the group.
  * The alignment can be customized through the `align` prop, and additional class names can be provided via `className`.
  *
  * @param {Object} props - The properties for the component.
@@ -80,7 +80,6 @@ function InputGroupAddon({
   VariantProps<typeof inputGroupAddonVariants> & {
     clickable?: boolean;
   }) {
-
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('button')) {
       return;
@@ -88,6 +87,15 @@ function InputGroupAddon({
     e.currentTarget.parentElement?.querySelector('input')?.focus();
   };
 
+  /**
+   * Handles the key down event for a div element.
+   *
+   * This function checks if the pressed key is either 'Enter' or ' '. If so, it prevents the default action.
+   * It then verifies if the event target is a button; if it is, the function exits early.
+   * Otherwise, it focuses on the first input element found within the parent of the current target.
+   *
+   * @param e - The keyboard event triggered by the user.
+   */
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
@@ -112,7 +120,7 @@ function InputGroupAddon({
         )}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
-        aria-label="Focus input field"
+        aria-label='Focus input field'
         {...props}
       />
     );
@@ -123,7 +131,11 @@ function InputGroupAddon({
       role='group'
       data-slot='input-group-addon'
       data-align={align}
-      className={cn(inputGroupAddonVariants({ align }), 'cursor-default', className)}
+      className={cn(
+        inputGroupAddonVariants({ align }),
+        'cursor-default',
+        className
+      )}
       {...props}
     />
   );
