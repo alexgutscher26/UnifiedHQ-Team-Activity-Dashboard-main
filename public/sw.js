@@ -192,6 +192,16 @@ async function handleFetch(request) {
 }
 
 // Handle cached request based on strategy
+/**
+ * Handle a cached request based on the specified caching strategy.
+ *
+ * The function evaluates the caching strategy defined in the config and delegates the request handling to the appropriate strategy function.
+ * If the strategy is not recognized, it defaults to a network fetch. The strategies include cache-first, network-first, stale-while-revalidate, and cache-only.
+ *
+ * @param request - The request object to be handled.
+ * @param config - The configuration object containing the caching strategy.
+ * @returns The result of the caching strategy function or the network fetch.
+ */
 async function handleCachedRequest(request, config) {
   switch (config.strategy) {
     case 'cache-first':
@@ -211,9 +221,7 @@ async function handleCachedRequest(request, config) {
 /**
  * Implements a network-first strategy for handling requests.
  *
- * The function attempts to fetch a response from the network, applying a timeout to avoid long waits.
- * If the network request fails, it checks the cache for a valid response. If a cached response is found
- * and is not expired, it returns that response; otherwise, it throws the original error.
+ * The function attempts to fetch a response from the network with a specified timeout. If the network request fails, it checks the cache for a valid response. If a cached response is found and is not expired, it returns that response; otherwise, it throws the original error. The function also utilizes the putInCache function to store successful network responses.
  *
  * @param request - The request object to be fetched from the network.
  * @param config - Configuration object containing cache name and network timeout settings.
@@ -333,6 +341,9 @@ async function cacheOnlyStrategy(request, config) {
 }
 
 // Check if URL is a static asset
+/**
+ * Checks if the given URL is a static asset.
+ */
 function isStaticAsset(url) {
   return (
     url.pathname.startsWith('/_next/static/') ||
@@ -528,7 +539,7 @@ async function getCacheStats() {
 /**
  * Caches a successful response with a timestamp for expiration tracking.
  *
- * This function checks if the response is successful before caching it. If successful, it creates a new response object that includes a timestamp header. The response is then stored in the cache using the provided request. Finally, it calls the cleanupCache function to remove old entries based on the provided config.
+ * This function checks if the response is successful before caching it. If the response is valid, it creates a new response object that includes a timestamp header for tracking when it was cached. The response is then stored in the cache using the provided request. Finally, it invokes the cleanupCache function to remove old entries based on the provided config.
  *
  * @param {Cache} cache - The cache object where the response will be stored.
  * @param {Request} request - The request object associated with the response.
@@ -559,11 +570,11 @@ async function putInCache(cache, request, response, config) {
 
 // Check if cached response is expired
 /**
- * Checks if a cached response has expired based on the provided configuration.
+ * Determines if a cached response has expired based on the provided configuration.
  *
- * The function first verifies if a maximum age is specified in the config. If not, it assumes the response is not expired.
- * It then retrieves the cached timestamp from the response headers. If the timestamp is absent, the function assumes the response is expired.
- * Finally, it calculates the age of the cache and compares it to the maximum age to determine if the response is expired.
+ * The function checks if a maximum age is defined in the config; if not, it assumes the response is not expired.
+ * It retrieves the cached timestamp from the response headers, and if absent, considers the response expired.
+ * Finally, it calculates the cache age and compares it to the maximum age to decide if the response is expired.
  *
  * @param {Response} response - The response object containing headers to check for cache information.
  * @param {Object} config - Configuration object containing the maxAgeSeconds property.
@@ -586,7 +597,7 @@ function isExpired(response, config) {
 /**
  * Cleans up the cache by removing expired entries and oldest entries if limits are exceeded.
  *
- * The function first checks if there are any constraints on max entries or max age. If so, it retrieves all cache keys and removes entries that are expired based on the provided configuration. If the number of remaining entries exceeds the maxEntries limit, it sorts the entries by their timestamp and deletes the oldest ones until the limit is met.
+ * The function checks for constraints on max entries and max age. It retrieves all cache keys and removes entries that are expired based on the provided configuration. If the number of remaining entries exceeds the maxEntries limit, it sorts the entries by their timestamp and deletes the oldest ones until the limit is met.
  *
  * @param cache - The cache object to be cleaned up.
  * @param config - Configuration object containing maxEntries and maxAgeSeconds.
