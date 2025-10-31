@@ -12,7 +12,10 @@ interface ErrorBoundaryProps {
   fallback?: React.ReactNode;
 }
 
-export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends React.Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false };
@@ -28,19 +31,21 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   render() {
     if (this.state.hasError) {
-      return this.props.fallback || (
-        <div className="flex flex-col items-center justify-center min-h-[400px] p-8">
-          <h2 className="text-xl font-semibold mb-4">Something went wrong</h2>
-          <p className="text-muted-foreground mb-4">
-            The page encountered an error. Please refresh to try again.
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-          >
-            Refresh Page
-          </button>
-        </div>
+      return (
+        this.props.fallback || (
+          <div className='flex flex-col items-center justify-center min-h-[400px] p-8'>
+            <h2 className='text-xl font-semibold mb-4'>Something went wrong</h2>
+            <p className='text-muted-foreground mb-4'>
+              The page encountered an error. Please refresh to try again.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className='px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90'
+            >
+              Refresh Page
+            </button>
+          </div>
+        )
       );
     }
 

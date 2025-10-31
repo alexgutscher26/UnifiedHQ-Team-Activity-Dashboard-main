@@ -1,11 +1,11 @@
 /**
  * @fileoverview React hook for managing service worker lifecycle and operations.
- * 
+ *
  * This module provides a comprehensive React hook for service worker management,
  * including registration, updates, cache management, and lifecycle event handling.
  * It supports automatic registration, periodic update checks, and graceful degradation
  * when service workers are disabled or unsupported.
- * 
+ *
  * @author UnifiedHQ Team
  * @version 1.0.0
  */
@@ -21,7 +21,7 @@ import {
 
 /**
  * Configuration options for the useServiceWorker hook.
- * 
+ *
  * @interface UseServiceWorkerOptions
  */
 export interface UseServiceWorkerOptions {
@@ -37,7 +37,7 @@ export interface UseServiceWorkerOptions {
 
 /**
  * Return type for the useServiceWorker hook, extending ServiceWorkerState with additional methods and properties.
- * 
+ *
  * @interface UseServiceWorkerReturn
  * @extends ServiceWorkerState
  */
@@ -84,7 +84,8 @@ export function useServiceWorker(
   } = options;
 
   // Check if service worker should be disabled - declare at top of function scope
-  const isDisabled = process.env.NEXT_PUBLIC_DISABLE_SW === 'true' ||
+  const isDisabled =
+    process.env.NEXT_PUBLIC_DISABLE_SW === 'true' ||
     process.env.NEXT_PUBLIC_DISABLE_SW === true ||
     !('serviceWorker' in navigator);
 
@@ -126,7 +127,8 @@ export function useServiceWorker(
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const [hasAttemptedRegistration, setHasAttemptedRegistration] = useState(false);
+  const [hasAttemptedRegistration, setHasAttemptedRegistration] =
+    useState(false);
 
   /**
    * Updates the local state with the current service worker state from the manager.
@@ -140,7 +142,7 @@ export function useServiceWorker(
   /**
    * Registers the service worker with appropriate callbacks for lifecycle events.
    * Handles errors and loading states, and skips registration if service worker is disabled or unsupported.
-   * 
+   *
    * @throws {Error} When service worker is not supported
    */
   const register = useCallback(async () => {
@@ -148,7 +150,9 @@ export function useServiceWorker(
     let error: Error;
 
     if (isDisabled) {
-      console.log('[useServiceWorker] Service worker disabled, skipping registration');
+      console.log(
+        '[useServiceWorker] Service worker disabled, skipping registration'
+      );
       return;
     }
 
@@ -282,7 +286,7 @@ export function useServiceWorker(
 
   /**
    * Clears service worker cache storage.
-   * 
+   *
    * @param cacheName - Optional specific cache name to clear. If not provided, all caches are cleared.
    */
   const clearCache = useCallback(
@@ -306,7 +310,7 @@ export function useServiceWorker(
 
   /**
    * Retrieves the current version of the service worker.
-   * 
+   *
    * @returns Promise that resolves to the version string, or null if unavailable
    */
   const getVersion = useCallback(async () => {
