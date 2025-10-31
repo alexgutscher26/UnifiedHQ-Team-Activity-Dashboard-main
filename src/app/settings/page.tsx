@@ -7,6 +7,9 @@ import { DashboardErrorBoundary } from '@/components/error-boundaries';
 import { getCurrentUser } from '@/lib/get-user';
 import { SettingsContent } from '@/components/settings-content';
 
+/**
+ * Renders the settings page, redirecting to authentication if the user is not authenticated.
+ */
 export default async function SettingsPage() {
   const user = await getCurrentUser();
 
