@@ -198,8 +198,7 @@ async function saveReport(reports, format, outputPath) {
 /**
  * Generates an HTML report for memory leak detection issues.
  *
- * This function takes an array of report objects, calculates the total number of issues and categorizes them by severity (critical, high, medium, low).
- * It then constructs an HTML document that includes a summary of the issues and a detailed table listing each report's file, line, severity, type, description, and suggested fix.
+ * This function takes an array of report objects and calculates the total number of issues, categorizing them by severity (critical, high, medium, low). It constructs an HTML document that includes a summary of the issues and a detailed table listing each report's file, line, severity, type, description, and suggested fix. The generated report is formatted with appropriate styles for better readability.
  *
  * @param {Array} reports - An array of report objects containing details about memory leak issues.
  */
