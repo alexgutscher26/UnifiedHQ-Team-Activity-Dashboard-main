@@ -12,10 +12,10 @@ if (typeof importScripts !== 'function') {
 const PRELOADER_CONFIG = {
   // Preloading strategies
   strategies: {
-    immediate: 'immediate',     // Preload immediately on navigation
-    idle: 'idle',              // Preload during idle time
-    predictive: 'predictive',   // Preload based on patterns
-    critical: 'critical'       // Always preload critical resources
+    immediate: 'immediate', // Preload immediately on navigation
+    idle: 'idle', // Preload during idle time
+    predictive: 'predictive', // Preload based on patterns
+    critical: 'critical' // Always preload critical resources
   },
 
   // Resource priorities
@@ -27,13 +27,13 @@ const PRELOADER_CONFIG = {
   },
 
   // Timing configurations
-  idleTimeout: 2000,           // Wait 2s before idle preloading
-  preloadBatchSize: 3,         // Max concurrent preloads
+  idleTimeout: 2000, // Wait 2s before idle preloading
+  preloadBatchSize: 3, // Max concurrent preloads
   maxPreloadAge: 5 * 60 * 1000, // 5 minutes max age for preloaded resources
 
   // Pattern matching
-  patternConfidence: 0.7,      // Minimum confidence for predictive preloading
-  minPatternOccurrences: 3     // Minimum occurrences to establish pattern
+  patternConfidence: 0.7, // Minimum confidence for predictive preloading
+  minPatternOccurrences: 3 // Minimum occurrences to establish pattern
 }
 
 // Resource definitions for different app sections
@@ -81,10 +81,10 @@ const RESOURCE_DEFINITIONS = {
 
 // Preload queue and state management
 const PRELOAD_STATE = {
-  queue: new Map(),           // url -> { priority, strategy, timestamp, attempts }
-  active: new Set(),          // Currently preloading URLs
-  completed: new Map(),       // url -> { timestamp, success, cacheHit }
-  patterns: new Map(),        // Enhanced pattern storage
+  queue: new Map(), // url -> { priority, strategy, timestamp, attempts }
+  active: new Set(), // Currently preloading URLs
+  completed: new Map(), // url -> { timestamp, success, cacheHit }
+  patterns: new Map(), // Enhanced pattern storage
   idleTimer: null,
   isIdle: false
 }
@@ -93,7 +93,7 @@ const PRELOAD_STATE = {
  * Enhanced cache preloader that integrates with navigation tracking
  */
 class CachePreloader {
-  constructor() {
+  constructor () {
     this.initializeIdleDetection()
     this.bindToNavigationTracking()
   }
@@ -109,7 +109,7 @@ class CachePreloader {
    * @param {string} path - The navigation path to track.
    * @param {string} [sessionId='default'] - The session identifier for tracking.
    */
-  trackNavigation(path, sessionId = 'default') {
+  trackNavigation (path, sessionId = 'default') {
     try {
       // Call the original navigation tracking if it exists
       if (self.cachePreloader?.trackNavigation && typeof self.cachePreloader.trackNavigation === 'function') {
@@ -123,7 +123,6 @@ class CachePreloader {
 
       // Trigger preloading based on the navigation
       this.handleNavigationPreload(path, sessionId)
-
     } catch (error) {
       console.error('[CachePreloader] Navigation tracking error:', error)
     }
@@ -140,7 +139,7 @@ class CachePreloader {
    * @param {string} path - The current navigation path being tracked.
    * @param {string} sessionId - The unique identifier for the user session.
    */
-  enhancedTrackNavigation(path, sessionId) {
+  enhancedTrackNavigation (path, sessionId) {
     const now = Date.now()
 
     // Update navigation tracking if available
@@ -192,7 +191,7 @@ class CachePreloader {
   /**
    * Handle preloading based on navigation event
    */
-  async handleNavigationPreload(path, sessionId) {
+  async handleNavigationPreload (path, sessionId) {
     try {
       // Get resource definition for this path
       const resourceDef = this.getResourceDefinition(path)
@@ -203,7 +202,6 @@ class CachePreloader {
 
       // Predictive preloading based on patterns
       await this.predictivePreload(path, sessionId)
-
     } catch (error) {
       console.error('[CachePreloader] Navigation preload error:', error)
     }
@@ -219,7 +217,7 @@ class CachePreloader {
    *
    * @param {string} path - The path for which to retrieve the resource definition.
    */
-  getResourceDefinition(path) {
+  getResourceDefinition (path) {
     // Exact match first
     if (RESOURCE_DEFINITIONS[path]) {
       return RESOURCE_DEFINITIONS[path]
@@ -246,7 +244,7 @@ class CachePreloader {
    * @param priority - The priority level for the preloading operation.
    * @returns A promise that resolves when the preloading process is complete.
    */
-  async schedulePreload(resources, strategy, priority) {
+  async schedulePreload (resources, strategy, priority) {
     const now = Date.now()
 
     for (const resource of resources) {
@@ -284,7 +282,7 @@ class CachePreloader {
   /**
    * Execute immediate preloading of resources in the next batch.
    */
-  async executePreload() {
+  async executePreload () {
     const batch = this.getNextBatch()
     const promises = batch.map(item => this.preloadResource(item))
 
@@ -294,7 +292,7 @@ class CachePreloader {
   /**
    * Executes predictive preloading for high confidence items.
    */
-  async executePredictivePreload() {
+  async executePredictivePreload () {
     const highConfidenceItems = Array.from(PRELOAD_STATE.queue.values())
       .filter(item => this.calculatePreloadConfidence(item) >= PRELOADER_CONFIG.patternConfidence)
 
@@ -310,7 +308,7 @@ class CachePreloader {
   /**
    * Execute critical resource preloading.
    */
-  async executeCriticalPreload() {
+  async executeCriticalPreload () {
     const criticalItems = Array.from(PRELOAD_STATE.queue.values())
       .filter(item => item.priority === PRELOADER_CONFIG.priorities.critical)
 
@@ -321,7 +319,7 @@ class CachePreloader {
   /**
    * Get the next batch of resources to preload based on priority.
    */
-  getNextBatch() {
+  getNextBatch () {
     const available = Array.from(PRELOAD_STATE.queue.values())
       .filter(item => !PRELOAD_STATE.active.has(item.url))
       .sort((a, b) => a.priority - b.priority)
@@ -332,7 +330,7 @@ class CachePreloader {
   /**
    * Preload a single resource
    */
-  async preloadResource(item) {
+  async preloadResource (item) {
     if (PRELOAD_STATE.active.has(item.url)) {
       return
     }
@@ -365,7 +363,6 @@ class CachePreloader {
       }
 
       PRELOAD_STATE.queue.delete(item.url)
-
     } catch (error) {
       console.warn('[CachePreloader] Preload failed:', item.url, error)
 
@@ -385,7 +382,6 @@ class CachePreloader {
         error: error.message,
         strategy: item.strategy
       })
-
     } finally {
       PRELOAD_STATE.active.delete(item.url)
     }
@@ -402,7 +398,7 @@ class CachePreloader {
    * @param sessionId - The session identifier for tracking user navigation.
    * @returns {Promise<void>} A promise that resolves when the preloading is complete.
    */
-  async predictivePreload(currentPath, sessionId) {
+  async predictivePreload (currentPath, sessionId) {
     if (!self.NAVIGATION_TRACKING) return
 
     const pattern = self.NAVIGATION_TRACKING.patterns.get(currentPath)
@@ -442,7 +438,7 @@ class CachePreloader {
    * @param {string} fromPath - The starting path for the transition.
    * @param {string} toPath - The target path for the transition.
    */
-  calculatePathConfidence(fromPath, toPath) {
+  calculatePathConfidence (fromPath, toPath) {
     if (!self.NAVIGATION_TRACKING) return 0
 
     const fromPattern = self.NAVIGATION_TRACKING.patterns.get(fromPath)
@@ -457,7 +453,7 @@ class CachePreloader {
   /**
    * Calculate preload confidence based on item priority and age.
    */
-  calculatePreloadConfidence(item) {
+  calculatePreloadConfidence (item) {
     const now = Date.now()
     const age = now - item.timestamp
     const maxAge = PRELOADER_CONFIG.maxPreloadAge
@@ -472,7 +468,7 @@ class CachePreloader {
   /**
    * Initialize idle detection for preloading based on available APIs.
    */
-  initializeIdleDetection() {
+  initializeIdleDetection () {
     // Use requestIdleCallback if available
     if (typeof requestIdleCallback !== 'undefined') {
       /**
@@ -500,7 +496,7 @@ class CachePreloader {
   /**
    * Schedules preloading during idle time if the system is idle.
    */
-  scheduleIdlePreload() {
+  scheduleIdlePreload () {
     if (PRELOAD_STATE.isIdle) {
       this.processIdleQueue()
     }
@@ -509,7 +505,7 @@ class CachePreloader {
   /**
    * Process preload queue during idle time
    */
-  async processIdleQueue() {
+  async processIdleQueue () {
     if (!PRELOAD_STATE.isIdle) return
 
     const idleItems = Array.from(PRELOAD_STATE.queue.values())
@@ -528,7 +524,7 @@ class CachePreloader {
   /**
    * Bind to existing navigation tracking system and enhance cachePreloader methods.
    */
-  bindToNavigationTracking() {
+  bindToNavigationTracking () {
     // Enhance existing cachePreloader if it exists
     if (self.cachePreloader) {
       // Store original methods
@@ -561,7 +557,7 @@ class CachePreloader {
    *
    * @param {Function} originalMethod - An optional method to call before preloading critical data.
    */
-  async enhancedPreloadCriticalData(originalMethod) {
+  async enhancedPreloadCriticalData (originalMethod) {
     try {
       // Call original method if it exists
       if (originalMethod) {
@@ -583,7 +579,6 @@ class CachePreloader {
       }
 
       await this.executeCriticalPreload()
-
     } catch (error) {
       console.error('[CachePreloader] Enhanced critical preload error:', error)
     }
@@ -598,7 +593,7 @@ class CachePreloader {
    *
    * @param {Function} originalMethod - An optional function that returns the original cache statistics.
    */
-  async enhancedGetCacheStats(originalMethod) {
+  async enhancedGetCacheStats (originalMethod) {
     try {
       const originalStats = originalMethod ? await originalMethod() : {}
 
@@ -615,7 +610,6 @@ class CachePreloader {
       }
 
       return preloadStats
-
     } catch (error) {
       console.error('[CachePreloader] Enhanced stats error:', error)
       return {}
@@ -631,7 +625,7 @@ class CachePreloader {
    *
    * @param {Function} originalMethod - The original method to be called before clearing the states.
    */
-  async enhancedClearPatterns(originalMethod) {
+  async enhancedClearPatterns (originalMethod) {
     try {
       // Call original method
       if (originalMethod) {
@@ -645,7 +639,6 @@ class CachePreloader {
       PRELOAD_STATE.patterns.clear()
 
       console.debug('[CachePreloader] Enhanced patterns cleared')
-
     } catch (error) {
       console.error('[CachePreloader] Enhanced clear patterns error:', error)
     }
@@ -654,7 +647,7 @@ class CachePreloader {
   /**
    * Retrieves preloader-specific statistics including queue, active items, completed tasks, and performance metrics.
    */
-  getPreloadStats() {
+  getPreloadStats () {
     return {
       queue: {
         size: PRELOAD_STATE.queue.size,
@@ -689,7 +682,7 @@ class CachePreloader {
    *
    * @param {string[]} urls - An array of URLs to preload.
    */
-  async forcePreload(urls) {
+  async forcePreload (urls) {
     const resources = urls.map(url => ({
       url,
       type: 'api',
@@ -708,7 +701,7 @@ class CachePreloader {
   /**
    * Clear preload queue
    */
-  clearPreloadQueue() {
+  clearPreloadQueue () {
     PRELOAD_STATE.queue.clear()
     PRELOAD_STATE.active.clear()
   }
@@ -716,7 +709,7 @@ class CachePreloader {
   /**
    * Calculate the success rate of completed tasks.
    */
-  calculateSuccessRate() {
+  calculateSuccessRate () {
     const completed = Array.from(PRELOAD_STATE.completed.values())
     if (completed.length === 0) return 0
 
@@ -733,7 +726,7 @@ class CachePreloader {
    * Otherwise, it sums the durations of the successful preloads and divides by their count
    * to obtain the average.
    */
-  calculateAveragePreloadTime() {
+  calculateAveragePreloadTime () {
     const completed = Array.from(PRELOAD_STATE.completed.values())
       .filter(c => c.success && c.duration)
 
