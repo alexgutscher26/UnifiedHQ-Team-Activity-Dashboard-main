@@ -278,7 +278,6 @@ export function OptimizedActivityFeed() {
   const [isLiveConnected, setIsLiveConnected] = useState(false);
   const [eventSource, setEventSource] = useState<EventSource | null>(null);
 
-
   // Search and filter states
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSource, setFilterSource] = useState<string>('all');

@@ -62,11 +62,15 @@ const getActivityColor = (activity: Activity) => {
 
 const formatTimestamp = (timestamp: Date | string) => {
   const now = new Date();
-  const timestampDate = timestamp instanceof Date ? timestamp : new Date(timestamp);
-  const diffInHours = Math.floor((now.getTime() - timestampDate.getTime()) / (1000 * 60 * 60));
+  const timestampDate =
+    timestamp instanceof Date ? timestamp : new Date(timestamp);
+  const diffInHours = Math.floor(
+    (now.getTime() - timestampDate.getTime()) / (1000 * 60 * 60)
+  );
 
   if (diffInHours < 1) return 'Just now';
-  if (diffInHours < 24) return `${diffInHours} hour${diffInHours === 1 ? '' : 's'} ago`;
+  if (diffInHours < 24)
+    return `${diffInHours} hour${diffInHours === 1 ? '' : 's'} ago`;
 
   const diffInDays = Math.floor(diffInHours / 24);
   return `${diffInDays} day${diffInDays === 1 ? '' : 's'} ago`;
@@ -115,7 +119,9 @@ export function ActivityFeed() {
         return;
       }
 
-      const es = new EventSource('/api/activities/live', { withCredentials: true });
+      const es = new EventSource('/api/activities/live', {
+        withCredentials: true,
+      });
       eventSourceRef.current = es;
 
       es.onopen = () => {
@@ -123,10 +129,13 @@ export function ActivityFeed() {
         console.log('✅ Connected to live updates');
       };
 
-      es.onmessage = (event) => {
+      es.onmessage = event => {
         try {
           const data = JSON.parse(event.data);
-          if (data.type === 'activity_update' && data.data.type === 'sync_completed') {
+          if (
+            data.type === 'activity_update' &&
+            data.data.type === 'sync_completed'
+          ) {
             fetchActivities();
             toast({
               title: 'Live Update',
@@ -250,7 +259,10 @@ export function ActivityFeed() {
         <CardContent>
           <div className='space-y-4'>
             {[...Array(3)].map((_, i) => (
-              <div key={i} className='flex items-start gap-3 p-3 rounded-lg border bg-card'>
+              <div
+                key={i}
+                className='flex items-start gap-3 p-3 rounded-lg border bg-card'
+              >
                 <Skeleton className='size-8 rounded-lg' />
                 <div className='flex-1 space-y-2'>
                   <Skeleton className='h-4 w-3/4' />
@@ -312,7 +324,8 @@ export function ActivityFeed() {
         {activities.length === 0 ? (
           <div className='text-center py-8'>
             <p className='text-muted-foreground mb-4'>
-              No activity found. Connect your integrations and select repositories to see activity here.
+              No activity found. Connect your integrations and select
+              repositories to see activity here.
             </p>
             <div className='flex gap-2 justify-center'>
               <Button
@@ -325,7 +338,7 @@ export function ActivityFeed() {
           </div>
         ) : (
           <div className='max-h-96 overflow-y-auto space-y-4 pr-2'>
-            {activities.map((activity) => {
+            {activities.map(activity => {
               const Icon = getActivityIcon(activity);
               const colorClass = getActivityColor(activity);
               const actor = activity.metadata?.actor;
@@ -334,7 +347,8 @@ export function ActivityFeed() {
               const getExternalUrl = () => {
                 if (activity.source === 'github' && payload) {
                   if (payload.commit?.url) return payload.commit.url;
-                  if (payload.pull_request?.url) return payload.pull_request.url;
+                  if (payload.pull_request?.url)
+                    return payload.pull_request.url;
                   if (payload.issue?.url) return payload.issue.url;
                 }
                 if (activity.source === 'slack' && payload) {
@@ -387,10 +401,14 @@ export function ActivityFeed() {
                           <Avatar className='size-4'>
                             <AvatarImage src={actor.avatar_url} />
                             <AvatarFallback>
-                              {actor.login?.charAt(0) || actor.name?.charAt(0) || '?'}
+                              {actor.login?.charAt(0) ||
+                                actor.name?.charAt(0) ||
+                                '?'}
                             </AvatarFallback>
                           </Avatar>
-                          <span>{actor.display_login || actor.login || actor.name}</span>
+                          <span>
+                            {actor.display_login || actor.login || actor.name}
+                          </span>
                           <span>•</span>
                         </>
                       )}

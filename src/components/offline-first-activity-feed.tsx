@@ -30,7 +30,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useNetworkStatusContext } from '@/contexts/network-status-context';
 import { cn } from '@/lib/utils';
 
-
 interface CachedActivityData {
   activities: Activity[];
   timestamp: number;
@@ -187,7 +186,6 @@ export function OfflineFirstActivityFeed() {
   const [showBottomFade, setShowBottomFade] = useState(false);
   const [isLiveConnected, setIsLiveConnected] = useState(false);
   const [eventSource, setEventSource] = useState<EventSource | null>(null);
-
 
   useEffect(() => {
     loadActivities();
