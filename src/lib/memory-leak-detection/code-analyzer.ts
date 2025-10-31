@@ -35,7 +35,7 @@ export class CodeAnalyzer {
     private sourceFile: ts.SourceFile | null = null;
 
     /**
-     * Analyze code for memory leaks
+     * Analyzes code for memory leaks and returns the analysis results.
      */
     analyzeCode(code: string, fileName: string = 'component.tsx'): MemoryLeakAnalysis {
         try {
@@ -76,7 +76,7 @@ export class CodeAnalyzer {
     }
 
     /**
-     * Recursively analyze AST nodes
+     * Analyzes AST nodes for useEffect hooks and component lifecycle methods.
      */
     private analyzeNode(node: ts.Node, leaks: MemoryLeak[], cleanupActions: CleanupAction[]): void {
         // Analyze useEffect hooks
@@ -94,7 +94,7 @@ export class CodeAnalyzer {
     }
 
     /**
-     * Check if node is a useEffect call
+     * Checks if the node is a useEffect call.
      */
     private isUseEffectCall(node: ts.Node): boolean {
         return ts.isCallExpression(node) &&
@@ -103,7 +103,7 @@ export class CodeAnalyzer {
     }
 
     /**
-     * Check if node is componentDidMount
+     * Checks if the given node is a componentDidMount method.
      */
     private isComponentDidMount(node: ts.Node): boolean {
         return ts.isMethodDeclaration(node) &&
@@ -112,7 +112,7 @@ export class CodeAnalyzer {
     }
 
     /**
-     * Analyze useEffect for memory leaks
+     * Analyzes useEffect for potential memory leaks and cleanup actions.
      */
     private analyzeUseEffect(
         useEffectCall: ts.CallExpression,
@@ -143,6 +143,13 @@ export class CodeAnalyzer {
      * Analyze callback function for potential memory leaks
      */
     private analyzeCallback(callback: ts.Expression, potentialLeaks: Map<string, MemoryLeak>): void {
+        /**
+         * Analyzes a TypeScript AST node for potential resource leaks.
+         *
+         * The function checks if the node represents various constructs that may lead to resource leaks, such as event listeners, intervals, timeouts, EventSources, WebSockets, subscriptions, and AbortControllers. For each identified construct, it records the type, line, column, and a description of the issue in the `potentialLeaks` map, along with suggested fixes for proper cleanup. The function recursively visits child nodes to ensure comprehensive analysis.
+         *
+         * @param node - The TypeScript AST node to analyze for potential leaks.
+         */
         const visit = (node: ts.Node) => {
             const position = this.getPosition(node);
 
@@ -244,6 +251,15 @@ export class CodeAnalyzer {
         foundCleanups: Set<string>,
         cleanupActions: CleanupAction[]
     ): void {
+        /**
+         * Processes a TypeScript AST node to analyze return statements.
+         *
+         * If the node is a return statement with an expression that is either an arrow function or a function expression,
+         * it invokes the analyzeCleanupActions method to handle cleanup actions. The function then recursively visits
+         * all child nodes of the current node to ensure comprehensive analysis.
+         *
+         * @param node - The TypeScript AST node to be visited.
+         */
         const visit = (node: ts.Node) => {
             if (ts.isReturnStatement(node) && node.expression) {
                 if (ts.isArrowFunction(node.expression) || ts.isFunctionExpression(node.expression)) {
@@ -257,13 +273,27 @@ export class CodeAnalyzer {
     }
 
     /**
-     * Analyze cleanup actions in cleanup function
+     * Analyze cleanup actions in a cleanup function.
+     *
+     * This function traverses the provided cleanup function's AST nodes to identify and record various cleanup actions, such as removing event listeners, clearing intervals and timeouts, closing connections, unsubscribing from subscriptions, and aborting controllers. It utilizes helper methods to determine the type of cleanup required and stores the results in the provided `cleanupActions` array while tracking found cleanups in the `foundCleanups` set.
+     *
+     * @param cleanupFn - The cleanup function represented as an ArrowFunction or FunctionExpression.
+     * @param foundCleanups - A Set to track the types of cleanups that have been identified.
+     * @param cleanupActions - An array to store the details of each cleanup action identified during the analysis.
      */
     private analyzeCleanupActions(
         cleanupFn: ts.ArrowFunction | ts.FunctionExpression,
         foundCleanups: Set<string>,
         cleanupActions: CleanupAction[]
     ): void {
+        /**
+         * Processes a given AST node to identify and record cleanup actions.
+         * The function checks for various types of cleanup calls such as removing event listeners, clearing intervals,
+         * clearing timeouts, closing connections, unsubscribing, and aborting controllers. For each identified call,
+         * it adds the corresponding cleanup action to the `cleanupActions` array along with the position of the node.
+         *
+         * @param node - The AST node to be visited and processed for cleanup actions.
+         */
         const visit = (node: ts.Node) => {
             const position = this.getPosition(node);
 
@@ -335,7 +365,7 @@ export class CodeAnalyzer {
     }
 
     /**
-     * Check if cleanup matches the memory leak type
+     * Check if cleanup matches the memory leak type.
      */
     private hasMatchingCleanup(leakType: string, cleanups: Set<string>): boolean {
         return cleanups.has(leakType);
@@ -365,7 +395,15 @@ export class CodeAnalyzer {
     }
 
     /**
-     * Calculate memory safety score (0-100)
+     * Calculate memory safety score (0-100).
+     *
+     * This function evaluates the memory safety score based on the number of memory leaks and cleanup actions.
+     * It deducts points for errors and warnings found in the leaks, where each error reduces the score by 25 points
+     * and each warning by 10 points. Additionally, it adds points for each cleanup action performed, contributing
+     * 5 points per action. The final score is constrained between 0 and 100.
+     *
+     * @param {MemoryLeak[]} leaks - An array of memory leaks to evaluate.
+     * @param {CleanupAction[]} cleanupActions - An array of cleanup actions taken.
      */
     private calculateScore(leaks: MemoryLeak[], cleanupActions: CleanupAction[]): number {
         const totalIssues = leaks.length;
@@ -388,7 +426,7 @@ export class CodeAnalyzer {
     }
 
     /**
-     * Get position information for a node
+     * Retrieves the line and column position of a given node.
      */
     private getPosition(node: ts.Node): { line: number; column: number } {
         if (!this.sourceFile) return { line: 0, column: 0 };
@@ -405,6 +443,9 @@ export class CodeAnalyzer {
             node.expression.name.text === 'addEventListener';
     }
 
+    /**
+     * Checks if the given node is a call to removeEventListener.
+     */
     private isRemoveEventListenerCall(node: ts.Node): boolean {
         return ts.isCallExpression(node) &&
             ts.isPropertyAccessExpression(node.expression) &&
@@ -412,48 +453,72 @@ export class CodeAnalyzer {
             node.expression.name.text === 'removeEventListener';
     }
 
+    /**
+     * Checks if the given node is a call to setInterval.
+     */
     private isSetIntervalCall(node: ts.Node): boolean {
         return ts.isCallExpression(node) &&
             ts.isIdentifier(node.expression) &&
             node.expression.text === 'setInterval';
     }
 
+    /**
+     * Checks if the given node is a call to clearInterval.
+     */
     private isClearIntervalCall(node: ts.Node): boolean {
         return ts.isCallExpression(node) &&
             ts.isIdentifier(node.expression) &&
             node.expression.text === 'clearInterval';
     }
 
+    /**
+     * Checks if the given node is a call to setTimeout.
+     */
     private isSetTimeoutCall(node: ts.Node): boolean {
         return ts.isCallExpression(node) &&
             ts.isIdentifier(node.expression) &&
             node.expression.text === 'setTimeout';
     }
 
+    /**
+     * Checks if the given node is a call to clearTimeout.
+     */
     private isClearTimeoutCall(node: ts.Node): boolean {
         return ts.isCallExpression(node) &&
             ts.isIdentifier(node.expression) &&
             node.expression.text === 'clearTimeout';
     }
 
+    /**
+     * Checks if the given node is a creation of an EventSource.
+     */
     private isEventSourceCreation(node: ts.Node): boolean {
         return ts.isNewExpression(node) &&
             ts.isIdentifier(node.expression) &&
             node.expression.text === 'EventSource';
     }
 
+    /**
+     * Checks if the given node represents a WebSocket creation.
+     */
     private isWebSocketCreation(node: ts.Node): boolean {
         return ts.isNewExpression(node) &&
             ts.isIdentifier(node.expression) &&
             node.expression.text === 'WebSocket';
     }
 
+    /**
+     * Checks if the given node is a new AbortController instance.
+     */
     private isAbortControllerCreation(node: ts.Node): boolean {
         return ts.isNewExpression(node) &&
             ts.isIdentifier(node.expression) &&
             node.expression.text === 'AbortController';
     }
 
+    /**
+     * Checks if the given node is a subscription call expression.
+     */
     private isSubscriptionCall(node: ts.Node): boolean {
         return ts.isCallExpression(node) &&
             ts.isPropertyAccessExpression(node.expression) &&
@@ -461,6 +526,9 @@ export class CodeAnalyzer {
             node.expression.name.text === 'subscribe';
     }
 
+    /**
+     * Checks if the given node is a call expression to the 'close' method.
+     */
     private isCloseCall(node: ts.Node): boolean {
         return ts.isCallExpression(node) &&
             ts.isPropertyAccessExpression(node.expression) &&
@@ -468,6 +536,9 @@ export class CodeAnalyzer {
             node.expression.name.text === 'close';
     }
 
+    /**
+     * Checks if the given node is a call to the 'unsubscribe' method.
+     */
     private isUnsubscribeCall(node: ts.Node): boolean {
         return ts.isCallExpression(node) &&
             ts.isPropertyAccessExpression(node.expression) &&
