@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     console.log('[GitHub Callback] Exchanging code for token...', {
       client_id: process.env.GITHUB_CLIENT_ID,
       code: code?.substring(0, 10) + '...',
-      state
+      state,
     });
 
     const tokenResponse = await fetch(
@@ -124,9 +124,15 @@ export async function GET(request: NextRequest) {
 
     // Trigger cache warming for GitHub integration
     try {
-      const { warmCacheOnIntegrationConnect } = await import('@/lib/cache-warming');
+      const { warmCacheOnIntegrationConnect } = await import(
+        '@/lib/cache-warming'
+      );
       // Run in background - don't block the redirect
-      warmCacheOnIntegrationConnect(user.id, 'github', tokenData.access_token).catch(error => {
+      warmCacheOnIntegrationConnect(
+        user.id,
+        'github',
+        tokenData.access_token
+      ).catch(error => {
         console.error('Background cache warming failed:', error);
       });
     } catch (error) {
