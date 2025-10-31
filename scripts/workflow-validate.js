@@ -56,7 +56,11 @@ class WorkflowValidator {
   }
 
   /**
-   * Initialize validation rules
+   * Initialize validation rules for workflows.
+   *
+   * This function returns an object containing various validation rules categorized into syntax, security, performance, and best practices. Each category includes checks that validate the structure and content of the provided workflow object, identifying issues and warnings based on specific criteria such as required fields, job structure, secret usage, and caching strategies.
+   *
+   * @returns An object containing validation rules for workflows.
    */
   initializeValidationRules() {
     return {
