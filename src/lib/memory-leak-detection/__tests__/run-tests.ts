@@ -4,6 +4,7 @@
  */
 
 import { useEffectCleanupRule } from '../eslint-rules';
+import * as ts from 'typescript';
 
 // Simple test runner for ESLint rules
 class SimpleRuleTester {
@@ -26,21 +27,13 @@ class SimpleRuleTester {
     console.log('\n✅ Testing valid cases:');
     testCases.valid.forEach((code, index) => {
       try {
-        // TODO: In a real implementation, we would parse and analyze the code
-        // For now, just check basic patterns
-        const hasCleanup =
-          code.includes('return () => {') &&
-          (code.includes('removeEventListener') ||
-            code.includes('clearInterval') ||
-            code.includes('clearTimeout'));
+        const analysisResult = this.analyzeCodeForMemoryLeaks(code);
 
-        if (hasCleanup || !this.hasMemoryLeakPattern(code)) {
-          console.log(`  ✓ Valid case ${index + 1} passed`);
+        if (!analysisResult.hasMemoryLeaks) {
+          console.log(`  ✓ Valid case ${index + 1} passed - no memory leaks detected`);
           passed++;
         } else {
-          console.log(
-            `  ✗ Valid case ${index + 1} failed - should not have memory leak`
-          );
+          console.log(`  ✗ Valid case ${index + 1} failed - unexpected memory leaks:`, analysisResult.leaks);
           failed++;
         }
       } catch (error) {
@@ -53,17 +46,13 @@ class SimpleRuleTester {
     console.log('\n❌ Testing invalid cases:');
     testCases.invalid.forEach((testCase, index) => {
       try {
-        const hasMemoryLeak = this.hasMemoryLeakPattern(testCase.code);
+        const analysisResult = this.analyzeCodeForMemoryLeaks(testCase.code);
 
-        if (hasMemoryLeak) {
-          console.log(
-            `  ✓ Invalid case ${index + 1} passed - detected memory leak`
-          );
+        if (analysisResult.hasMemoryLeaks) {
+          console.log(`  ✓ Invalid case ${index + 1} passed - detected memory leaks:`, analysisResult.leaks);
           passed++;
         } else {
-          console.log(
-            `  ✗ Invalid case ${index + 1} failed - should have detected memory leak`
-          );
+          console.log(`  ✗ Invalid case ${index + 1} failed - should have detected memory leaks`);
           failed++;
         }
       } catch (error) {
@@ -75,15 +64,301 @@ class SimpleRuleTester {
     console.log(`\n📊 Results for ${this.ruleName}:`);
     console.log(`  Passed: ${passed}`);
     console.log(`  Failed: ${failed}`);
-    console.log(
-      `  Success rate: ${((passed / (passed + failed)) * 100).toFixed(1)}%`
-    );
+    console.log(`  Success rate: ${((passed / (passed + failed)) * 100).toFixed(1)}%`);
 
     return { passed, failed };
   }
 
+  /**
+   * Comprehensive code analysis for memory leaks
+   */
+  private analyzeCodeForMemoryLeaks(code: string): {
+    hasMemoryLeaks: boolean;
+    leaks: string[];
+    cleanupActions: string[];
+    suggestions: string[];
+  } {
+    try {
+      const sourceFile = ts.createSourceFile(
+        'test.tsx',
+        code,
+        ts.ScriptTarget.Latest,
+        true,
+        ts.ScriptKind.TSX
+      );
+
+      const memoryLeaks = new Set<string>();
+      const cleanupActions = new Set<string>();
+      const suggestions: string[] = [];
+      let hasUseEffect = false;
+
+      const visit = (node: ts.Node) => {
+        if (ts.isCallExpression(node)) {
+          const expression = node.expression;
+
+          if (ts.isIdentifier(expression) && expression.text === 'useEffect') {
+            hasUseEffect = true;
+
+            if (node.arguments.length > 0) {
+              const callback = node.arguments[0];
+              this.analyzeUseEffectCallback(callback, memoryLeaks, cleanupActions);
+            }
+          }
+        }
+
+        if (ts.isReturnStatement(node) && node.expression) {
+          if (ts.isArrowFunction(node.expression) || ts.isFunctionExpression(node.expression)) {
+            this.analyzeCleanupFunction(node.expression, cleanupActions);
+          }
+        }
+
+        ts.forEachChild(node, visit);
+      };
+
+      visit(sourceFile);
+
+      // Generate suggestions for unmatched leaks
+      const unmatchedLeaks = Array.from(memoryLeaks).filter(leak => {
+        return !Array.from(cleanupActions).some(cleanup =>
+          this.isMatchingCleanup(leak, cleanup)
+        );
+      });
+
+      unmatchedLeaks.forEach(leak => {
+        const cleanupSuggestion = this.getCleanupSuggestion(leak);
+        if (cleanupSuggestion) {
+          suggestions.push(cleanupSuggestion);
+        }
+      });
+
+      return {
+        hasMemoryLeaks: hasUseEffect && unmatchedLeaks.length > 0,
+        leaks: unmatchedLeaks,
+        cleanupActions: Array.from(cleanupActions),
+        suggestions,
+      };
+
+    } catch (error) {
+      console.warn('AST analysis failed, using fallback:', error);
+      return {
+        hasMemoryLeaks: this.fallbackPatternMatching(code),
+        leaks: ['unknown'],
+        cleanupActions: [],
+        suggestions: ['Use proper cleanup in useEffect return function'],
+      };
+    }
+  }
+
+  /**
+   * Get cleanup suggestion for a specific memory leak type
+   */
+  private getCleanupSuggestion(leak: string): string {
+    const suggestions: Record<string, string> = {
+      'addEventListener': 'Add removeEventListener in cleanup function',
+      'setInterval': 'Add clearInterval in cleanup function',
+      'setTimeout': 'Add clearTimeout in cleanup function',
+      'EventSource': 'Add eventSource.close() in cleanup function',
+      'WebSocket': 'Add webSocket.close() in cleanup function',
+      'subscribe': 'Add subscription.unsubscribe() in cleanup function',
+    };
+
+    return suggestions[leak] || `Add proper cleanup for ${leak}`;
+  }
+
   private hasMemoryLeakPattern(code: string): boolean {
-    // Simple pattern detection for testing
+    return this.analyzeCodeWithAST(code);
+  }
+
+  /**
+   * Analyze code using TypeScript AST for accurate memory leak detection
+   */
+  private analyzeCodeWithAST(code: string): boolean {
+    try {
+      // Create TypeScript source file
+      const sourceFile = ts.createSourceFile(
+        'test.tsx',
+        code,
+        ts.ScriptTarget.Latest,
+        true,
+        ts.ScriptKind.TSX
+      );
+
+      const memoryLeaks = new Set<string>();
+      const cleanupActions = new Set<string>();
+      let hasUseEffect = false;
+      let hasCleanupFunction = false;
+
+      // Visitor function to traverse AST
+      const visit = (node: ts.Node) => {
+        // Check for useEffect calls
+        if (ts.isCallExpression(node)) {
+          const expression = node.expression;
+
+          if (ts.isIdentifier(expression) && expression.text === 'useEffect') {
+            hasUseEffect = true;
+
+            // Analyze useEffect callback
+            if (node.arguments.length > 0) {
+              const callback = node.arguments[0];
+              this.analyzeUseEffectCallback(callback, memoryLeaks, cleanupActions);
+            }
+          }
+        }
+
+        // Check for return statements in useEffect (cleanup functions)
+        if (ts.isReturnStatement(node) && node.expression) {
+          if (ts.isArrowFunction(node.expression) || ts.isFunctionExpression(node.expression)) {
+            hasCleanupFunction = true;
+            this.analyzeCleanupFunction(node.expression, cleanupActions);
+          }
+        }
+
+        // Continue traversing
+        ts.forEachChild(node, visit);
+      };
+
+      // Start traversal
+      visit(sourceFile);
+
+      // Check if there are unmatched memory leaks
+      const unmatchedLeaks = Array.from(memoryLeaks).filter(leak => {
+        return !Array.from(cleanupActions).some(cleanup =>
+          this.isMatchingCleanup(leak, cleanup)
+        );
+      });
+
+      return hasUseEffect && unmatchedLeaks.length > 0;
+
+    } catch (error) {
+      console.warn('AST analysis failed, falling back to pattern matching:', error);
+      return this.fallbackPatternMatching(code);
+    }
+  }
+
+  /**
+   * Analyze useEffect callback for potential memory leaks
+   */
+  private analyzeUseEffectCallback(
+    callback: ts.Expression,
+    memoryLeaks: Set<string>,
+    cleanupActions: Set<string>
+  ): void {
+    const visit = (node: ts.Node) => {
+      if (ts.isCallExpression(node)) {
+        const expression = node.expression;
+
+        // Check for addEventListener
+        if (ts.isPropertyAccessExpression(expression) &&
+          ts.isIdentifier(expression.name) &&
+          expression.name.text === 'addEventListener') {
+          memoryLeaks.add('addEventListener');
+        }
+
+        // Check for setInterval
+        if (ts.isIdentifier(expression) && expression.text === 'setInterval') {
+          memoryLeaks.add('setInterval');
+        }
+
+        // Check for setTimeout
+        if (ts.isIdentifier(expression) && expression.text === 'setTimeout') {
+          memoryLeaks.add('setTimeout');
+        }
+      }
+
+      // Check for new expressions (EventSource, WebSocket, etc.)
+      if (ts.isNewExpression(node) && node.expression) {
+        if (ts.isIdentifier(node.expression)) {
+          const typeName = node.expression.text;
+          if (['EventSource', 'WebSocket', 'AbortController'].includes(typeName)) {
+            memoryLeaks.add(typeName);
+          }
+        }
+      }
+
+      // Check for subscription patterns
+      if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
+        const propertyName = node.expression.name;
+        if (ts.isIdentifier(propertyName) && propertyName.text === 'subscribe') {
+          memoryLeaks.add('subscribe');
+        }
+      }
+
+      ts.forEachChild(node, visit);
+    };
+
+    visit(callback);
+  }
+
+  /**
+   * Analyze cleanup function for cleanup actions
+   */
+  private analyzeCleanupFunction(
+    cleanupFn: ts.ArrowFunction | ts.FunctionExpression,
+    cleanupActions: Set<string>
+  ): void {
+    const visit = (node: ts.Node) => {
+      if (ts.isCallExpression(node)) {
+        const expression = node.expression;
+
+        // Check for removeEventListener
+        if (ts.isPropertyAccessExpression(expression) &&
+          ts.isIdentifier(expression.name) &&
+          expression.name.text === 'removeEventListener') {
+          cleanupActions.add('removeEventListener');
+        }
+
+        // Check for clearInterval
+        if (ts.isIdentifier(expression) && expression.text === 'clearInterval') {
+          cleanupActions.add('clearInterval');
+        }
+
+        // Check for clearTimeout
+        if (ts.isIdentifier(expression) && expression.text === 'clearTimeout') {
+          cleanupActions.add('clearTimeout');
+        }
+
+        // Check for close() calls
+        if (ts.isPropertyAccessExpression(expression) &&
+          ts.isIdentifier(expression.name) &&
+          expression.name.text === 'close') {
+          cleanupActions.add('close');
+        }
+
+        // Check for unsubscribe
+        if (ts.isPropertyAccessExpression(expression) &&
+          ts.isIdentifier(expression.name) &&
+          expression.name.text === 'unsubscribe') {
+          cleanupActions.add('unsubscribe');
+        }
+      }
+
+      ts.forEachChild(node, visit);
+    };
+
+    visit(cleanupFn);
+  }
+
+  /**
+   * Check if a cleanup action matches a memory leak pattern
+   */
+  private isMatchingCleanup(leak: string, cleanup: string): boolean {
+    const matches: Record<string, string[]> = {
+      'addEventListener': ['removeEventListener'],
+      'setInterval': ['clearInterval'],
+      'setTimeout': ['clearTimeout'],
+      'EventSource': ['close'],
+      'WebSocket': ['close'],
+      'AbortController': ['abort', 'close'],
+      'subscribe': ['unsubscribe'],
+    };
+
+    return matches[leak]?.includes(cleanup) || false;
+  }
+
+  /**
+   * Fallback pattern matching when AST analysis fails
+   */
+  private fallbackPatternMatching(code: string): boolean {
     const hasEventListener =
       code.includes('addEventListener') &&
       !code.includes('removeEventListener');
@@ -185,6 +460,19 @@ async function runTests() {
     failed: 0,
   };
 
+  // Test useEffect cleanup rule
+  const useEffectTester = new SimpleRuleTester('useEffect-cleanup');
+  const useEffectResults = useEffectTester.test(useEffectTestCases);
+
+  results.passed += useEffectResults.passed;
+  results.failed += useEffectResults.failed;
+
+  // Test additional memory leak patterns
+  console.log('\n🔍 Testing additional memory leak patterns...');
+  const additionalTests = await runAdditionalTests();
+  results.passed += additionalTests.passed;
+  results.failed += additionalTests.failed;
+
   console.log('\n' + '='.repeat(60));
   console.log('🏁 Test Summary:');
   console.log(`Total tests: ${results.passed + results.failed}`);
@@ -198,6 +486,86 @@ async function runTests() {
     console.log('❌ Some tests failed');
     process.exit(1);
   }
+}
+
+/**
+ * Run additional comprehensive tests
+ */
+async function runAdditionalTests(): Promise<{ passed: number; failed: number }> {
+  const additionalTestCases = {
+    valid: [
+      // Complex valid case with multiple cleanups
+      `
+        useEffect(() => {
+          const controller = new AbortController();
+          const eventSource = new EventSource('/api/events');
+          const interval = setInterval(() => {}, 1000);
+          
+          const handleResize = () => {};
+          window.addEventListener('resize', handleResize);
+          
+          return () => {
+            controller.abort();
+            eventSource.close();
+            clearInterval(interval);
+            window.removeEventListener('resize', handleResize);
+          };
+        }, []);
+      `,
+      // Valid case with conditional cleanup
+      `
+        useEffect(() => {
+          let subscription;
+          if (condition) {
+            subscription = observable.subscribe(handler);
+          }
+          
+          return () => {
+            if (subscription) {
+              subscription.unsubscribe();
+            }
+          };
+        }, [condition]);
+      `,
+    ],
+    invalid: [
+      // Complex invalid case with missing cleanups
+      {
+        code: `
+          useEffect(() => {
+            const eventSource = new EventSource('/api/events');
+            const ws = new WebSocket('ws://localhost:8080');
+            const interval = setInterval(() => {}, 1000);
+            
+            window.addEventListener('resize', () => {});
+            
+            return () => {
+              // Missing all cleanups
+            };
+          }, []);
+        `,
+        expectedErrors: 4,
+      },
+      // Partial cleanup
+      {
+        code: `
+          useEffect(() => {
+            const interval = setInterval(() => {}, 1000);
+            const timeout = setTimeout(() => {}, 5000);
+            
+            return () => {
+              clearInterval(interval);
+              // Missing clearTimeout
+            };
+          }, []);
+        `,
+        expectedErrors: 1,
+      },
+    ],
+  };
+
+  const tester = new SimpleRuleTester('comprehensive-memory-leak-detection');
+  return tester.test(additionalTestCases);
 }
 
 // Run tests if this file is executed directly
