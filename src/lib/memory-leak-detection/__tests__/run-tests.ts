@@ -42,10 +42,15 @@ class SimpleRuleTester {
         const analysisResult = this.analyzeCodeForMemoryLeaks(code);
 
         if (!analysisResult.hasMemoryLeaks) {
-          console.log(`  ✓ Valid case ${index + 1} passed - no memory leaks detected`);
+          console.log(
+            `  ✓ Valid case ${index + 1} passed - no memory leaks detected`
+          );
           passed++;
         } else {
-          console.log(`  ✗ Valid case ${index + 1} failed - unexpected memory leaks:`, analysisResult.leaks);
+          console.log(
+            `  ✗ Valid case ${index + 1} failed - unexpected memory leaks:`,
+            analysisResult.leaks
+          );
           failed++;
         }
       } catch (error) {
@@ -61,10 +66,15 @@ class SimpleRuleTester {
         const analysisResult = this.analyzeCodeForMemoryLeaks(testCase.code);
 
         if (analysisResult.hasMemoryLeaks) {
-          console.log(`  ✓ Invalid case ${index + 1} passed - detected memory leaks:`, analysisResult.leaks);
+          console.log(
+            `  ✓ Invalid case ${index + 1} passed - detected memory leaks:`,
+            analysisResult.leaks
+          );
           passed++;
         } else {
-          console.log(`  ✗ Invalid case ${index + 1} failed - should have detected memory leaks`);
+          console.log(
+            `  ✗ Invalid case ${index + 1} failed - should have detected memory leaks`
+          );
           failed++;
         }
       } catch (error) {
@@ -76,7 +86,9 @@ class SimpleRuleTester {
     console.log(`\n📊 Results for ${this.ruleName}:`);
     console.log(`  Passed: ${passed}`);
     console.log(`  Failed: ${failed}`);
-    console.log(`  Success rate: ${((passed / (passed + failed)) * 100).toFixed(1)}%`);
+    console.log(
+      `  Success rate: ${((passed / (passed + failed)) * 100).toFixed(1)}%`
+    );
 
     return { passed, failed };
   }
@@ -118,13 +130,20 @@ class SimpleRuleTester {
 
             if (node.arguments.length > 0) {
               const callback = node.arguments[0];
-              this.analyzeUseEffectCallback(callback, memoryLeaks, cleanupActions);
+              this.analyzeUseEffectCallback(
+                callback,
+                memoryLeaks,
+                cleanupActions
+              );
             }
           }
         }
 
         if (ts.isReturnStatement(node) && node.expression) {
-          if (ts.isArrowFunction(node.expression) || ts.isFunctionExpression(node.expression)) {
+          if (
+            ts.isArrowFunction(node.expression) ||
+            ts.isFunctionExpression(node.expression)
+          ) {
             this.analyzeCleanupFunction(node.expression, cleanupActions);
           }
         }
@@ -154,7 +173,6 @@ class SimpleRuleTester {
         cleanupActions: Array.from(cleanupActions),
         suggestions,
       };
-
     } catch (error) {
       console.warn('AST analysis failed, using fallback:', error);
       return {
@@ -171,12 +189,12 @@ class SimpleRuleTester {
    */
   private getCleanupSuggestion(leak: string): string {
     const suggestions: Record<string, string> = {
-      'addEventListener': 'Add removeEventListener in cleanup function',
-      'setInterval': 'Add clearInterval in cleanup function',
-      'setTimeout': 'Add clearTimeout in cleanup function',
-      'EventSource': 'Add eventSource.close() in cleanup function',
-      'WebSocket': 'Add webSocket.close() in cleanup function',
-      'subscribe': 'Add subscription.unsubscribe() in cleanup function',
+      addEventListener: 'Add removeEventListener in cleanup function',
+      setInterval: 'Add clearInterval in cleanup function',
+      setTimeout: 'Add clearTimeout in cleanup function',
+      EventSource: 'Add eventSource.close() in cleanup function',
+      WebSocket: 'Add webSocket.close() in cleanup function',
+      subscribe: 'Add subscription.unsubscribe() in cleanup function',
     };
 
     return suggestions[leak] || `Add proper cleanup for ${leak}`;
@@ -228,14 +246,21 @@ class SimpleRuleTester {
             // Analyze useEffect callback
             if (node.arguments.length > 0) {
               const callback = node.arguments[0];
-              this.analyzeUseEffectCallback(callback, memoryLeaks, cleanupActions);
+              this.analyzeUseEffectCallback(
+                callback,
+                memoryLeaks,
+                cleanupActions
+              );
             }
           }
         }
 
         // Check for return statements in useEffect (cleanup functions)
         if (ts.isReturnStatement(node) && node.expression) {
-          if (ts.isArrowFunction(node.expression) || ts.isFunctionExpression(node.expression)) {
+          if (
+            ts.isArrowFunction(node.expression) ||
+            ts.isFunctionExpression(node.expression)
+          ) {
             hasCleanupFunction = true;
             this.analyzeCleanupFunction(node.expression, cleanupActions);
           }
@@ -256,9 +281,11 @@ class SimpleRuleTester {
       });
 
       return hasUseEffect && unmatchedLeaks.length > 0;
-
     } catch (error) {
-      console.warn('AST analysis failed, falling back to pattern matching:', error);
+      console.warn(
+        'AST analysis failed, falling back to pattern matching:',
+        error
+      );
       return this.fallbackPatternMatching(code);
     }
   }
@@ -289,9 +316,11 @@ class SimpleRuleTester {
         const expression = node.expression;
 
         // Check for addEventListener
-        if (ts.isPropertyAccessExpression(expression) &&
+        if (
+          ts.isPropertyAccessExpression(expression) &&
           ts.isIdentifier(expression.name) &&
-          expression.name.text === 'addEventListener') {
+          expression.name.text === 'addEventListener'
+        ) {
           memoryLeaks.add('addEventListener');
         }
 
@@ -310,16 +339,24 @@ class SimpleRuleTester {
       if (ts.isNewExpression(node) && node.expression) {
         if (ts.isIdentifier(node.expression)) {
           const typeName = node.expression.text;
-          if (['EventSource', 'WebSocket', 'AbortController'].includes(typeName)) {
+          if (
+            ['EventSource', 'WebSocket', 'AbortController'].includes(typeName)
+          ) {
             memoryLeaks.add(typeName);
           }
         }
       }
 
       // Check for subscription patterns
-      if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
+      if (
+        ts.isCallExpression(node) &&
+        ts.isPropertyAccessExpression(node.expression)
+      ) {
         const propertyName = node.expression.name;
-        if (ts.isIdentifier(propertyName) && propertyName.text === 'subscribe') {
+        if (
+          ts.isIdentifier(propertyName) &&
+          propertyName.text === 'subscribe'
+        ) {
           memoryLeaks.add('subscribe');
         }
       }
@@ -360,14 +397,19 @@ class SimpleRuleTester {
         const expression = node.expression;
 
         // Check for removeEventListener
-        if (ts.isPropertyAccessExpression(expression) &&
+        if (
+          ts.isPropertyAccessExpression(expression) &&
           ts.isIdentifier(expression.name) &&
-          expression.name.text === 'removeEventListener') {
+          expression.name.text === 'removeEventListener'
+        ) {
           cleanupActions.add('removeEventListener');
         }
 
         // Check for clearInterval
-        if (ts.isIdentifier(expression) && expression.text === 'clearInterval') {
+        if (
+          ts.isIdentifier(expression) &&
+          expression.text === 'clearInterval'
+        ) {
           cleanupActions.add('clearInterval');
         }
 
@@ -377,16 +419,20 @@ class SimpleRuleTester {
         }
 
         // Check for close() calls
-        if (ts.isPropertyAccessExpression(expression) &&
+        if (
+          ts.isPropertyAccessExpression(expression) &&
           ts.isIdentifier(expression.name) &&
-          expression.name.text === 'close') {
+          expression.name.text === 'close'
+        ) {
           cleanupActions.add('close');
         }
 
         // Check for unsubscribe
-        if (ts.isPropertyAccessExpression(expression) &&
+        if (
+          ts.isPropertyAccessExpression(expression) &&
           ts.isIdentifier(expression.name) &&
-          expression.name.text === 'unsubscribe') {
+          expression.name.text === 'unsubscribe'
+        ) {
           cleanupActions.add('unsubscribe');
         }
       }
@@ -402,13 +448,13 @@ class SimpleRuleTester {
    */
   private isMatchingCleanup(leak: string, cleanup: string): boolean {
     const matches: Record<string, string[]> = {
-      'addEventListener': ['removeEventListener'],
-      'setInterval': ['clearInterval'],
-      'setTimeout': ['clearTimeout'],
-      'EventSource': ['close'],
-      'WebSocket': ['close'],
-      'AbortController': ['abort', 'close'],
-      'subscribe': ['unsubscribe'],
+      addEventListener: ['removeEventListener'],
+      setInterval: ['clearInterval'],
+      setTimeout: ['clearTimeout'],
+      EventSource: ['close'],
+      WebSocket: ['close'],
+      AbortController: ['abort', 'close'],
+      subscribe: ['unsubscribe'],
     };
 
     return matches[leak]?.includes(cleanup) || false;
@@ -558,7 +604,10 @@ async function runTests() {
 /**
  * Run additional comprehensive tests for memory leak detection.
  */
-async function runAdditionalTests(): Promise<{ passed: number; failed: number }> {
+async function runAdditionalTests(): Promise<{
+  passed: number;
+  failed: number;
+}> {
   const additionalTestCases = {
     valid: [
       // Complex valid case with multiple cleanups
