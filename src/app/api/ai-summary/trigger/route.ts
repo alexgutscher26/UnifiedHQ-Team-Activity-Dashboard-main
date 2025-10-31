@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * GET endpoint to check if trigger is available
+ * Returns a JSON response indicating the availability of the AI summary trigger.
  */
 export async function GET() {
   return NextResponse.json({
