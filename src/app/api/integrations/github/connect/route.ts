@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Generate GitHub OAuth URL
-    const githubClientId = process.env.GH_CLIENT_ID;
+    const githubClientId = process.env.GITHUB_CLIENT_ID;
     const redirectUri = `${process.env.BETTER_AUTH_URL || 'http://localhost:3000'}/api/integrations/github/callback`;
     const scope = 'read:user repo read:org';
     const state = session.user.id; // Use user ID as state for security

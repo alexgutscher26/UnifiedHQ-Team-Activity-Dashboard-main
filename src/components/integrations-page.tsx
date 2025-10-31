@@ -66,6 +66,35 @@ export function IntegrationsPage() {
       setLastSyncTime(new Date(savedSyncTime));
     }
 
+    // Check for success/error parameters in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    const error = urlParams.get('error');
+
+    if (success === 'github_connected') {
+      toast({
+        title: 'GitHub Connected',
+        description: 'Successfully connected to GitHub integration.',
+      });
+      // Clear URL parameters
+      window.history.replaceState({}, '', '/integrations');
+    } else if (success === 'slack_connected') {
+      toast({
+        title: 'Slack Connected',
+        description: 'Successfully connected to Slack integration.',
+      });
+      // Clear URL parameters
+      window.history.replaceState({}, '', '/integrations');
+    } else if (error) {
+      toast({
+        title: 'Connection Error',
+        description: decodeURIComponent(error),
+        variant: 'destructive',
+      });
+      // Clear URL parameters
+      window.history.replaceState({}, '', '/integrations');
+    }
+
     checkGithubStatus();
     checkSlackStatus();
     fetchStats();
@@ -448,10 +477,10 @@ export function IntegrationsPage() {
       features: ['Commits', 'Pull Requests', 'Issues', 'Repository Events'],
       stats: githubConnected
         ? {
-            repositories: selectedRepos,
-            activities: totalActivities,
-            lastSync: lastSyncTime,
-          }
+          repositories: selectedRepos,
+          activities: totalActivities,
+          lastSync: lastSyncTime,
+        }
         : null,
       action: githubConnected ? (
         <div className='flex flex-col gap-2'>
@@ -522,10 +551,10 @@ export function IntegrationsPage() {
       features: ['Messages', 'Channels', 'Files', 'Reactions'],
       stats: slackConnected
         ? {
-            channels: selectedChannels,
-            activities: 0, // Will be calculated separately
-            lastSync: lastSyncTime,
-          }
+          channels: selectedChannels,
+          activities: 0, // Will be calculated separately
+          lastSync: lastSyncTime,
+        }
         : null,
       action: slackConnected ? (
         <div className='flex flex-col gap-2'>
@@ -843,11 +872,10 @@ export function IntegrationsPage() {
               {integrations.map(integration => (
                 <Card
                   key={integration.id}
-                  className={`relative overflow-hidden transition-all duration-200 hover:shadow-lg ${
-                    integration.connected
+                  className={`relative overflow-hidden transition-all duration-200 hover:shadow-lg ${integration.connected
                       ? 'ring-2 ring-green-200 dark:ring-green-800 bg-green-50/30 dark:bg-green-950/20'
                       : ''
-                  }`}
+                    }`}
                 >
                   {/* Gradient Background */}
                   <div
