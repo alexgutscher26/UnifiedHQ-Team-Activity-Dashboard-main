@@ -126,7 +126,15 @@ export class RateLimiter {
     }
 
     /**
-     * Add request timestamp to Redis sorted set
+     * Add request timestamp to Redis sorted set.
+     *
+     * This function attempts to add a timestamp to a Redis sorted set identified by the given key.
+     * It first adds the timestamp and then sets an expiration time for the key.
+     * If an error occurs during the process, it falls back to storing the request in memory using the addInMemoryRequest method.
+     *
+     * @param key - The key under which the timestamp is stored in Redis.
+     * @param timestamp - The timestamp to be added to the sorted set.
+     * @param ttl - The time-to-live for the key in milliseconds.
      */
     private async addRequest(key: string, timestamp: number, ttl: number): Promise<void> {
         try {
@@ -143,7 +151,11 @@ export class RateLimiter {
     }
 
     /**
-     * Reset rate limit for identifier
+     * Reset rate limit for identifier.
+     *
+     * This function generates a cache key using the provided identifier and attempts to delete the corresponding entry from the Redis cache. If an error occurs during the deletion process, it logs the error to the console. Additionally, it clears the entry from the in-memory store managed by RateLimiter.
+     *
+     * @param {string} identifier - The identifier for which the rate limit is being reset.
      */
     async reset(identifier: string): Promise<void> {
         const key = this.config.keyGenerator!(identifier);
