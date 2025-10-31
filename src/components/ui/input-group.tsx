@@ -60,10 +60,10 @@ const inputGroupAddonVariants = cva(
 );
 
 /**
- * Renders an input group addon component.
+ * Renders an input group addon component that can be clickable or static.
  *
  * This component creates an accessible addon for input groups, allowing for alignment and additional props.
- * It can optionally handle click events to focus on the nearest input element unless the click originated from a button within the group.
+ * It handles click and keydown events to focus on the nearest input element unless the event originated from a button within the group.
  * The alignment can be customized through the `align` prop, and additional class names can be provided via `className`.
  *
  * @param {Object} props - The properties for the component.
