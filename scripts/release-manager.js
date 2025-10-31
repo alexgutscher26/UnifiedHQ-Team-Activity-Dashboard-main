@@ -32,49 +32,45 @@ class ReleaseManager {
       'release-config.yml'
     );
     if (fs.existsSync(configPath)) {
-      try {
-        // For now, return a comprehensive config based on the YAML file
-        // In production, you'd use js-yaml to parse the actual file
-        return {
-          versioning: {
-            strategy: 'semantic',
-            auto_bump: true,
-            bump_files: ['package.json', 'README.md'],
+      // For now, return a comprehensive config based on the YAML file
+      // In production, you'd use js-yaml to parse the actual file
+      return {
+        versioning: {
+          strategy: 'semantic',
+          auto_bump: true,
+          bump_files: ['package.json', 'README.md'],
+        },
+        changelog: {
+          file: 'CHANGELOG.md',
+          format: 'keep-a-changelog',
+        },
+        release_notes: {
+          file: 'RELEASE_NOTES.md',
+        },
+        branches: {
+          main: 'main',
+          develop: 'develop',
+          release_prefix: 'release/',
+          hotfix_prefix: 'hotfix/',
+        },
+        environments: {
+          staging: {
+            branch: 'develop',
+            auto_deploy: true,
+            url: 'https://staging.unifiedhq.com',
           },
-          changelog: {
-            file: 'CHANGELOG.md',
-            format: 'keep-a-changelog',
+          production: {
+            branch: 'main',
+            auto_deploy: false,
+            url: 'https://unifiedhq.com',
           },
-          release_notes: {
-            file: 'RELEASE_NOTES.md',
-          },
-          branches: {
-            main: 'main',
-            develop: 'develop',
-            release_prefix: 'release/',
-            hotfix_prefix: 'hotfix/',
-          },
-          environments: {
-            staging: {
-              branch: 'develop',
-              auto_deploy: true,
-              url: 'https://staging.unifiedhq.com',
-            },
-            production: {
-              branch: 'main',
-              auto_deploy: false,
-              url: 'https://unifiedhq.com',
-            },
-          },
-          artifacts: {
-            build_dir: '.next',
-            include: ['.next/', 'public/', 'package.json', 'bun.lock'],
-            exclude: ['node_modules/', '.git/', '.env*', '*.log'],
-          },
-        };
-      } catch (error) {
-        console.warn(`⚠️ Error loading config: ${error.message}`);
-      }
+        },
+        artifacts: {
+          build_dir: '.next',
+          include: ['.next/', 'public/', 'package.json', 'bun.lock'],
+          exclude: ['node_modules/', '.git/', '.env*', '*.log'],
+        },
+      };
     }
     return this.getDefaultConfig();
   }
