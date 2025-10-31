@@ -1,0 +1,22 @@
+{
+  "enabled": true,
+  "name": "Changelog Generator",
+  "description": "Automatically creates and updates changelog entries in markdown format following semantic versioning (1.0.0, 1.4.0, 1.2.0) when package.json, release files, or version-related files are modified",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "package.json",
+      "CHANGELOG.md",
+      "changelog/*",
+      "scripts/release-manager.js",
+      "src/app/api/*/route.ts",
+      "src/components/**/*.tsx",
+      "src/lib/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A file has been updated that may indicate a new feature, bug fix, or version change. Please analyze the changes and create or update a changelog entry in markdown format. Follow semantic versioning (MAJOR.MINOR.PATCH) and categorize changes as: Added (new features), Changed (changes in existing functionality), Deprecated (soon-to-be removed features), Removed (removed features), Fixed (bug fixes), Security (security improvements). Create the changelog file in the changelog/ directory with proper versioning and formatting suitable for a public changelog website."
+  }
+}

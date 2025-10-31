@@ -1,0 +1,20 @@
+{
+  "enabled": true,
+  "name": "Update Support Knowledge Base",
+  "description": "Automatically updates the customer support knowledge base whenever documentation files, README, or the main knowledge base file are modified",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "docs/*.md",
+      "README.md",
+      "UnifiedHQ_Customer_Support_Knowledge_Base.md",
+      "SECURITY.md",
+      "CONTRIBUTING.md"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Documentation files have been updated. Please review the changes and update the UnifiedHQ_Customer_Support_Knowledge_Base.md file to reflect any new information, procedures, or troubleshooting steps that would be relevant for customer support. Ensure the knowledge base remains comprehensive and up-to-date with the latest product features, security guidelines, and user guidance."
+  }
+}
