@@ -170,6 +170,17 @@ export async function GET(request: NextRequest) {
       // Don't fail the callback if sync fails - user can manually sync later
     }
 
+    // Trigger cache warming for Slack integration
+    try {
+      const { warmCacheOnIntegrationConnect } = await import('@/lib/cache-warming');
+      // Run in background - don't block the redirect
+      warmCacheOnIntegrationConnect(user.id, 'slack', tokenData.access_token).catch(error => {
+        console.error('Background cache warming failed:', error);
+      });
+    } catch (error) {
+      console.error('Failed to import cache warming:', error);
+    }
+
     return NextResponse.redirect(
       `${process.env.BETTER_AUTH_URL || 'http://localhost:3000'}/integrations?success=slack_connected`
     );

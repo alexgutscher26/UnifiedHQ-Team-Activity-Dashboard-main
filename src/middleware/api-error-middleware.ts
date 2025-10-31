@@ -130,44 +130,58 @@ export function logApiResponse(res: NextResponse, req: NextRequest): void {
 /**
  * Checks if the API rate limit has been exceeded for a given request.
  *
- * This function implements a simple in-memory rate limiting mechanism based on the client's IP address.
- * It retrieves the IP from the request headers, maintains a record of request timestamps, and enforces a limit
- * of 100 requests within a 15-minute window. If the limit is reached, it returns false; otherwise, it updates
- * the request log and returns true.
+ * This function implements a Redis-based distributed rate limiting mechanism with fallback to in-memory storage.
+ * It uses sliding window algorithm for accurate rate limiting and supports different rate limit configurations
+ * based on the request path and user authentication status.
  *
  * @param req - The NextRequest object representing the incoming request.
+ * @returns Promise<RateLimitResult> containing rate limit status and metadata.
  */
-export function checkApiRateLimit(req: NextRequest): boolean {
-  // Simple rate limiting based on IP
-  const ip =
-    req.headers.get('x-forwarded-for') ||
-    req.headers.get('x-real-ip') ||
-    'unknown';
-  const key = `rate_limit_${ip}`;
+export async function checkApiRateLimit(req: NextRequest): Promise<{
+  allowed: boolean;
+  limit: number;
+  remaining: number;
+  resetTime: number;
+  retryAfter?: number;
+}> {
+  const { RateLimiters, FallbackRateLimiters, getClientIdentifier } = await import('@/lib/rate-limiter');
 
-  // TODO: This is a simple in-memory rate limiter
-  // In production, use Redis or a proper rate limiting service
-  if (!global.rateLimitStore) {
-    global.rateLimitStore = new Map();
+  const identifier = getClientIdentifier(req);
+  const url = new URL(req.url);
+  const pathname = url.pathname;
+
+  try {
+    // Choose appropriate rate limiter based on endpoint
+    let limiter = RateLimiters.API;
+
+    if (pathname.includes('/auth/')) {
+      limiter = RateLimiters.AUTH;
+    } else if (pathname.includes('/sync') || pathname.includes('/integrations/')) {
+      limiter = RateLimiters.INTEGRATION_SYNC;
+    } else if (pathname.includes('/ai-summary') || pathname.includes('/openrouter')) {
+      limiter = RateLimiters.AI_GENERATION;
+    } else if (pathname.includes('/upload')) {
+      limiter = RateLimiters.UPLOAD;
+    }
+
+    // Try Redis-based rate limiter first
+    const result = await limiter.checkLimit(identifier);
+    return result;
+
+  } catch (error) {
+    console.warn('Redis rate limiter failed, using fallback:', error);
+
+    // Fallback to in-memory rate limiter
+    let fallbackLimiter = FallbackRateLimiters.API;
+
+    if (pathname.includes('/auth/')) {
+      fallbackLimiter = FallbackRateLimiters.AUTH;
+    } else if (pathname.includes('/sync') || pathname.includes('/integrations/')) {
+      fallbackLimiter = FallbackRateLimiters.STRICT;
+    }
+
+    return fallbackLimiter.checkLimit(identifier);
   }
-
-  const now = Date.now();
-  const windowMs = 15 * 60 * 1000; // 15 minutes
-  const limit = 100; // 100 requests per window
-
-  const requests = global.rateLimitStore.get(key) || [];
-  const recentRequests = requests.filter(
-    (timestamp: number) => timestamp > now - windowMs
-  );
-
-  if (recentRequests.length >= limit) {
-    return false;
-  }
-
-  recentRequests.push(now);
-  global.rateLimitStore.set(key, recentRequests);
-
-  return true;
 }
 
 // CORS middleware
@@ -222,12 +236,66 @@ export function addSecurityHeaders(res: NextResponse): NextResponse {
  * Adds a unique request ID to the response headers.
  */
 export function addRequestId(res: NextResponse): NextResponse {
-  const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   res.headers.set('X-Request-ID', requestId);
   return res;
 }
 
-// Global rate limit store type
-declare global {
-  var rateLimitStore: Map<string, number[]> | undefined;
+// Rate limit response middleware
+/**
+ * Adds rate limit headers to the response and handles rate limit exceeded cases.
+ */
+export async function handleRateLimit(req: NextRequest): Promise<NextResponse | null> {
+  const rateLimitResult = await checkApiRateLimit(req);
+
+  if (!rateLimitResult.allowed) {
+    const response = NextResponse.json(
+      {
+        success: false,
+        error: {
+          type: 'RATE_LIMIT_EXCEEDED',
+          message: 'Too many requests. Please try again later.',
+          code: 'RATE_LIMIT_EXCEEDED',
+          statusCode: 429,
+          retryAfter: rateLimitResult.retryAfter,
+        },
+      },
+      { status: 429 }
+    );
+
+    // Add rate limit headers
+    response.headers.set('X-RateLimit-Limit', rateLimitResult.limit.toString());
+    response.headers.set('X-RateLimit-Remaining', '0');
+    response.headers.set('X-RateLimit-Reset', rateLimitResult.resetTime.toString());
+
+    if (rateLimitResult.retryAfter) {
+      response.headers.set('Retry-After', rateLimitResult.retryAfter.toString());
+    }
+
+    return response;
+  }
+
+  return null; // Allow request to proceed
 }
+
+// Add rate limit headers to successful responses
+/**
+ * Adds rate limit headers to successful API responses.
+ */
+export async function addRateLimitHeaders(res: NextResponse, req: NextRequest): Promise<NextResponse> {
+  try {
+    const rateLimitResult = await checkApiRateLimit(req);
+
+    res.headers.set('X-RateLimit-Limit', rateLimitResult.limit.toString());
+    res.headers.set('X-RateLimit-Remaining', rateLimitResult.remaining.toString());
+    res.headers.set('X-RateLimit-Reset', rateLimitResult.resetTime.toString());
+
+    return res;
+  } catch (error) {
+    console.error('Error adding rate limit headers:', error);
+    return res;
+  }
+}
+
+// Export rate limiting utilities for use in API routes
+export { RateLimiters, getClientIdentifier, addRateLimitHeaders as addRateLimitHeadersToResponse } from '@/lib/rate-limiter';

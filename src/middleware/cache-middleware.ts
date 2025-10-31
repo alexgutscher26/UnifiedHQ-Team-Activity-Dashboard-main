@@ -510,9 +510,10 @@ export class CacheWarmer {
   static async warmEndpoints(
     endpoints: Array<{
       url: string;
+      headers?: Record<string, string>;
     }>
   ): Promise<void> {
-    const promises = endpoints.map(async ({ url }) => {
+    const promises = endpoints.map(async ({ url, headers = {} }) => {
       if (this.warmingQueue.has(url)) {
         return; // Already warming this endpoint
       }
@@ -520,11 +521,25 @@ export class CacheWarmer {
       this.warmingQueue.add(url);
 
       try {
-        // TODO: This would need to be called with the actual handler
-        // In practice, this would be integrated with the route handlers
-        console.log(`Warming cache for: ${url}`);
+        console.log(`🔥 Warming cache for: ${url}`);
+
+        // Make actual HTTP request to warm the cache
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'User-Agent': 'UnifiedHQ-CacheWarmer/1.0',
+            'X-Cache-Warmer': 'true',
+            ...headers,
+          },
+        });
+
+        if (response.ok) {
+          console.log(`✅ Cache warmed successfully for: ${url}`);
+        } else {
+          console.warn(`⚠️ Cache warming failed for ${url}: ${response.status} ${response.statusText}`);
+        }
       } catch (error) {
-        console.error(`Failed to warm cache for ${url}:`, error);
+        console.error(`❌ Failed to warm cache for ${url}:`, error);
       } finally {
         this.warmingQueue.delete(url);
       }
@@ -536,29 +551,48 @@ export class CacheWarmer {
   /**
    * Warms cache for user-specific data by fetching from predefined endpoints.
    */
-  static async warmUserCache(userId: string): Promise<void> {
+  static async warmUserCache(userId: string, authToken?: string): Promise<void> {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+    // Prepare headers for authenticated requests
+    const headers: Record<string, string> = {};
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+
     const endpoints = [
-      { url: `${baseUrl}/api/user/profile` },
-      { url: `${baseUrl}/api/github/repos` },
-      { url: `${baseUrl}/api/slack/channels` },
-      { url: `${baseUrl}/api/slack/stats` },
+      { url: `${baseUrl}/api/integrations/github/repositories`, headers },
+      { url: `${baseUrl}/api/integrations/slack/channels`, headers },
+      { url: `${baseUrl}/api/integrations/slack/sync`, headers },
+      { url: `${baseUrl}/api/ai-summary?timeRange=24h&limit=1`, headers },
+      { url: `${baseUrl}/api/activities`, headers },
     ];
 
+    console.log(`🔥 Warming user cache for userId: ${userId}`);
     await this.warmEndpoints(endpoints);
   }
 
   /**
    * Warms the cache for dashboard data by fetching from predefined endpoints.
    */
-  static async warmDashboardCache(): Promise<void> {
+  static async warmDashboardCache(authToken?: string): Promise<void> {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+    // Prepare headers for authenticated requests
+    const headers: Record<string, string> = {};
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+
     const endpoints = [
-      { url: `${baseUrl}/api/dashboard/summary` },
-      { url: `${baseUrl}/api/github/activity` },
-      { url: `${baseUrl}/api/slack/activity` },
+      { url: `${baseUrl}/api/activities`, headers },
+      { url: `${baseUrl}/api/ai-summary?timeRange=24h&limit=3`, headers },
+      { url: `${baseUrl}/api/team-stats`, headers },
+      { url: `${baseUrl}/api/integrations/github/sync`, headers },
+      { url: `${baseUrl}/api/integrations/slack/sync`, headers },
     ];
 
+    console.log('🔥 Warming dashboard cache');
     await this.warmEndpoints(endpoints);
   }
 }

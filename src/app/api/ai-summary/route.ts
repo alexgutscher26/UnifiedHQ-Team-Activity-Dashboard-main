@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { PrismaClient } from '@/generated/prisma';
 import { AISummaryService, AISummaryData } from '@/lib/ai-summary-service';
 import { Activity } from '@/types/components';
+import { withCustomRateLimit } from '@/middleware/api-middleware';
 
 const prisma = new PrismaClient();
 
@@ -189,7 +190,7 @@ function calculateTimeSpread(activities: any[]): string {
  * @returns A JSON response containing the summaries and additional metadata.
  * @throws Error If there is an issue fetching AI summaries or if the user is not found.
  */
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
       headers: request.headers,
@@ -266,7 +267,7 @@ export async function GET(request: NextRequest) {
     // Check if it's been 24 hours since last summary
     const hoursSinceLastSummary = mostRecentSummary
       ? (now.getTime() - new Date(mostRecentSummary.generatedAt).getTime()) /
-        (60 * 60 * 1000)
+      (60 * 60 * 1000)
       : 24; // If no summaries, consider it as 24+ hours
 
     // Auto-generate summary if it's been 24+ hours since last summary OR if no summaries exist
@@ -500,7 +501,7 @@ export async function GET(request: NextRequest) {
  * @returns A JSON response containing the generated summary or an error message.
  * @throws Error If an error occurs during the summary generation process.
  */
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
       headers: request.headers,
@@ -682,4 +683,13 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// Export rate-limited versions
+export async function GET(request: NextRequest) {
+  return withCustomRateLimit(request, handleGET, 'AI_GENERATION');
+}
+
+export async function POST(request: NextRequest) {
+  return withCustomRateLimit(request, handlePOST, 'AI_GENERATION');
 }
