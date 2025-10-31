@@ -12,21 +12,21 @@ import { auth } from '@/lib/auth';
  */
 export async function GET(request: NextRequest) {
   try {
-    console.log('[SSE] Received connection request');
+    // console.log('[SSE] Received connection request');
 
     // Try to get session from cookies first
     const session = await auth.api.getSession({
       headers: request.headers,
     });
 
-    console.log('[SSE] Session check:', {
-      hasSession: Boolean(session),
-      hasUser: Boolean(session?.user),
-      userId: session?.user?.id,
-    });
+    //  console.log('[SSE] Session check:', {
+    //   hasSession: Boolean(session),
+    //   hasUser: Boolean(session?.user),
+    //   userId: session?.user?.id,
+    // });
 
     if (!session?.user) {
-      console.log('[SSE] Unauthorized access attempt - session not found');
+      // console.log('[SSE] Unauthorized access attempt - session not found');
       // Return SSE error message instead of JSON
       return new Response(
         `data: ${JSON.stringify({
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     }
 
     const userId = session.user.id;
-    console.log(`[SSE] User ${userId} connecting to live updates`);
+    // console.log(`[SSE] User ${userId} connecting to live updates`);
 
     // Create a readable stream for SSE
     const stream = new ReadableStream({

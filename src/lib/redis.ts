@@ -223,6 +223,34 @@ export class RedisCache {
   }
 
   /**
+   * Get Redis client instance
+   * Returns a Promise that resolves to the Redis client or null if unavailable
+   */
+  static async getClient(): Promise<RedisClientType | null> {
+    try {
+      // Skip Redis during build phase
+      if (process.env.NEXT_PHASE === 'phase-production-build') {
+        return null;
+      }
+
+      // If Redis is not connected, try to connect
+      if (!redis.isOpen && !redis.isReady) {
+        await redis.connect();
+      }
+
+      // Return the client if it's ready
+      if (redis.isReady || redis.isOpen) {
+        return redis;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error getting Redis client:', error);
+      return null;
+    }
+  }
+
+  /**
    * Set a value in cache with TTL
    */
   static async set(key: string, value: any, ttl?: number): Promise<boolean> {
@@ -389,5 +417,73 @@ export class RedisCache {
   static async invalidateByTag(tag: string): Promise<number> {
     const pattern = `*:${tag}:*`;
     return this.deleteByPattern(pattern);
+  }
+
+  /**
+   * Add member to sorted set with score
+   */
+  static async zadd(key: string, score: number, member: string): Promise<number> {
+    try {
+      if (!this.isRedisAvailable()) {
+        console.warn('Redis not available, skipping zadd');
+        return 0;
+      }
+
+      return await redis.zAdd(key, { score, value: member });
+    } catch (error) {
+      console.error('Redis zadd error:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Get members from sorted set by score range
+   */
+  static async zrangebyscore(key: string, min: number, max: number): Promise<string[]> {
+    try {
+      if (!this.isRedisAvailable()) {
+        console.warn('Redis not available, returning empty array for zrangebyscore');
+        return [];
+      }
+
+      return await redis.zRangeByScore(key, min, max);
+    } catch (error) {
+      console.error('Redis zrangebyscore error:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Remove members from sorted set by score range
+   */
+  static async zremrangebyscore(key: string, min: number, max: number): Promise<number> {
+    try {
+      if (!this.isRedisAvailable()) {
+        console.warn('Redis not available, skipping zremrangebyscore');
+        return 0;
+      }
+
+      return await redis.zRemRangeByScore(key, min, max);
+    } catch (error) {
+      console.error('Redis zremrangebyscore error:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Get count of members in sorted set by score range
+   */
+  static async zcount(key: string, min: number, max: number): Promise<number> {
+    try {
+      if (!this.isRedisAvailable()) {
+        console.warn('Redis not available, returning 0 for zcount');
+        return 0;
+      }
+
+      return await redis.zCount(key, min, max);
+    } catch (error) {
+      console.error('Redis zcount error:', error);
+      return 0;
+    }
   }
 }

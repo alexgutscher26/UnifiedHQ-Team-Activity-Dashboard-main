@@ -9,7 +9,7 @@ import { auth } from '@/lib/auth';
  */
 export async function GET(request: NextRequest) {
   try {
-    console.log('[Offline Sync SSE] Received connection request');
+    // console.log('[Offline Sync SSE] Received connection request');
 
     // Check authentication
     const session = await auth.api.getSession({
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     }
 
     const userId = session.user.id;
-    console.log(`[Offline Sync SSE] User ${userId} connecting to sync events`);
+    // console.log(`[Offline Sync SSE] User ${userId} connecting to sync events`);
 
     // Create a readable stream for SSE
     const stream = new ReadableStream({

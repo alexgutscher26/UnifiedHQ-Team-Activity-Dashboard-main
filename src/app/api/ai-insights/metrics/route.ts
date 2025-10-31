@@ -109,64 +109,12 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// TODO: Dont use mock
-
 function calculateMetrics(
   currentActivities: any[],
   previousActivities: any[],
   days: number
 ): ProductivityMetrics {
-  // Commit frequency
-  const currentCommits = currentActivities.filter(
-    a => a.source === 'github' && a.metadata?.eventType === 'commit'
-  ).length;
-  const previousCommits = previousActivities.filter(
-    a => a.source === 'github' && a.metadata?.eventType === 'commit'
-  ).length;
-
-  const currentCommitFreq = currentCommits / days;
-  const previousCommitFreq = previousCommits / days;
-
-  // Code review time (mock calculation based on PR activity)
-  const currentPRs = currentActivities.filter(
-    a => a.source === 'github' && a.metadata?.eventType === 'pull_request'
-  ).length;
-  const avgReviewTime = currentPRs > 0 ? 2.3 : 0; // Mock average
-
-  // Issue resolution time (mock calculation)
-  const currentIssues = currentActivities.filter(
-    a => a.source === 'github' && a.metadata?.eventType === 'issue'
-  ).length;
-  const avgResolutionTime = currentIssues > 0 ? 1.8 : 0; // Mock average
-
-  // Collaboration score (based on activity diversity)
-  const githubActivity = currentActivities.filter(
-    a => a.source === 'github'
-  ).length;
-  const slackActivity = currentActivities.filter(
-    a => a.source === 'slack'
-  ).length;
-  const totalActivity = currentActivities.length;
-
-  let collaborationScore = 0;
-  if (totalActivity > 0) {
-    const diversity = githubActivity > 0 && slackActivity > 0 ? 1 : 0.5;
-    const activityLevel = Math.min(totalActivity / (days * 5), 1); // Normalize to max 5 activities per day
-    collaborationScore = Math.round(diversity * activityLevel * 100);
-  }
-
-  // Calculate trends
-  /**
-   * Determines the trend of a value compared to its previous value.
-   *
-   * This function calculates the percentage change between the current and previous values.
-   * It returns 'up' if the change exceeds a 10% increase, 'down' for a 10% decrease,
-   * and 'stable' if the change is within the threshold. The function handles cases
-   * where the previous value is zero to avoid division by zero errors.
-   *
-   * @param current - The current value to compare.
-   * @param previous - The previous value to compare against.
-   */
+  // Helper function to calculate trends
   const getTrend = (
     current: number,
     previous: number
@@ -179,6 +127,148 @@ function calculateMetrics(
     return 'stable';
   };
 
+  // Commit frequency calculation
+  const currentCommits = currentActivities.filter(
+    a => a.source === 'github' && a.metadata?.eventType === 'commit'
+  ).length;
+  const previousCommits = previousActivities.filter(
+    a => a.source === 'github' && a.metadata?.eventType === 'commit'
+  ).length;
+
+  const currentCommitFreq = currentCommits / days;
+  const previousCommitFreq = previousCommits / days;
+
+  // Code review time calculation based on PR lifecycle
+  const currentPRs = currentActivities.filter(
+    a => a.source === 'github' && a.metadata?.eventType === 'pull_request'
+  );
+
+  let avgReviewTime = 0;
+  let previousAvgReviewTime = 0;
+
+  if (currentPRs.length > 0) {
+    // Calculate average time between PR creation and merge/close
+    const reviewTimes = currentPRs
+      .filter(pr => pr.metadata?.action === 'closed' && pr.metadata?.merged)
+      .map(pr => {
+        const createdAt = new Date(pr.metadata?.created_at || pr.timestamp);
+        const closedAt = new Date(pr.metadata?.closed_at || pr.timestamp);
+        return (closedAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24); // Days
+      })
+      .filter(time => time > 0 && time < 30); // Filter out invalid times
+
+    avgReviewTime = reviewTimes.length > 0
+      ? reviewTimes.reduce((sum, time) => sum + time, 0) / reviewTimes.length
+      : 0;
+  }
+
+  // Calculate previous period review time
+  const previousPRs = previousActivities.filter(
+    a => a.source === 'github' && a.metadata?.eventType === 'pull_request'
+  );
+
+  if (previousPRs.length > 0) {
+    const previousReviewTimes = previousPRs
+      .filter(pr => pr.metadata?.action === 'closed' && pr.metadata?.merged)
+      .map(pr => {
+        const createdAt = new Date(pr.metadata?.created_at || pr.timestamp);
+        const closedAt = new Date(pr.metadata?.closed_at || pr.timestamp);
+        return (closedAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+      })
+      .filter(time => time > 0 && time < 30);
+
+    previousAvgReviewTime = previousReviewTimes.length > 0
+      ? previousReviewTimes.reduce((sum, time) => sum + time, 0) / previousReviewTimes.length
+      : 0;
+  }
+
+  // Issue resolution time calculation
+  const currentIssues = currentActivities.filter(
+    a => a.source === 'github' && a.metadata?.eventType === 'issue'
+  );
+
+  let avgResolutionTime = 0;
+  let previousAvgResolutionTime = 0;
+
+  if (currentIssues.length > 0) {
+    const resolutionTimes = currentIssues
+      .filter(issue => issue.metadata?.action === 'closed')
+      .map(issue => {
+        const createdAt = new Date(issue.metadata?.created_at || issue.timestamp);
+        const closedAt = new Date(issue.metadata?.closed_at || issue.timestamp);
+        return (closedAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24); // Days
+      })
+      .filter(time => time > 0 && time < 365); // Filter out invalid times
+
+    avgResolutionTime = resolutionTimes.length > 0
+      ? resolutionTimes.reduce((sum, time) => sum + time, 0) / resolutionTimes.length
+      : 0;
+  }
+
+  // Calculate previous period resolution time
+  const previousIssues = previousActivities.filter(
+    a => a.source === 'github' && a.metadata?.eventType === 'issue'
+  );
+
+  if (previousIssues.length > 0) {
+    const previousResolutionTimes = previousIssues
+      .filter(issue => issue.metadata?.action === 'closed')
+      .map(issue => {
+        const createdAt = new Date(issue.metadata?.created_at || issue.timestamp);
+        const closedAt = new Date(issue.metadata?.closed_at || issue.timestamp);
+        return (closedAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+      })
+      .filter(time => time > 0 && time < 365);
+
+    previousAvgResolutionTime = previousResolutionTimes.length > 0
+      ? previousResolutionTimes.reduce((sum, time) => sum + time, 0) / previousResolutionTimes.length
+      : 0;
+  }
+
+  // Collaboration score calculation based on activity patterns
+  const githubActivity = currentActivities.filter(a => a.source === 'github').length;
+  const slackActivity = currentActivities.filter(a => a.source === 'slack').length;
+  const totalActivity = currentActivities.length;
+
+  // Calculate previous collaboration score for trend
+  const previousGithubActivity = previousActivities.filter(a => a.source === 'github').length;
+  const previousSlackActivity = previousActivities.filter(a => a.source === 'slack').length;
+  const previousTotalActivity = previousActivities.length;
+
+  let collaborationScore = 0;
+  let previousCollaborationScore = 0;
+
+  if (totalActivity > 0) {
+    // Score based on activity diversity and engagement
+    const platformDiversity = (githubActivity > 0 ? 1 : 0) + (slackActivity > 0 ? 1 : 0);
+    const activityBalance = githubActivity > 0 && slackActivity > 0
+      ? 1 - Math.abs(githubActivity - slackActivity) / Math.max(githubActivity, slackActivity)
+      : 0.5;
+
+    const activityLevel = Math.min(totalActivity / (days * 3), 1); // Normalize to max 3 activities per day
+
+    collaborationScore = Math.round(
+      (platformDiversity / 2) * 0.4 + // Platform diversity (40%)
+      activityBalance * 0.3 + // Activity balance (30%)
+      activityLevel * 0.3 // Activity level (30%)
+    ) * 100;
+  }
+
+  if (previousTotalActivity > 0) {
+    const prevPlatformDiversity = (previousGithubActivity > 0 ? 1 : 0) + (previousSlackActivity > 0 ? 1 : 0);
+    const prevActivityBalance = previousGithubActivity > 0 && previousSlackActivity > 0
+      ? 1 - Math.abs(previousGithubActivity - previousSlackActivity) / Math.max(previousGithubActivity, previousSlackActivity)
+      : 0.5;
+
+    const prevActivityLevel = Math.min(previousTotalActivity / (days * 3), 1);
+
+    previousCollaborationScore = Math.round(
+      (prevPlatformDiversity / 2) * 0.4 +
+      prevActivityBalance * 0.3 +
+      prevActivityLevel * 0.3
+    ) * 100;
+  }
+
   return {
     commitFrequency: {
       current: Math.round(currentCommitFreq * 10) / 10,
@@ -186,16 +276,16 @@ function calculateMetrics(
       trend: getTrend(currentCommitFreq, previousCommitFreq),
     },
     codeReviewTime: {
-      average: avgReviewTime,
-      trend: 'stable', // Mock trend
+      average: Math.round(avgReviewTime * 10) / 10,
+      trend: getTrend(avgReviewTime, previousAvgReviewTime),
     },
     issueResolutionTime: {
-      average: avgResolutionTime,
-      trend: 'stable', // Mock trend
+      average: Math.round(avgResolutionTime * 10) / 10,
+      trend: getTrend(avgResolutionTime, previousAvgResolutionTime),
     },
     collaborationScore: {
       score: collaborationScore,
-      trend: getTrend(collaborationScore, Math.max(collaborationScore - 10, 0)), // Mock comparison
+      trend: getTrend(collaborationScore, previousCollaborationScore),
     },
   };
 }

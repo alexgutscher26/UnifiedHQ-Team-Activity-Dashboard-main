@@ -90,27 +90,39 @@ export class RateLimiter {
         windowEnd: number
     ): Promise<number[]> {
         try {
-            // Use Redis ZRANGEBYSCORE to get requests in time window
-            const requests = await RedisCache.getClient().then(async (client) => {
-                if (!client) return [];
+            // Remove expired requests
+            await RedisCache.zremrangebyscore(key, 0, windowStart);
 
-                // Remove expired requests
-                await client.zremrangebyscore(key, 0, windowStart);
+            // Get current requests in window
+            const results = await RedisCache.zrangebyscore(key, windowStart, windowEnd);
 
-                // Get current requests in window
-                const results = await client.zrangebyscore(key, windowStart, windowEnd);
+            // Set expiration for the key
+            await RedisCache.expire(key, Math.ceil(this.config.windowMs / 1000));
 
-                // Set expiration for the key
-                await client.expire(key, Math.ceil(this.config.windowMs / 1000));
-
-                return results.map(Number);
-            });
-
-            return requests || [];
+            return results.map(Number);
         } catch (error) {
             console.error('Error getting requests from Redis:', error);
-            return [];
+            // Fallback to in-memory storage (less reliable but prevents errors)
+            return this.getInMemoryRequests(key, windowStart, windowEnd);
         }
+    }
+
+    // In-memory fallback for when Redis is unavailable
+    private static memoryStore = new Map<string, number[]>();
+
+    private getInMemoryRequests(key: string, windowStart: number, windowEnd: number): number[] {
+        const requests = RateLimiter.memoryStore.get(key) || [];
+        // Filter requests within the time window
+        const validRequests = requests.filter(timestamp => timestamp >= windowStart && timestamp <= windowEnd);
+        // Update the store with valid requests only
+        RateLimiter.memoryStore.set(key, validRequests);
+        return validRequests;
+    }
+
+    private addInMemoryRequest(key: string, timestamp: number): void {
+        const requests = RateLimiter.memoryStore.get(key) || [];
+        requests.push(timestamp);
+        RateLimiter.memoryStore.set(key, requests);
     }
 
     /**
@@ -118,17 +130,15 @@ export class RateLimiter {
      */
     private async addRequest(key: string, timestamp: number, ttl: number): Promise<void> {
         try {
-            await RedisCache.getClient().then(async (client) => {
-                if (!client) return;
+            // Add timestamp to sorted set
+            await RedisCache.zadd(key, timestamp, timestamp.toString());
 
-                // Add timestamp to sorted set
-                await client.zadd(key, timestamp, timestamp.toString());
-
-                // Set expiration
-                await client.expire(key, Math.ceil(ttl / 1000));
-            });
+            // Set expiration
+            await RedisCache.expire(key, Math.ceil(ttl / 1000));
         } catch (error) {
             console.error('Error adding request to Redis:', error);
+            // Fallback to in-memory storage
+            this.addInMemoryRequest(key, timestamp);
         }
     }
 
@@ -138,14 +148,12 @@ export class RateLimiter {
     async reset(identifier: string): Promise<void> {
         const key = this.config.keyGenerator!(identifier);
         try {
-            await RedisCache.getClient().then(async (client) => {
-                if (client) {
-                    await client.del(key);
-                }
-            });
+            await RedisCache.del(key);
         } catch (error) {
             console.error('Error resetting rate limit:', error);
         }
+        // Also clear from in-memory store
+        RateLimiter.memoryStore.delete(key);
     }
 }
 
