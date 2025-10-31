@@ -6,7 +6,7 @@
   "scripts": {
     "build": "next build",
     "dev": "TURBOPACK=0 next dev",
-    "lint": "next lint",
+    "lint": "eslint .",
     "start": "next start",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -162,7 +162,6 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.37.0",
     "@next/bundle-analyzer": "^16.0.1",
     "@tailwindcss/postcss": "^4.1.9",
