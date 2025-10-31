@@ -52,9 +52,14 @@ export function ServiceWorkerProvider({
   const [pendingRegistration, setPendingRegistration] =
     useState<ServiceWorkerRegistration | null>(null);
 
+  // Completely disable service worker if environment variable is set
+  const isServiceWorkerDisabled = process.env.NEXT_PUBLIC_DISABLE_SW === 'true';
+
   const serviceWorker = useServiceWorker({
-    autoRegister: true,
+    autoRegister: !isServiceWorkerDisabled,
     onUpdateAvailable: registration => {
+      if (isServiceWorkerDisabled) return;
+
       console.log('[SW Provider] Update available');
       setPendingRegistration(registration);
 
@@ -63,6 +68,8 @@ export function ServiceWorkerProvider({
       }
     },
     onUpdateReady: () => {
+      if (isServiceWorkerDisabled) return;
+
       console.log('[SW Provider] Update ready');
 
       if (enableUpdatePrompts) {
@@ -72,6 +79,8 @@ export function ServiceWorkerProvider({
       }
     },
     onError: error => {
+      if (isServiceWorkerDisabled) return;
+
       console.error('[SW Provider] Service worker error:', error);
 
       if (enableErrorToasts) {

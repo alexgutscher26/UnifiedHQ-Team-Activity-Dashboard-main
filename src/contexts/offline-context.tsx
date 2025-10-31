@@ -104,13 +104,16 @@ export function OfflineProvider({
   ]);
 
   const serviceWorker = useServiceWorkerContext();
+  const isServiceWorkerDisabled = process.env.NEXT_PUBLIC_DISABLE_SW === 'true';
 
   // Load cached pages from service worker
   useEffect(() => {
+    if (isServiceWorkerDisabled) return;
+
     if (serviceWorker.isActive) {
       loadCachedPages();
     }
-  }, [serviceWorker.isActive]);
+  }, [isServiceWorkerDisabled, serviceWorker.isActive]);
 
   // Load queued actions count (this would typically come from IndexedDB)
   useEffect(() => {
@@ -189,7 +192,9 @@ export function OfflineProvider({
   const clearOfflineData = useCallback(async () => {
     try {
       // Clear service worker caches
-      await serviceWorker.clearCache();
+      if (!isServiceWorkerDisabled) {
+        await serviceWorker.clearCache();
+      }
 
       // Clear local storage
       localStorage.removeItem('offline-queued-actions');
@@ -216,7 +221,7 @@ export function OfflineProvider({
         });
       }
     }
-  }, [serviceWorker, enableNotifications]);
+  }, [isServiceWorkerDisabled, serviceWorker, enableNotifications]);
 
   // Auto-retry sync when coming back online
   useEffect(() => {

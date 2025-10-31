@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { AppSidebar } from '@/components/app-sidebar';
 import { SiteHeader } from '@/components/site-header';
 import { IntegrationsPage } from '@/components/integrations-page';
+import { ErrorBoundary } from '@/components/error-boundary';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { getCurrentUser } from '@/lib/get-user';
 
@@ -26,7 +27,9 @@ export default async function Page() {
       <AppSidebar variant='inset' user={user} />
       <SidebarInset>
         <SiteHeader />
-        <IntegrationsPage />
+        <ErrorBoundary>
+          <IntegrationsPage />
+        </ErrorBoundary>
       </SidebarInset>
     </SidebarProvider>
   );

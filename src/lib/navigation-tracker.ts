@@ -31,7 +31,10 @@ class NavigationTracker {
 
     constructor() {
         this.sessionId = this.generateSessionId()
-        this.initializeServiceWorker()
+        // Don't initialize if service worker is disabled
+        if (process.env.NEXT_PUBLIC_DISABLE_SW !== 'true') {
+            this.initializeServiceWorker()
+        }
     }
 
     private generateSessionId(): string {
@@ -39,6 +42,11 @@ class NavigationTracker {
     }
 
     private async initializeServiceWorker(): Promise<void> {
+        // Don't initialize if service worker is disabled
+        if (process.env.NEXT_PUBLIC_DISABLE_SW === 'true') {
+            return
+        }
+
         if ('serviceWorker' in navigator) {
             try {
                 const registration = await navigator.serviceWorker.ready

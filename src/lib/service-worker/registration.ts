@@ -22,6 +22,7 @@ export interface ServiceWorkerCallbacks {
 class ServiceWorkerManager {
   private registration: ServiceWorkerRegistration | null = null;
   private callbacks: ServiceWorkerCallbacks = {};
+  private isDisabled: boolean = false;
   private state: ServiceWorkerState = {
     isSupported: false,
     isRegistered: false,
@@ -33,6 +34,14 @@ class ServiceWorkerManager {
   };
 
   constructor() {
+    // Check if service worker is disabled and set flag
+    this.isDisabled = process.env.NEXT_PUBLIC_DISABLE_SW === 'true';
+
+    if (this.isDisabled) {
+      console.log('[SW Manager] Service worker permanently disabled via environment variable');
+      this.state.isSupported = false;
+      return;
+    }
     this.state.isSupported = 'serviceWorker' in navigator;
   }
 
@@ -42,6 +51,12 @@ class ServiceWorkerManager {
   async register(
     callbacks: ServiceWorkerCallbacks = {}
   ): Promise<ServiceWorkerState> {
+    // Check if service worker is disabled using instance flag
+    if (this.isDisabled) {
+      // Don't log repeatedly - just return silently
+      return this.state;
+    }
+
     this.callbacks = callbacks;
 
     if (!this.state.isSupported) {
@@ -53,13 +68,6 @@ class ServiceWorkerManager {
     }
 
     try {
-      // Check if service worker is disabled via environment variable
-      if (process.env.NEXT_PUBLIC_DISABLE_SW === 'true') {
-        console.log(
-          '[SW Manager] Service worker disabled via environment variable'
-        );
-        return;
-      }
 
       console.log('[SW Manager] Registering service worker...');
 
@@ -90,6 +98,10 @@ class ServiceWorkerManager {
    * Unregister the service worker
    */
   async unregister(): Promise<boolean> {
+    if (this.isDisabled) {
+      return false;
+    }
+
     if (!this.registration) {
       return false;
     }
@@ -114,6 +126,11 @@ class ServiceWorkerManager {
    * Update the service worker
    */
   async update(): Promise<void> {
+    // Don't update if service worker is disabled
+    if (this.isDisabled) {
+      return;
+    }
+
     if (!this.registration) {
       throw new Error('Service worker is not registered');
     }
@@ -132,6 +149,10 @@ class ServiceWorkerManager {
    * Skip waiting and activate the new service worker
    */
   async skipWaiting(): Promise<void> {
+    if (this.isDisabled) {
+      return;
+    }
+
     if (!this.registration?.waiting) {
       throw new Error('No waiting service worker found');
     }
@@ -177,6 +198,10 @@ class ServiceWorkerManager {
    * Get the current service worker version
    */
   async getVersion(): Promise<string | null> {
+    if (this.isDisabled) {
+      return null;
+    }
+
     if (!this.registration?.active) {
       return null;
     }
@@ -201,6 +226,10 @@ class ServiceWorkerManager {
    * Clear service worker caches
    */
   async clearCache(cacheName?: string): Promise<boolean> {
+    if (this.isDisabled) {
+      return true; // Return success for disabled state
+    }
+
     if (!this.registration?.active) {
       throw new Error('No active service worker found');
     }
@@ -230,6 +259,10 @@ class ServiceWorkerManager {
    * Get the current state
    */
   getState(): ServiceWorkerState {
+    // If service worker is disabled, return the disabled state
+    if (this.isDisabled) {
+      return { ...this.state };
+    }
     return { ...this.state };
   }
 
@@ -332,7 +365,7 @@ class ServiceWorkerManager {
 // Export singleton instance
 export const serviceWorkerManager = new ServiceWorkerManager();
 
-// Convenience functions
+// ✅ FIXED: Convenience functions with proper class scope preservation
 export const registerServiceWorker = (callbacks?: ServiceWorkerCallbacks) =>
   serviceWorkerManager.register(callbacks);
 

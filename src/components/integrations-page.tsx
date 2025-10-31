@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -60,9 +60,11 @@ export function IntegrationsPage() {
 
   // Check connection status on mount
   useEffect(() => {
+    let isMounted = true;
+
     // Load lastSyncTime from localStorage
     const savedSyncTime = localStorage.getItem('lastSyncTime');
-    if (savedSyncTime) {
+    if (savedSyncTime && isMounted) {
       setLastSyncTime(new Date(savedSyncTime));
     }
 
@@ -71,21 +73,21 @@ export function IntegrationsPage() {
     const success = urlParams.get('success');
     const error = urlParams.get('error');
 
-    if (success === 'github_connected') {
+    if (success === 'github_connected' && isMounted) {
       toast({
         title: 'GitHub Connected',
         description: 'Successfully connected to GitHub integration.',
       });
       // Clear URL parameters
       window.history.replaceState({}, '', '/integrations');
-    } else if (success === 'slack_connected') {
+    } else if (success === 'slack_connected' && isMounted) {
       toast({
         title: 'Slack Connected',
         description: 'Successfully connected to Slack integration.',
       });
       // Clear URL parameters
       window.history.replaceState({}, '', '/integrations');
-    } else if (error) {
+    } else if (error && isMounted) {
       toast({
         title: 'Connection Error',
         description: decodeURIComponent(error),
@@ -95,10 +97,20 @@ export function IntegrationsPage() {
       window.history.replaceState({}, '', '/integrations');
     }
 
-    checkGithubStatus();
-    checkSlackStatus();
-    fetchStats();
-    fetchSlackClientId();
+    // Debounce the initial API calls
+    const timeoutId = setTimeout(() => {
+      if (isMounted) {
+        checkGithubStatus();
+        checkSlackStatus();
+        fetchStats();
+        fetchSlackClientId();
+      }
+    }, 100);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+    };
 
     // Listen for storage changes (cross-tab sync)
     /**
@@ -174,36 +186,71 @@ export function IntegrationsPage() {
    * @returns {Promise<void>} A promise that resolves when the stats have been fetched and processed.
    * @throws {Error} If there is an issue with the fetch requests or data processing.
    */
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
+    // Prevent multiple simultaneous calls
+    if (isLoading) return;
+
     try {
       let totalActivities = 0;
 
-      // Fetch GitHub stats
-      const githubResponse = await fetch('/api/debug/github-sync');
-      const githubData = await githubResponse.json();
-      if (githubResponse.ok) {
-        setSelectedRepos(githubData.selectedRepositories || 0);
-        totalActivities += githubData.storedActivities || 0;
+      // Fetch GitHub stats with timeout
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        const githubResponse = await fetch('/api/debug/github-sync', {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (githubResponse.ok) {
+          const githubData = await githubResponse.json();
+          setSelectedRepos(githubData.selectedRepositories || 0);
+          totalActivities += githubData.storedActivities || 0;
+        } else {
+          setSelectedRepos(0);
+        }
+      } catch (githubError) {
+        console.warn('GitHub stats fetch failed:', githubError);
+        setSelectedRepos(0);
       }
 
-      // Fetch Slack stats
-      const slackResponse = await fetch('/api/slack/stats');
-      const slackData = await slackResponse.json();
-      if (slackResponse.ok) {
-        setSelectedChannels(slackData.channels?.selected || 0);
-        totalActivities += slackData.count || 0;
+      // Fetch Slack stats with timeout
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        const slackResponse = await fetch('/api/slack/stats', {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (slackResponse.ok) {
+          const slackData = await slackResponse.json();
+          setSelectedChannels(slackData.channels?.selected || 0);
+          totalActivities += slackData.count || 0;
+        } else {
+          setSelectedChannels(0);
+        }
+      } catch (slackError) {
+        console.warn('Slack stats fetch failed:', slackError);
+        setSelectedChannels(0);
       }
 
       setTotalActivities(totalActivities);
     } catch (error) {
       console.error('Failed to fetch stats:', error);
+      // Set default values on complete failure
+      setSelectedRepos(0);
+      setSelectedChannels(0);
+      setTotalActivities(0);
     }
-  };
+  }, [isLoading]);
 
   /**
    * Initiates the GitHub connection process and manages loading state.
    */
-  const handleGithubConnect = async () => {
+  const handleGithubConnect = useCallback(async () => {
     setIsLoading(true);
     try {
       window.location.href = '/api/integrations/github/connect';
@@ -216,14 +263,14 @@ export function IntegrationsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   /**
    * Handles the synchronization of GitHub data.
    *
    * This function initiates a sync process by setting the syncing state and progress. It makes a POST request to the GitHub sync API and updates the UI based on the response. If the sync is successful, it updates the last sync time and refreshes statistics. In case of errors, it handles token expiration and other failures with appropriate user notifications.
    */
-  const handleGithubSync = async () => {
+  const handleGithubSync = useCallback(async () => {
     setIsSyncing(true);
     setSyncProgress(0);
 
@@ -286,7 +333,7 @@ export function IntegrationsPage() {
       setIsSyncing(false);
       setTimeout(() => setSyncProgress(0), 1000);
     }
-  };
+  }, [toast, fetchStats]);
 
   /**
    * Handles the disconnection from GitHub.
@@ -295,7 +342,7 @@ export function IntegrationsPage() {
    * If the disconnection is successful, it updates the connection state and displays a success message.
    * In case of an error, it shows an appropriate error message. The loading state is reset in the finally block.
    */
-  const handleGithubDisconnect = async () => {
+  const handleGithubDisconnect = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await fetch('/api/integrations/github/disconnect', {
@@ -325,12 +372,12 @@ export function IntegrationsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   /**
    * Initiates the Slack connection process and handles loading state.
    */
-  const handleSlackConnect = async () => {
+  const handleSlackConnect = useCallback(async () => {
     setIsLoading(true);
     try {
       window.location.href = '/api/integrations/slack/connect';
@@ -343,14 +390,14 @@ export function IntegrationsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   /**
    * Handles the synchronization process with Slack.
    *
    * This function initiates the syncing process by setting the syncing state and progress. It simulates progress updates while making a POST request to the Slack sync API. Upon receiving a response, it logs the result and updates the last sync time if successful. In case of errors, it handles specific scenarios such as token expiration and displays appropriate messages to the user. Finally, it resets the syncing state and progress after completion.
    */
-  const handleSlackSync = async () => {
+  const handleSlackSync = useCallback(async () => {
     setIsSyncing(true);
     setSyncProgress(0);
 
@@ -413,7 +460,7 @@ export function IntegrationsPage() {
       setIsSyncing(false);
       setTimeout(() => setSyncProgress(0), 1000);
     }
-  };
+  }, [toast, fetchStats]);
 
   /**
    * Handles the disconnection of Slack integration.
@@ -422,7 +469,7 @@ export function IntegrationsPage() {
    * It processes the response to update the connection status and display a success message if the disconnection is successful.
    * In case of an error, it shows an appropriate error message. The loading state is reset in the finally block, ensuring it is cleared regardless of the outcome.
    */
-  const handleSlackDisconnect = async () => {
+  const handleSlackDisconnect = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await fetch('/api/integrations/slack/disconnect', {
@@ -460,9 +507,9 @@ export function IntegrationsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
-  const integrations = [
+  const integrations = useMemo(() => [
     {
       id: 'github',
       name: 'GitHub',
@@ -761,7 +808,24 @@ export function IntegrationsPage() {
         </Button>
       ),
     },
-  ];
+  ], [
+    githubConnected,
+    slackConnected,
+    selectedRepos,
+    selectedChannels,
+    totalActivities,
+    lastSyncTime,
+    isLoading,
+    isSyncing,
+    syncProgress,
+    slackClientId,
+    handleGithubConnect,
+    handleGithubSync,
+    handleGithubDisconnect,
+    handleSlackConnect,
+    handleSlackSync,
+    handleSlackDisconnect,
+  ]);
 
   return (
     <div className='flex flex-1 flex-col'>
@@ -873,8 +937,8 @@ export function IntegrationsPage() {
                 <Card
                   key={integration.id}
                   className={`relative overflow-hidden transition-all duration-200 hover:shadow-lg ${integration.connected
-                      ? 'ring-2 ring-green-200 dark:ring-green-800 bg-green-50/30 dark:bg-green-950/20'
-                      : ''
+                    ? 'ring-2 ring-green-200 dark:ring-green-800 bg-green-50/30 dark:bg-green-950/20'
+                    : ''
                     }`}
                 >
                   {/* Gradient Background */}

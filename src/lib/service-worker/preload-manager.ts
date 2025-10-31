@@ -14,13 +14,21 @@ export class PreloadManager {
   private serviceWorker: ServiceWorker | null = null;
 
   constructor() {
-    this.initializeServiceWorker();
+    // Don't initialize if service worker is disabled
+    if (process.env.NEXT_PUBLIC_DISABLE_SW !== 'true') {
+      this.initializeServiceWorker();
+    }
   }
 
   /**
    * Initialize service worker connection
    */
   private async initializeServiceWorker(): Promise<void> {
+    // Don't initialize if service worker is disabled
+    if (process.env.NEXT_PUBLIC_DISABLE_SW === 'true') {
+      return;
+    }
+
     if ('serviceWorker' in navigator) {
       try {
         const registration = await navigator.serviceWorker.ready;

@@ -329,6 +329,17 @@ export function TeamActivityContent({ className }: TeamActivityContentProps) {
     });
   }, [fetchTeamData, toast]);
 
+  // Optimized callback functions to prevent unnecessary re-renders
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  }, []);
+
+  const handleSortByTimestamp = useCallback(() => setSortBy('timestamp'), []);
+  const handleSortByAuthor = useCallback(() => setSortBy('author'), []);
+  const handleSortByRepository = useCallback(() => setSortBy('repository'), []);
+  const handleSortOrderDesc = useCallback(() => setSortOrder('desc'), []);
+  const handleSortOrderAsc = useCallback(() => setSortOrder('asc'), []);
+
   /**
    * Retrieve the appropriate activity icon based on the given type.
    *
@@ -606,7 +617,7 @@ export function TeamActivityContent({ className }: TeamActivityContentProps) {
                 <Input
                   placeholder='Search activities, members, or repositories...'
                   value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
+                  onChange={handleSearchChange}
                   className='pl-10'
                 />
               </div>
@@ -666,24 +677,24 @@ export function TeamActivityContent({ className }: TeamActivityContentProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => setSortBy('timestamp')}>
+                  <DropdownMenuItem onClick={handleSortByTimestamp}>
                     <IconClock className='h-4 w-4 mr-2' />
                     By Time
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSortBy('author')}>
+                  <DropdownMenuItem onClick={handleSortByAuthor}>
                     <IconUsers className='h-4 w-4 mr-2' />
                     By Author
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSortBy('repository')}>
+                  <DropdownMenuItem onClick={handleSortByRepository}>
                     <IconCode className='h-4 w-4 mr-2' />
                     By Repository
                   </DropdownMenuItem>
                   <Separator />
-                  <DropdownMenuItem onClick={() => setSortOrder('desc')}>
+                  <DropdownMenuItem onClick={handleSortOrderDesc}>
                     <IconSortDescending className='h-4 w-4 mr-2' />
                     Descending
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSortOrder('asc')}>
+                  <DropdownMenuItem onClick={handleSortOrderAsc}>
                     <IconSortAscending className='h-4 w-4 mr-2' />
                     Ascending
                   </DropdownMenuItem>
