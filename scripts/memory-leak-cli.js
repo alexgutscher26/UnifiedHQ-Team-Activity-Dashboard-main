@@ -255,8 +255,8 @@ function generateHTMLReport(reports) {
         </thead>
         <tbody>
             ${reports
-      .map(
-        r => `
+              .map(
+                r => `
                 <tr>
                     <td>${r.file}</td>
                     <td>${r.line}</td>
@@ -266,8 +266,8 @@ function generateHTMLReport(reports) {
                     <td class="fix">${r.suggestedFix || 'Manual review required'}</td>
                 </tr>
             `
-      )
-      .join('')}
+              )
+              .join('')}
         </tbody>
     </table>
 </body>
