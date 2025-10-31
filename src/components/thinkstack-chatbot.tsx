@@ -12,14 +12,14 @@ interface ChatbotConfig {
 }
 
 /**
- * Type-safe chatbot ID validation
+ * Validates if the given string is a valid chatbot ID.
  */
 function isValidChatbotId(id: string): id is string {
     return /^[a-f0-9]{24}$/.test(id);
 }
 
 /**
- * Type-safe script element creation with proper attributes
+ * Creates a script element for a chatbot with specified attributes.
  */
 function createChatbotScript(config: ChatbotConfig): HTMLScriptElement {
     const script = document.createElement('script');
