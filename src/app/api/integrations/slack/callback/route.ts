@@ -172,9 +172,15 @@ export async function GET(request: NextRequest) {
 
     // Trigger cache warming for Slack integration
     try {
-      const { warmCacheOnIntegrationConnect } = await import('@/lib/cache-warming');
+      const { warmCacheOnIntegrationConnect } = await import(
+        '@/lib/cache-warming'
+      );
       // Run in background - don't block the redirect
-      warmCacheOnIntegrationConnect(user.id, 'slack', tokenData.access_token).catch(error => {
+      warmCacheOnIntegrationConnect(
+        user.id,
+        'slack',
+        tokenData.access_token
+      ).catch(error => {
         console.error('Background cache warming failed:', error);
       });
     } catch (error) {

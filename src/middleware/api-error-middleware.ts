@@ -144,7 +144,8 @@ export async function checkApiRateLimit(req: NextRequest): Promise<{
   resetTime: number;
   retryAfter?: number;
 }> {
-  const { RateLimiters, FallbackRateLimiters, getClientIdentifier } = await import('@/lib/rate-limiter');
+  const { RateLimiters, FallbackRateLimiters, getClientIdentifier } =
+    await import('@/lib/rate-limiter');
 
   const identifier = getClientIdentifier(req);
   const url = new URL(req.url);
@@ -156,9 +157,15 @@ export async function checkApiRateLimit(req: NextRequest): Promise<{
 
     if (pathname.includes('/auth/')) {
       limiter = RateLimiters.AUTH;
-    } else if (pathname.includes('/sync') || pathname.includes('/integrations/')) {
+    } else if (
+      pathname.includes('/sync') ||
+      pathname.includes('/integrations/')
+    ) {
       limiter = RateLimiters.INTEGRATION_SYNC;
-    } else if (pathname.includes('/ai-summary') || pathname.includes('/openrouter')) {
+    } else if (
+      pathname.includes('/ai-summary') ||
+      pathname.includes('/openrouter')
+    ) {
       limiter = RateLimiters.AI_GENERATION;
     } else if (pathname.includes('/upload')) {
       limiter = RateLimiters.UPLOAD;
@@ -167,7 +174,6 @@ export async function checkApiRateLimit(req: NextRequest): Promise<{
     // Try Redis-based rate limiter first
     const result = await limiter.checkLimit(identifier);
     return result;
-
   } catch (error) {
     console.warn('Redis rate limiter failed, using fallback:', error);
 
@@ -176,7 +182,10 @@ export async function checkApiRateLimit(req: NextRequest): Promise<{
 
     if (pathname.includes('/auth/')) {
       fallbackLimiter = FallbackRateLimiters.AUTH;
-    } else if (pathname.includes('/sync') || pathname.includes('/integrations/')) {
+    } else if (
+      pathname.includes('/sync') ||
+      pathname.includes('/integrations/')
+    ) {
       fallbackLimiter = FallbackRateLimiters.STRICT;
     }
 
@@ -245,7 +254,9 @@ export function addRequestId(res: NextResponse): NextResponse {
 /**
  * Adds rate limit headers to the response and handles rate limit exceeded cases.
  */
-export async function handleRateLimit(req: NextRequest): Promise<NextResponse | null> {
+export async function handleRateLimit(
+  req: NextRequest
+): Promise<NextResponse | null> {
   const rateLimitResult = await checkApiRateLimit(req);
 
   if (!rateLimitResult.allowed) {
@@ -266,10 +277,16 @@ export async function handleRateLimit(req: NextRequest): Promise<NextResponse | 
     // Add rate limit headers
     response.headers.set('X-RateLimit-Limit', rateLimitResult.limit.toString());
     response.headers.set('X-RateLimit-Remaining', '0');
-    response.headers.set('X-RateLimit-Reset', rateLimitResult.resetTime.toString());
+    response.headers.set(
+      'X-RateLimit-Reset',
+      rateLimitResult.resetTime.toString()
+    );
 
     if (rateLimitResult.retryAfter) {
-      response.headers.set('Retry-After', rateLimitResult.retryAfter.toString());
+      response.headers.set(
+        'Retry-After',
+        rateLimitResult.retryAfter.toString()
+      );
     }
 
     return response;
@@ -282,12 +299,18 @@ export async function handleRateLimit(req: NextRequest): Promise<NextResponse | 
 /**
  * Adds rate limit headers to successful API responses.
  */
-export async function addRateLimitHeaders(res: NextResponse, req: NextRequest): Promise<NextResponse> {
+export async function addRateLimitHeaders(
+  res: NextResponse,
+  req: NextRequest
+): Promise<NextResponse> {
   try {
     const rateLimitResult = await checkApiRateLimit(req);
 
     res.headers.set('X-RateLimit-Limit', rateLimitResult.limit.toString());
-    res.headers.set('X-RateLimit-Remaining', rateLimitResult.remaining.toString());
+    res.headers.set(
+      'X-RateLimit-Remaining',
+      rateLimitResult.remaining.toString()
+    );
     res.headers.set('X-RateLimit-Reset', rateLimitResult.resetTime.toString());
 
     return res;
@@ -298,4 +321,8 @@ export async function addRateLimitHeaders(res: NextResponse, req: NextRequest): 
 }
 
 // Export rate limiting utilities for use in API routes
-export { RateLimiters, getClientIdentifier, addRateLimitHeaders as addRateLimitHeadersToResponse } from '@/lib/rate-limiter';
+export {
+  RateLimiters,
+  getClientIdentifier,
+  addRateLimitHeaders as addRateLimitHeadersToResponse,
+} from '@/lib/rate-limiter';
