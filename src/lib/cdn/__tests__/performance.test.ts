@@ -211,7 +211,7 @@ describe('CDN Performance Tests', () => {
       const duration = endTime - startTime;
 
       // Verify all operations succeeded
-      assert.ok(results.every(result => result === true));
+      assert.ok(results.every(result => result));
       assert.strictEqual(mockFetch.mock.callCount(), batchSize);
 
       // Performance assertions

@@ -46,6 +46,7 @@ function PaginationItem({ ...props }: React.ComponentProps<'li'>) {
 
 type PaginationLinkProps = {
   isActive?: boolean;
+  children?: React.ReactNode;
 } & Pick<React.ComponentProps<typeof Button>, 'size'> &
   React.ComponentProps<'a'>;
 
@@ -56,11 +57,21 @@ function PaginationLink({
   className,
   isActive,
   size = 'icon',
+  children,
+  'aria-label': ariaLabel,
   ...props
 }: PaginationLinkProps) {
+  // Ensure accessibility by requiring either children or aria-label
+  const hasAccessibleContent = children || ariaLabel;
+
+  if (!hasAccessibleContent) {
+    console.warn('PaginationLink: Either children or aria-label must be provided for accessibility');
+  }
+
   return (
     <a
       aria-current={isActive ? 'page' : undefined}
+      aria-label={ariaLabel}
       data-slot='pagination-link'
       data-active={isActive}
       className={cn(
@@ -71,7 +82,9 @@ function PaginationLink({
         className
       )}
       {...props}
-    />
+    >
+      {children}
+    </a>
   );
 }
 

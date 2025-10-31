@@ -253,19 +253,51 @@ class ServiceWorkerManager {
         this.updateState();
 
         switch (newWorker.state) {
+          case 'installing':
+            console.log('[SW Manager] Service worker installing...');
+            this.state.isInstalling = true;
+            this.callbacks.onInstalling?.();
+            break;
+
           case 'installed':
+            console.log('[SW Manager] Service worker installed');
+            this.state.isInstalling = false;
             if (navigator.serviceWorker.controller) {
               // New service worker is waiting
               this.state.hasUpdate = true;
+              this.state.isWaiting = true;
               this.callbacks.onUpdateAvailable?.(this.registration!);
+              this.callbacks.onWaiting?.();
             } else {
               // First time installation
               this.callbacks.onActive?.();
             }
             break;
 
+          case 'activating':
+            console.log('[SW Manager] Service worker activating...');
+            this.state.isWaiting = false;
+            break;
+
           case 'activated':
+            console.log('[SW Manager] Service worker activated');
+            this.state.isActive = true;
             this.callbacks.onActive?.();
+            break;
+
+          case 'redundant':
+            console.log('[SW Manager] Service worker became redundant');
+            this.state.isInstalling = false;
+            this.state.isWaiting = false;
+            break;
+
+          case 'parsed':
+            console.log('[SW Manager] Service worker parsed');
+            // This is an initial state, no specific action needed
+            break;
+
+          default:
+            console.warn('[SW Manager] Unknown service worker state:', newWorker.state);
             break;
         }
       });

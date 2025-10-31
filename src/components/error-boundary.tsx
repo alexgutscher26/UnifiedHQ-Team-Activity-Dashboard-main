@@ -42,7 +42,6 @@ interface State {
   errorId: string | null;
   retryCount: number;
   isRetrying: boolean;
-  lastErrorTime: number | null;
   errorReported: boolean;
 }
 
@@ -59,7 +58,6 @@ export class ErrorBoundary extends Component<Props, State> {
       errorId: null,
       retryCount: 0,
       isRetrying: false,
-      lastErrorTime: null,
       errorReported: false,
     };
   }
@@ -72,7 +70,6 @@ export class ErrorBoundary extends Component<Props, State> {
     return {
       hasError: true,
       error,
-      lastErrorTime: Date.now(),
     };
   }
 

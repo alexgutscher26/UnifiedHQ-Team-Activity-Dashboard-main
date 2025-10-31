@@ -40,7 +40,8 @@ describe('FeatureFlags', () => {
       if (value !== undefined) {
         process.env[key] = value;
       } else {
-        delete process.env[key];
+        // Use Reflect.deleteProperty instead of delete operator for dynamic keys
+        Reflect.deleteProperty(process.env, key);
       }
     });
 
