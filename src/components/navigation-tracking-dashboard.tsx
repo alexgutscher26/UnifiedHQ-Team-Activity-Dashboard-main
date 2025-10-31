@@ -14,12 +14,22 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { RefreshCw, Trash2, Zap, Activity, Clock, Users } from 'lucide-react'
 
+/**
+ * Render the Navigation Tracking Dashboard component.
+ *
+ * This component fetches and displays navigation statistics, including user patterns, session activity, and preloader statistics. It provides functionality to clear patterns, preload critical data, and refresh the displayed data periodically. The component handles loading states and errors gracefully, ensuring a smooth user experience while monitoring navigation behavior.
+ *
+ * @returns {JSX.Element} The rendered Navigation Tracking Dashboard component.
+ */
 export function NavigationTrackingDashboard() {
     const { stats, loading, error, refresh } = useNavigationStats()
     const { clearPatterns, preloadCriticalData } = useNavigationTracking({ autoTrack: false })
     const [actionLoading, setActionLoading] = useState<string | null>(null)
     const [preloaderStats, setPreloaderStats] = useState<any>(null)
 
+    /**
+     * Handles the process of clearing patterns and refreshing the state.
+     */
     const handleClearPatterns = async () => {
         setActionLoading('clear')
         try {
@@ -30,6 +40,9 @@ export function NavigationTrackingDashboard() {
         }
     }
 
+    /**
+     * Handles the preloading of critical data and updates loading state.
+     */
     const handlePreloadCritical = async () => {
         setActionLoading('preload')
         try {
@@ -40,6 +53,9 @@ export function NavigationTrackingDashboard() {
         }
     }
 
+    /**
+     * Refreshes the preloader statistics.
+     */
     const refreshPreloaderStats = async () => {
         try {
             const stats = await navigationTracker.getPreloaderStats()
@@ -61,12 +77,18 @@ export function NavigationTrackingDashboard() {
         return () => clearInterval(interval)
     }, [])
 
+    /**
+     * Formats a duration in milliseconds into a string of minutes and seconds.
+     */
     const formatDuration = (ms: number) => {
         const minutes = Math.floor(ms / 60000)
         const seconds = Math.floor((ms % 60000) / 1000)
         return `${minutes}m ${seconds}s`
     }
 
+    /**
+     * Formats a timestamp into a localized time string.
+     */
     const formatTimestamp = (timestamp: number) => {
         return new Date(timestamp).toLocaleTimeString()
     }
