@@ -4,8 +4,14 @@ import { auth } from '@/lib/auth';
 /**
  * Handles Server-Sent Events (SSE) for offline sync notifications.
  *
- * This endpoint provides real-time updates about offline synchronization events,
- * including sync start, completion, failures, and conflicts.
+ * This function manages real-time updates about offline synchronization events, including authentication checks,
+ * connection establishment, and periodic heartbeat messages. It also handles disconnection events and cleans up
+ * resources accordingly. If authentication fails, it returns an error response, while successful connections
+ * initiate a stream for sending sync notifications.
+ *
+ * @param request - The NextRequest object representing the incoming request.
+ * @returns A Response object containing the SSE stream or an error message if authentication fails.
+ * @throws Error If an error occurs during the connection process or while handling the stream.
  */
 export async function GET(request: NextRequest) {
   try {
