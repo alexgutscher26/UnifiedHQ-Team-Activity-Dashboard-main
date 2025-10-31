@@ -18,12 +18,7 @@ class ReleaseManager {
   }
 
   /**
-   * Load release configuration.
-   *
-   * This function constructs the path to the release configuration YAML file and checks if it exists.
-   * If the file is found, it attempts to return a comprehensive configuration object with versioning,
-   * changelog, release notes, branches, environments, and artifacts settings. In case of an error during
-   * loading, it logs a warning and falls back to a default configuration.
+   * Loads the release configuration from a YAML file if it exists.
    */
   loadConfig() {
     const configPath = path.join(
