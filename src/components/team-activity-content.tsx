@@ -330,9 +330,12 @@ export function TeamActivityContent({ className }: TeamActivityContentProps) {
   }, [fetchTeamData, toast]);
 
   // Optimized callback functions to prevent unnecessary re-renders
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  }, []);
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearchQuery(e.target.value);
+    },
+    []
+  );
 
   const handleSortByTimestamp = useCallback(() => setSortBy('timestamp'), []);
   const handleSortByAuthor = useCallback(() => setSortBy('author'), []);

@@ -199,7 +199,7 @@ export function IntegrationsPage() {
         const timeoutId = setTimeout(() => controller.abort(), 5000);
 
         const githubResponse = await fetch('/api/debug/github-sync', {
-          signal: controller.signal
+          signal: controller.signal,
         });
         clearTimeout(timeoutId);
 
@@ -221,7 +221,7 @@ export function IntegrationsPage() {
         const timeoutId = setTimeout(() => controller.abort(), 5000);
 
         const slackResponse = await fetch('/api/slack/stats', {
-          signal: controller.signal
+          signal: controller.signal,
         });
         clearTimeout(timeoutId);
 
@@ -509,146 +509,71 @@ export function IntegrationsPage() {
     }
   }, [toast]);
 
-  const integrations = useMemo(() => [
-    {
-      id: 'github',
-      name: 'GitHub',
-      description:
-        'Track commits, pull requests, issues, and repository activity',
-      icon: IconBrandGithub,
-      connected: githubConnected,
-      color: 'bg-gray-900',
-      gradient: 'from-gray-800 to-gray-900',
-      status: githubConnected ? 'Connected' : 'Available',
-      statusColor: githubConnected ? 'bg-green-500' : 'bg-blue-500',
-      features: ['Commits', 'Pull Requests', 'Issues', 'Repository Events'],
-      stats: githubConnected
-        ? {
-          repositories: selectedRepos,
-          activities: totalActivities,
-          lastSync: lastSyncTime,
-        }
-        : null,
-      action: githubConnected ? (
-        <div className='flex flex-col gap-2'>
-          <div className='flex gap-2'>
-            <RepositorySelector isConnected={githubConnected} />
+  const integrations = useMemo(
+    () => [
+      {
+        id: 'github',
+        name: 'GitHub',
+        description:
+          'Track commits, pull requests, issues, and repository activity',
+        icon: IconBrandGithub,
+        connected: githubConnected,
+        color: 'bg-gray-900',
+        gradient: 'from-gray-800 to-gray-900',
+        status: githubConnected ? 'Connected' : 'Available',
+        statusColor: githubConnected ? 'bg-green-500' : 'bg-blue-500',
+        features: ['Commits', 'Pull Requests', 'Issues', 'Repository Events'],
+        stats: githubConnected
+          ? {
+              repositories: selectedRepos,
+              activities: totalActivities,
+              lastSync: lastSyncTime,
+            }
+          : null,
+        action: githubConnected ? (
+          <div className='flex flex-col gap-2'>
+            <div className='flex gap-2'>
+              <RepositorySelector isConnected={githubConnected} />
+              <Button
+                size='sm'
+                variant='outline'
+                onClick={handleGithubSync}
+                disabled={isSyncing}
+                className='flex-1'
+              >
+                {isSyncing ? (
+                  <IconLoader2 className='size-4 mr-2 animate-spin' />
+                ) : (
+                  <IconRefresh className='size-4 mr-2' />
+                )}
+                Sync Now
+              </Button>
+            </div>
+            {isSyncing && (
+              <div className='space-y-2'>
+                <Progress value={syncProgress} className='h-2' />
+                <p className='text-xs text-muted-foreground text-center'>
+                  Syncing activities...
+                </p>
+              </div>
+            )}
             <Button
               size='sm'
-              variant='outline'
-              onClick={handleGithubSync}
-              disabled={isSyncing}
-              className='flex-1'
+              variant='destructive'
+              onClick={handleGithubDisconnect}
+              disabled={isLoading}
+              className='w-full'
             >
-              {isSyncing ? (
+              {isLoading ? (
                 <IconLoader2 className='size-4 mr-2 animate-spin' />
-              ) : (
-                <IconRefresh className='size-4 mr-2' />
-              )}
-              Sync Now
+              ) : null}
+              Disconnect
             </Button>
           </div>
-          {isSyncing && (
-            <div className='space-y-2'>
-              <Progress value={syncProgress} className='h-2' />
-              <p className='text-xs text-muted-foreground text-center'>
-                Syncing activities...
-              </p>
-            </div>
-          )}
+        ) : (
           <Button
             size='sm'
-            variant='destructive'
-            onClick={handleGithubDisconnect}
-            disabled={isLoading}
-            className='w-full'
-          >
-            {isLoading ? (
-              <IconLoader2 className='size-4 mr-2 animate-spin' />
-            ) : null}
-            Disconnect
-          </Button>
-        </div>
-      ) : (
-        <Button
-          size='sm'
-          onClick={handleGithubConnect}
-          disabled={isLoading}
-          className='w-full'
-        >
-          {isLoading ? (
-            <IconLoader2 className='size-4 mr-2 animate-spin' />
-          ) : (
-            <IconRocket className='size-4 mr-2' />
-          )}
-          Connect GitHub
-        </Button>
-      ),
-    },
-    {
-      id: 'slack',
-      name: 'Slack',
-      description: 'Track team messages, channels, and collaboration activity',
-      icon: IconBrandSlack,
-      connected: slackConnected,
-      color: 'bg-purple-600',
-      gradient: 'from-purple-600 to-purple-700',
-      status: slackConnected ? 'Connected' : 'Available',
-      statusColor: slackConnected ? 'bg-green-500' : 'bg-blue-500',
-      features: ['Messages', 'Channels', 'Files', 'Reactions'],
-      stats: slackConnected
-        ? {
-          channels: selectedChannels,
-          activities: 0, // Will be calculated separately
-          lastSync: lastSyncTime,
-        }
-        : null,
-      action: slackConnected ? (
-        <div className='flex flex-col gap-2'>
-          <div className='flex gap-2'>
-            <ChannelSelector isConnected={slackConnected} />
-            <Button
-              size='sm'
-              variant='outline'
-              onClick={handleSlackSync}
-              disabled={isSyncing}
-              className='flex-1'
-            >
-              {isSyncing ? (
-                <IconLoader2 className='size-4 mr-2 animate-spin' />
-              ) : (
-                <IconRefresh className='size-4 mr-2' />
-              )}
-              Sync Now
-            </Button>
-          </div>
-          {isSyncing && (
-            <div className='space-y-2'>
-              <Progress value={syncProgress} className='h-2' />
-              <p className='text-xs text-muted-foreground text-center'>
-                Syncing activities...
-              </p>
-            </div>
-          )}
-          <Button
-            size='sm'
-            variant='destructive'
-            onClick={handleSlackDisconnect}
-            disabled={isLoading}
-            className='w-full'
-          >
-            {isLoading ? (
-              <IconLoader2 className='size-4 mr-2 animate-spin' />
-            ) : null}
-            Disconnect
-          </Button>
-          <SlackInstallationGuide clientId={slackClientId} />
-        </div>
-      ) : (
-        <div className='flex flex-col gap-2'>
-          <Button
-            size='sm'
-            onClick={handleSlackConnect}
+            onClick={handleGithubConnect}
             disabled={isLoading}
             className='w-full'
           >
@@ -657,175 +582,255 @@ export function IntegrationsPage() {
             ) : (
               <IconRocket className='size-4 mr-2' />
             )}
-            Connect Slack
+            Connect GitHub
           </Button>
-          <SlackInstallationGuide clientId={slackClientId} />
-        </div>
-      ),
-    },
-    // Coming Soon Integrations
-    {
-      id: 'microsoft-teams',
-      name: 'Microsoft Teams',
-      description:
-        'Track meetings, calls, and team collaboration in Microsoft Teams',
-      icon: IconBrandWindows,
-      connected: false,
-      color: 'bg-blue-600',
-      gradient: 'from-blue-600 to-blue-700',
-      status: 'Coming Soon',
-      statusColor: 'bg-yellow-500',
-      features: ['Meetings', 'Calls', 'Chat', 'Files'],
-      stats: null,
-      comingSoon: true,
-      action: (
-        <Button size='sm' disabled className='w-full opacity-50'>
-          <IconRocket className='size-4 mr-2' />
-          Coming Soon
-        </Button>
-      ),
-    },
-    {
-      id: 'google-workspace',
-      name: 'Google Workspace',
-      description: 'Track Gmail, Google Drive, Calendar, and Docs activity',
-      icon: IconBrandGoogle,
-      connected: false,
-      color: 'bg-green-600',
-      gradient: 'from-green-600 to-green-700',
-      status: 'Coming Soon',
-      statusColor: 'bg-yellow-500',
-      features: ['Gmail', 'Drive', 'Calendar', 'Docs'],
-      stats: null,
-      comingSoon: true,
-      action: (
-        <Button size='sm' disabled className='w-full opacity-50'>
-          <IconRocket className='size-4 mr-2' />
-          Coming Soon
-        </Button>
-      ),
-    },
-    {
-      id: 'jira',
-      name: 'Jira',
-      description: 'Track project management, issues, and sprint activities',
-      icon: IconChecklist,
-      connected: false,
-      color: 'bg-blue-500',
-      gradient: 'from-blue-500 to-blue-600',
-      status: 'Coming Soon',
-      statusColor: 'bg-yellow-500',
-      features: ['Issues', 'Sprints', 'Projects', 'Reports'],
-      stats: null,
-      comingSoon: true,
-      action: (
-        <Button size='sm' disabled className='w-full opacity-50'>
-          <IconRocket className='size-4 mr-2' />
-          Coming Soon
-        </Button>
-      ),
-    },
-    {
-      id: 'trello',
-      name: 'Trello',
-      description: 'Track board activities, card movements, and team workflows',
-      icon: IconBrandTrello,
-      connected: false,
-      color: 'bg-blue-400',
-      gradient: 'from-blue-400 to-blue-500',
-      status: 'Coming Soon',
-      statusColor: 'bg-yellow-500',
-      features: ['Boards', 'Cards', 'Lists', 'Comments'],
-      stats: null,
-      comingSoon: true,
-      action: (
-        <Button size='sm' disabled className='w-full opacity-50'>
-          <IconRocket className='size-4 mr-2' />
-          Coming Soon
-        </Button>
-      ),
-    },
-    {
-      id: 'discord',
-      name: 'Discord',
-      description:
-        'Track server messages, voice channels, and community activity',
-      icon: IconBrandDiscord,
-      connected: false,
-      color: 'bg-indigo-600',
-      gradient: 'from-indigo-600 to-indigo-700',
-      status: 'Coming Soon',
-      statusColor: 'bg-yellow-500',
-      features: ['Messages', 'Voice', 'Channels', 'Servers'],
-      stats: null,
-      comingSoon: true,
-      action: (
-        <Button size='sm' disabled className='w-full opacity-50'>
-          <IconRocket className='size-4 mr-2' />
-          Coming Soon
-        </Button>
-      ),
-    },
-    {
-      id: 'linear',
-      name: 'Linear',
-      description:
-        'Track issue management, project updates, and team productivity',
-      icon: IconChartLine,
-      connected: false,
-      color: 'bg-purple-600',
-      gradient: 'from-purple-600 to-purple-700',
-      status: 'Coming Soon',
-      statusColor: 'bg-yellow-500',
-      features: ['Issues', 'Projects', 'Cycles', 'Updates'],
-      stats: null,
-      comingSoon: true,
-      action: (
-        <Button size='sm' disabled className='w-full opacity-50'>
-          <IconRocket className='size-4 mr-2' />
-          Coming Soon
-        </Button>
-      ),
-    },
-    {
-      id: 'asana',
-      name: 'Asana',
-      description:
-        'Track task management, project progress, and team coordination',
-      icon: IconListCheck,
-      connected: false,
-      color: 'bg-red-500',
-      gradient: 'from-red-500 to-red-600',
-      status: 'Coming Soon',
-      statusColor: 'bg-yellow-500',
-      features: ['Tasks', 'Projects', 'Teams', 'Timeline'],
-      stats: null,
-      comingSoon: true,
-      action: (
-        <Button size='sm' disabled className='w-full opacity-50'>
-          <IconRocket className='size-4 mr-2' />
-          Coming Soon
-        </Button>
-      ),
-    },
-  ], [
-    githubConnected,
-    slackConnected,
-    selectedRepos,
-    selectedChannels,
-    totalActivities,
-    lastSyncTime,
-    isLoading,
-    isSyncing,
-    syncProgress,
-    slackClientId,
-    handleGithubConnect,
-    handleGithubSync,
-    handleGithubDisconnect,
-    handleSlackConnect,
-    handleSlackSync,
-    handleSlackDisconnect,
-  ]);
+        ),
+      },
+      {
+        id: 'slack',
+        name: 'Slack',
+        description:
+          'Track team messages, channels, and collaboration activity',
+        icon: IconBrandSlack,
+        connected: slackConnected,
+        color: 'bg-purple-600',
+        gradient: 'from-purple-600 to-purple-700',
+        status: slackConnected ? 'Connected' : 'Available',
+        statusColor: slackConnected ? 'bg-green-500' : 'bg-blue-500',
+        features: ['Messages', 'Channels', 'Files', 'Reactions'],
+        stats: slackConnected
+          ? {
+              channels: selectedChannels,
+              activities: 0, // Will be calculated separately
+              lastSync: lastSyncTime,
+            }
+          : null,
+        action: slackConnected ? (
+          <div className='flex flex-col gap-2'>
+            <div className='flex gap-2'>
+              <ChannelSelector isConnected={slackConnected} />
+              <Button
+                size='sm'
+                variant='outline'
+                onClick={handleSlackSync}
+                disabled={isSyncing}
+                className='flex-1'
+              >
+                {isSyncing ? (
+                  <IconLoader2 className='size-4 mr-2 animate-spin' />
+                ) : (
+                  <IconRefresh className='size-4 mr-2' />
+                )}
+                Sync Now
+              </Button>
+            </div>
+            {isSyncing && (
+              <div className='space-y-2'>
+                <Progress value={syncProgress} className='h-2' />
+                <p className='text-xs text-muted-foreground text-center'>
+                  Syncing activities...
+                </p>
+              </div>
+            )}
+            <Button
+              size='sm'
+              variant='destructive'
+              onClick={handleSlackDisconnect}
+              disabled={isLoading}
+              className='w-full'
+            >
+              {isLoading ? (
+                <IconLoader2 className='size-4 mr-2 animate-spin' />
+              ) : null}
+              Disconnect
+            </Button>
+            <SlackInstallationGuide clientId={slackClientId} />
+          </div>
+        ) : (
+          <div className='flex flex-col gap-2'>
+            <Button
+              size='sm'
+              onClick={handleSlackConnect}
+              disabled={isLoading}
+              className='w-full'
+            >
+              {isLoading ? (
+                <IconLoader2 className='size-4 mr-2 animate-spin' />
+              ) : (
+                <IconRocket className='size-4 mr-2' />
+              )}
+              Connect Slack
+            </Button>
+            <SlackInstallationGuide clientId={slackClientId} />
+          </div>
+        ),
+      },
+      // Coming Soon Integrations
+      {
+        id: 'microsoft-teams',
+        name: 'Microsoft Teams',
+        description:
+          'Track meetings, calls, and team collaboration in Microsoft Teams',
+        icon: IconBrandWindows,
+        connected: false,
+        color: 'bg-blue-600',
+        gradient: 'from-blue-600 to-blue-700',
+        status: 'Coming Soon',
+        statusColor: 'bg-yellow-500',
+        features: ['Meetings', 'Calls', 'Chat', 'Files'],
+        stats: null,
+        comingSoon: true,
+        action: (
+          <Button size='sm' disabled className='w-full opacity-50'>
+            <IconRocket className='size-4 mr-2' />
+            Coming Soon
+          </Button>
+        ),
+      },
+      {
+        id: 'google-workspace',
+        name: 'Google Workspace',
+        description: 'Track Gmail, Google Drive, Calendar, and Docs activity',
+        icon: IconBrandGoogle,
+        connected: false,
+        color: 'bg-green-600',
+        gradient: 'from-green-600 to-green-700',
+        status: 'Coming Soon',
+        statusColor: 'bg-yellow-500',
+        features: ['Gmail', 'Drive', 'Calendar', 'Docs'],
+        stats: null,
+        comingSoon: true,
+        action: (
+          <Button size='sm' disabled className='w-full opacity-50'>
+            <IconRocket className='size-4 mr-2' />
+            Coming Soon
+          </Button>
+        ),
+      },
+      {
+        id: 'jira',
+        name: 'Jira',
+        description: 'Track project management, issues, and sprint activities',
+        icon: IconChecklist,
+        connected: false,
+        color: 'bg-blue-500',
+        gradient: 'from-blue-500 to-blue-600',
+        status: 'Coming Soon',
+        statusColor: 'bg-yellow-500',
+        features: ['Issues', 'Sprints', 'Projects', 'Reports'],
+        stats: null,
+        comingSoon: true,
+        action: (
+          <Button size='sm' disabled className='w-full opacity-50'>
+            <IconRocket className='size-4 mr-2' />
+            Coming Soon
+          </Button>
+        ),
+      },
+      {
+        id: 'trello',
+        name: 'Trello',
+        description:
+          'Track board activities, card movements, and team workflows',
+        icon: IconBrandTrello,
+        connected: false,
+        color: 'bg-blue-400',
+        gradient: 'from-blue-400 to-blue-500',
+        status: 'Coming Soon',
+        statusColor: 'bg-yellow-500',
+        features: ['Boards', 'Cards', 'Lists', 'Comments'],
+        stats: null,
+        comingSoon: true,
+        action: (
+          <Button size='sm' disabled className='w-full opacity-50'>
+            <IconRocket className='size-4 mr-2' />
+            Coming Soon
+          </Button>
+        ),
+      },
+      {
+        id: 'discord',
+        name: 'Discord',
+        description:
+          'Track server messages, voice channels, and community activity',
+        icon: IconBrandDiscord,
+        connected: false,
+        color: 'bg-indigo-600',
+        gradient: 'from-indigo-600 to-indigo-700',
+        status: 'Coming Soon',
+        statusColor: 'bg-yellow-500',
+        features: ['Messages', 'Voice', 'Channels', 'Servers'],
+        stats: null,
+        comingSoon: true,
+        action: (
+          <Button size='sm' disabled className='w-full opacity-50'>
+            <IconRocket className='size-4 mr-2' />
+            Coming Soon
+          </Button>
+        ),
+      },
+      {
+        id: 'linear',
+        name: 'Linear',
+        description:
+          'Track issue management, project updates, and team productivity',
+        icon: IconChartLine,
+        connected: false,
+        color: 'bg-purple-600',
+        gradient: 'from-purple-600 to-purple-700',
+        status: 'Coming Soon',
+        statusColor: 'bg-yellow-500',
+        features: ['Issues', 'Projects', 'Cycles', 'Updates'],
+        stats: null,
+        comingSoon: true,
+        action: (
+          <Button size='sm' disabled className='w-full opacity-50'>
+            <IconRocket className='size-4 mr-2' />
+            Coming Soon
+          </Button>
+        ),
+      },
+      {
+        id: 'asana',
+        name: 'Asana',
+        description:
+          'Track task management, project progress, and team coordination',
+        icon: IconListCheck,
+        connected: false,
+        color: 'bg-red-500',
+        gradient: 'from-red-500 to-red-600',
+        status: 'Coming Soon',
+        statusColor: 'bg-yellow-500',
+        features: ['Tasks', 'Projects', 'Teams', 'Timeline'],
+        stats: null,
+        comingSoon: true,
+        action: (
+          <Button size='sm' disabled className='w-full opacity-50'>
+            <IconRocket className='size-4 mr-2' />
+            Coming Soon
+          </Button>
+        ),
+      },
+    ],
+    [
+      githubConnected,
+      slackConnected,
+      selectedRepos,
+      selectedChannels,
+      totalActivities,
+      lastSyncTime,
+      isLoading,
+      isSyncing,
+      syncProgress,
+      slackClientId,
+      handleGithubConnect,
+      handleGithubSync,
+      handleGithubDisconnect,
+      handleSlackConnect,
+      handleSlackSync,
+      handleSlackDisconnect,
+    ]
+  );
 
   return (
     <div className='flex flex-1 flex-col'>
@@ -936,10 +941,11 @@ export function IntegrationsPage() {
               {integrations.map(integration => (
                 <Card
                   key={integration.id}
-                  className={`relative overflow-hidden transition-all duration-200 hover:shadow-lg ${integration.connected
-                    ? 'ring-2 ring-green-200 dark:ring-green-800 bg-green-50/30 dark:bg-green-950/20'
-                    : ''
-                    }`}
+                  className={`relative overflow-hidden transition-all duration-200 hover:shadow-lg ${
+                    integration.connected
+                      ? 'ring-2 ring-green-200 dark:ring-green-800 bg-green-50/30 dark:bg-green-950/20'
+                      : ''
+                  }`}
                 >
                   {/* Gradient Background */}
                   <div
