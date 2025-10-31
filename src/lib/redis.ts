@@ -422,7 +422,11 @@ export class RedisCache {
   /**
    * Add member to sorted set with score
    */
-  static async zadd(key: string, score: number, member: string): Promise<number> {
+  static async zadd(
+    key: string,
+    score: number,
+    member: string
+  ): Promise<number> {
     try {
       if (!this.isRedisAvailable()) {
         console.warn('Redis not available, skipping zadd');
@@ -439,10 +443,16 @@ export class RedisCache {
   /**
    * Get members from sorted set by score range
    */
-  static async zrangebyscore(key: string, min: number, max: number): Promise<string[]> {
+  static async zrangebyscore(
+    key: string,
+    min: number,
+    max: number
+  ): Promise<string[]> {
     try {
       if (!this.isRedisAvailable()) {
-        console.warn('Redis not available, returning empty array for zrangebyscore');
+        console.warn(
+          'Redis not available, returning empty array for zrangebyscore'
+        );
         return [];
       }
 
@@ -456,7 +466,11 @@ export class RedisCache {
   /**
    * Remove members from sorted set by score range
    */
-  static async zremrangebyscore(key: string, min: number, max: number): Promise<number> {
+  static async zremrangebyscore(
+    key: string,
+    min: number,
+    max: number
+  ): Promise<number> {
     try {
       if (!this.isRedisAvailable()) {
         console.warn('Redis not available, skipping zremrangebyscore');
