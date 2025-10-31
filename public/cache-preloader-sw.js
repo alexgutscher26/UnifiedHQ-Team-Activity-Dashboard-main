@@ -99,7 +99,15 @@ class CachePreloader {
   }
 
   /**
-   * Track navigation and trigger appropriate preloading
+   * Track navigation and trigger appropriate preloading.
+   *
+   * This function checks if a navigation tracking method exists in the cachePreloader.
+   * If it does and is not a placeholder, it calls the enhancedTrackNavigation method.
+   * Regardless of the tracking method's existence, it then triggers preloading based on the provided path and sessionId.
+   * Any errors encountered during this process are logged to the console.
+   *
+   * @param {string} path - The navigation path to track.
+   * @param {string} [sessionId='default'] - The session identifier for tracking.
    */
   trackNavigation(path, sessionId = 'default') {
     try {
@@ -122,7 +130,15 @@ class CachePreloader {
   }
 
   /**
-   * Enhanced navigation tracking with pattern analysis
+   * Enhanced navigation tracking with pattern analysis.
+   *
+   * This function updates navigation tracking data based on the provided path and sessionId.
+   * It checks if navigation tracking is enabled and updates the path patterns and session data accordingly.
+   * If a session is new or has timed out, it initializes a new session. The function also detects navigation patterns
+   * within the session and updates preload targets for previous paths, enhancing the tracking capabilities.
+   *
+   * @param {string} path - The current navigation path being tracked.
+   * @param {string} sessionId - The unique identifier for the user session.
    */
   enhancedTrackNavigation(path, sessionId) {
     const now = Date.now()
@@ -194,7 +210,14 @@ class CachePreloader {
   }
 
   /**
-   * Get resource definition for a path
+   * Get resource definition for a path.
+   *
+   * This function first checks for an exact match in the RESOURCE_DEFINITIONS object using the provided path.
+   * If no exact match is found, it iterates through the entries of RESOURCE_DEFINITIONS to find a pattern
+   * that the path starts with, returning the corresponding definition if a match is found.
+   * If no matches are found, it returns null.
+   *
+   * @param {string} path - The path for which to retrieve the resource definition.
    */
   getResourceDefinition(path) {
     // Exact match first
@@ -213,7 +236,15 @@ class CachePreloader {
   }
 
   /**
-   * Schedule resources for preloading
+   * Schedule resources for preloading.
+   *
+   * This function iterates over the provided resources, creating a queue item for each resource with its associated priority, strategy, and timestamp.
+   * It then executes preloading based on the specified strategy, which can be immediate, idle, predictive, or critical, invoking the appropriate preload method as needed.
+   *
+   * @param resources - An array of resources to be preloaded.
+   * @param strategy - The strategy to use for preloading resources.
+   * @param priority - The priority level for the preloading operation.
+   * @returns A promise that resolves when the preloading process is complete.
    */
   async schedulePreload(resources, strategy, priority) {
     const now = Date.now()
@@ -251,7 +282,7 @@ class CachePreloader {
   }
 
   /**
-   * Execute immediate preloading
+   * Execute immediate preloading of resources in the next batch.
    */
   async executePreload() {
     const batch = this.getNextBatch()
@@ -261,7 +292,7 @@ class CachePreloader {
   }
 
   /**
-   * Execute predictive preloading based on confidence
+   * Executes predictive preloading for high confidence items.
    */
   async executePredictivePreload() {
     const highConfidenceItems = Array.from(PRELOAD_STATE.queue.values())
@@ -277,7 +308,7 @@ class CachePreloader {
   }
 
   /**
-   * Execute critical resource preloading
+   * Execute critical resource preloading.
    */
   async executeCriticalPreload() {
     const criticalItems = Array.from(PRELOAD_STATE.queue.values())
@@ -288,7 +319,7 @@ class CachePreloader {
   }
 
   /**
-   * Get next batch of resources to preload
+   * Get the next batch of resources to preload based on priority.
    */
   getNextBatch() {
     const available = Array.from(PRELOAD_STATE.queue.values())
@@ -361,7 +392,15 @@ class CachePreloader {
   }
 
   /**
-   * Predictive preloading based on navigation patterns
+   * Predictive preloading based on navigation patterns.
+   *
+   * This function analyzes the current navigation path and retrieves likely next destinations based on predefined patterns.
+   * It calculates the confidence for each target path and preloads resources for the top three targets that meet the confidence threshold.
+   * The function relies on external configurations and methods to determine resource definitions and scheduling for preloading.
+   *
+   * @param currentPath - The current navigation path being analyzed.
+   * @param sessionId - The session identifier for tracking user navigation.
+   * @returns {Promise<void>} A promise that resolves when the preloading is complete.
    */
   async predictivePreload(currentPath, sessionId) {
     if (!self.NAVIGATION_TRACKING) return
@@ -393,7 +432,15 @@ class CachePreloader {
   }
 
   /**
-   * Calculate confidence for path transition
+   * Calculate confidence for path transition.
+   *
+   * This function computes the confidence level for transitioning from one path to another based on the navigation tracking patterns.
+   * It first checks if navigation tracking is enabled, then retrieves the pattern associated with the `fromPath`.
+   * If the pattern exists, it counts the occurrences of the `toPath` in the preload targets and calculates the confidence as the ratio of
+   * successful transitions to the total number of transitions. If there are no transitions, it returns 0.
+   *
+   * @param {string} fromPath - The starting path for the transition.
+   * @param {string} toPath - The target path for the transition.
    */
   calculatePathConfidence(fromPath, toPath) {
     if (!self.NAVIGATION_TRACKING) return 0
@@ -408,7 +455,7 @@ class CachePreloader {
   }
 
   /**
-   * Calculate preload confidence for a resource
+   * Calculate preload confidence based on item priority and age.
    */
   calculatePreloadConfidence(item) {
     const now = Date.now()
@@ -423,11 +470,14 @@ class CachePreloader {
   }
 
   /**
-   * Initialize idle detection for idle preloading
+   * Initialize idle detection for preloading based on available APIs.
    */
   initializeIdleDetection() {
     // Use requestIdleCallback if available
     if (typeof requestIdleCallback !== 'undefined') {
+      /**
+       * Schedules work to be done during idle periods.
+       */
       const scheduleIdleWork = () => {
         requestIdleCallback((deadline) => {
           if (deadline.timeRemaining() > 0) {
@@ -448,7 +498,7 @@ class CachePreloader {
   }
 
   /**
-   * Schedule preloading during idle time
+   * Schedules preloading during idle time if the system is idle.
    */
   scheduleIdlePreload() {
     if (PRELOAD_STATE.isIdle) {
@@ -476,7 +526,7 @@ class CachePreloader {
   }
 
   /**
-   * Bind to existing navigation tracking system
+   * Bind to existing navigation tracking system and enhance cachePreloader methods.
    */
   bindToNavigationTracking() {
     // Enhance existing cachePreloader if it exists
@@ -502,7 +552,14 @@ class CachePreloader {
   }
 
   /**
-   * Enhanced critical data preloading
+   * Enhanced critical data preloading.
+   *
+   * This function enhances the preloading of critical data by first calling an optional original method,
+   * then iterating over predefined critical paths to schedule preloading of resources.
+   * It utilizes the resource definitions obtained from the paths and applies specific preloader strategies
+   * and priorities. Finally, it executes the critical preload and handles any errors that may occur during the process.
+   *
+   * @param {Function} originalMethod - An optional method to call before preloading critical data.
    */
   async enhancedPreloadCriticalData(originalMethod) {
     try {
@@ -533,7 +590,13 @@ class CachePreloader {
   }
 
   /**
-   * Enhanced cache statistics
+   * Enhanced cache statistics.
+   *
+   * This function retrieves enhanced cache statistics by optionally invoking an original method to get existing stats.
+   * It then combines these stats with additional information about preloading, including queue size, active and completed preloads,
+   * success rate, average preload time, and the number of resource definitions. In case of an error, it logs the error and returns an empty object.
+   *
+   * @param {Function} originalMethod - An optional function that returns the original cache statistics.
    */
   async enhancedGetCacheStats(originalMethod) {
     try {
@@ -560,7 +623,13 @@ class CachePreloader {
   }
 
   /**
-   * Enhanced pattern clearing
+   * Enhanced pattern clearing.
+   *
+   * This function asynchronously clears the preloader state by invoking the original method if provided,
+   * and then clearing various states related to the preloader. It handles any errors that may occur
+   * during the process and logs them for debugging purposes.
+   *
+   * @param {Function} originalMethod - The original method to be called before clearing the states.
    */
   async enhancedClearPatterns(originalMethod) {
     try {
@@ -583,7 +652,7 @@ class CachePreloader {
   }
 
   /**
-   * Get preloader-specific statistics
+   * Retrieves preloader-specific statistics including queue, active items, completed tasks, and performance metrics.
    */
   getPreloadStats() {
     return {
@@ -611,7 +680,14 @@ class CachePreloader {
   }
 
   /**
-   * Force preload specific resources
+   * Force preload specific resources.
+   *
+   * This function takes an array of URLs and constructs a resources array with each URL,
+   * setting the type to 'api' and the cache name to a default or specified value. It then
+   * schedules the preloading of these resources using the immediate strategy and high priority,
+   * followed by executing the preload process.
+   *
+   * @param {string[]} urls - An array of URLs to preload.
    */
   async forcePreload(urls) {
     const resources = urls.map(url => ({
@@ -638,7 +714,7 @@ class CachePreloader {
   }
 
   /**
-   * Calculate success rate
+   * Calculate the success rate of completed tasks.
    */
   calculateSuccessRate() {
     const completed = Array.from(PRELOAD_STATE.completed.values())
@@ -649,7 +725,13 @@ class CachePreloader {
   }
 
   /**
-   * Calculate average preload time
+   * Calculate average preload time.
+   *
+   * This function computes the average duration of successful preload operations.
+   * It first filters the completed preload states to include only those that were successful
+   * and have a defined duration. If no successful preloads are found, it returns 0.
+   * Otherwise, it sums the durations of the successful preloads and divides by their count
+   * to obtain the average.
    */
   calculateAveragePreloadTime() {
     const completed = Array.from(PRELOAD_STATE.completed.values())
