@@ -26,7 +26,7 @@ export interface RateLimitResult {
 }
 
 export class RateLimiter {
-    private config: RateLimitConfig;
+    private readonly config: RateLimitConfig;
 
     constructor(config: RateLimitConfig) {
         this.config = {
@@ -272,7 +272,7 @@ export function addRateLimitHeaders(
  */
 class InMemoryRateLimiter {
     private store = new Map<string, number[]>();
-    private config: RateLimitConfig;
+    private readonly config: RateLimitConfig;
 
     constructor(config: RateLimitConfig) {
         this.config = config;

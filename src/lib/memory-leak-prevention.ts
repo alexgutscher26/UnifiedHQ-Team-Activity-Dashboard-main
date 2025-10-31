@@ -566,7 +566,7 @@ export function useSafeEventSource(
 
   const addEventListener = useCallback(
     (type: string, listener: (event: MessageEvent) => void) => {
-      if (!eventSource) return () => {};
+      if (!eventSource) return () => { };
 
       eventSource.addEventListener(type, listener);
       return () => {
@@ -698,7 +698,7 @@ export function useSafeObservableSubscription<T>(
       };
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Subscription error'));
-      return () => {};
+      return () => { };
     }
   }, deps);
 

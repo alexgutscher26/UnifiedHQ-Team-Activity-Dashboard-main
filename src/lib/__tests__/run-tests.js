@@ -133,16 +133,19 @@ async function runAllTests() {
 // Handle errors
 process.on('unhandledRejection', error => {
   console.error('❌ Unhandled rejection:', error);
-  process.exit(1);
+  // Set exit code but don't immediately terminate
+  process.exitCode = 1;
 });
 
 process.on('uncaughtException', error => {
   console.error('❌ Uncaught exception:', error);
-  process.exit(1);
+  // Set exit code but don't immediately terminate
+  process.exitCode = 1;
 });
 
 // Run tests
 runAllTests().catch(error => {
   console.error('❌ Test runner error:', error);
-  process.exit(1);
+  // Set exit code and let process terminate naturally
+  process.exitCode = 1;
 });

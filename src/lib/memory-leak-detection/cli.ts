@@ -21,7 +21,7 @@ async function main() {
         console.log('  npx tsx src/lib/memory-leak-detection/cli.ts <file>');
         console.log('  npx tsx src/lib/memory-leak-detection/cli.ts --test');
         console.log('  npx tsx src/lib/memory-leak-detection/cli.ts --analyze-project');
-        process.exit(1);
+        throw new Error('Invalid usage - missing required arguments');
     }
 
     const command = args[0];
@@ -49,7 +49,7 @@ async function analyzeFile(filePath: string) {
     try {
         if (!fs.existsSync(filePath)) {
             console.error(`❌ File not found: ${filePath}`);
-            process.exit(1);
+            throw new Error(`File not found: ${filePath}`);
         }
 
         const code = fs.readFileSync(filePath, 'utf-8');
@@ -60,12 +60,13 @@ async function analyzeFile(filePath: string) {
         console.log(report);
 
         if (analysis.hasMemoryLeaks) {
-            process.exit(1);
+            process.exitCode = 1;
         }
 
     } catch (error) {
         console.error('❌ Analysis failed:', error);
-        process.exit(1);
+        process.exitCode = 1;
+        throw error;
     }
 }
 

@@ -100,14 +100,13 @@ function InputGroupAddon({
 
   if (clickable) {
     return (
-      <div
-        role='button'
-        tabIndex={0}
+      <button
+        type="button"
         data-slot='input-group-addon'
         data-align={align}
         className={cn(
           inputGroupAddonVariants({ align }),
-          'cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-sm hover:bg-muted/50 transition-colors',
+          'cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-sm hover:bg-muted/50 transition-colors border-none bg-transparent',
           className
         )}
         onClick={handleClick}

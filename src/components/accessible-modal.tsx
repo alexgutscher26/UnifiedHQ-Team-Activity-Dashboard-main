@@ -345,10 +345,9 @@ export const AccessibleTooltip: React.FC<AccessibleTooltipProps> = ({
   };
 
   return (
-    <div
-      className={cn('relative inline-block', className)}
-      role="button"
-      tabIndex={0}
+    <button
+      type="button"
+      className={cn('relative inline-block border-none bg-transparent p-0 m-0 cursor-default', className)}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onFocus={handleFocus}
@@ -395,7 +394,7 @@ export const AccessibleTooltip: React.FC<AccessibleTooltipProps> = ({
           />
         </div>
       )}
-    </div>
+    </button>
   );
 };
 
