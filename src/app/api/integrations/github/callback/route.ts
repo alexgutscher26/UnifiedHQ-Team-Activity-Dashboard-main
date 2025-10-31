@@ -7,6 +7,17 @@ import {
 
 const prisma = new PrismaClient();
 
+/**
+ * Handles the GET request for GitHub OAuth callback.
+ *
+ * This function processes the incoming request, checks for errors, and verifies the user based on the state parameter.
+ * It exchanges the provided code for an access token from GitHub, stores the connection in the database,
+ * and triggers an initial sync of GitHub activities for the user. Additionally, it warms the cache for the GitHub integration.
+ *
+ * @param request - The incoming NextRequest object containing the request details.
+ * @returns A NextResponse redirecting to the appropriate URL based on the outcome of the operation.
+ * @throws Error If an unexpected error occurs during the processing of the request.
+ */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -41,7 +52,7 @@ export async function GET(request: NextRequest) {
     console.log('[GitHub Callback] Exchanging code for token...', {
       client_id: process.env.GITHUB_CLIENT_ID,
       code: code?.substring(0, 10) + '...',
-      state
+      state,
     });
 
     const tokenResponse = await fetch(
@@ -113,9 +124,15 @@ export async function GET(request: NextRequest) {
 
     // Trigger cache warming for GitHub integration
     try {
-      const { warmCacheOnIntegrationConnect } = await import('@/lib/cache-warming');
+      const { warmCacheOnIntegrationConnect } = await import(
+        '@/lib/cache-warming'
+      );
       // Run in background - don't block the redirect
-      warmCacheOnIntegrationConnect(user.id, 'github', tokenData.access_token).catch(error => {
+      warmCacheOnIntegrationConnect(
+        user.id,
+        'github',
+        tokenData.access_token
+      ).catch(error => {
         console.error('Background cache warming failed:', error);
       });
     } catch (error) {
