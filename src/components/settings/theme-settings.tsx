@@ -39,9 +39,7 @@ interface ThemeSettings {
 /**
  * Manages theme settings for the application, allowing users to customize their appearance preferences.
  *
- * This component initializes with default theme settings and loads any saved settings from local storage.
- * It provides functionality to save updated settings, apply the selected theme, and preview themes.
- * The component also handles loading states and displays a user interface for selecting color schemes, themes, and display options.
+ * This component initializes with default theme settings, loads saved settings from local storage, and provides functionality to save updated settings, apply the selected theme, and preview themes. It also handles loading states and displays a user interface for selecting color schemes, themes, and display options.
  *
  * @param {ThemeSettingsProps} props - The properties for the ThemeSettings component.
  * @param {function} props.onSettingsChange - Callback function to be called when settings are changed.
@@ -272,11 +270,12 @@ export function ThemeSettings({ onSettingsChange }: ThemeSettingsProps) {
             {Object.entries(themes).map(([key, theme]) => (
               <button
                 key={key}
-                type="button"
-                className={`p-4 border rounded-lg cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 text-left w-full ${settings.theme === key
-                  ? 'border-primary ring-2 ring-primary/20'
-                  : 'border-border hover:border-primary/50'
-                  }`}
+                type='button'
+                className={`p-4 border rounded-lg cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 text-left w-full ${
+                  settings.theme === key
+                    ? 'border-primary ring-2 ring-primary/20'
+                    : 'border-border hover:border-primary/50'
+                }`}
                 onClick={() => saveSettings({ theme: key })}
                 onMouseEnter={() => previewTheme(key)}
                 onMouseLeave={resetPreview}

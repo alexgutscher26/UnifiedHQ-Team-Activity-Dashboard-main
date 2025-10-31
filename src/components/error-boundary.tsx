@@ -63,7 +63,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   /**
-   * Updates state to indicate an error has occurred.
+   * Updates state to indicate an error has occurred and provides error details.
    */
   static getDerivedStateFromError(error: Error): Partial<State> {
     // Update state so the next render will show the fallback UI
