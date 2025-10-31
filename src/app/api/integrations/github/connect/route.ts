@@ -4,6 +4,17 @@ import { PrismaClient } from '@/generated/prisma';
 
 const prisma = new PrismaClient();
 
+/**
+ * Handles the GET request for GitHub OAuth authentication.
+ *
+ * This function retrieves the user session using the provided request headers.
+ * If the user is not authenticated, it returns a 401 Unauthorized response.
+ * If authenticated, it constructs a GitHub OAuth URL with the necessary parameters
+ * and redirects the user to GitHub for authorization. In case of an error,
+ * it logs the error and returns a 500 Internal Server Error response.
+ *
+ * @param request - The NextRequest object containing the request details.
+ */
 export async function GET(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
