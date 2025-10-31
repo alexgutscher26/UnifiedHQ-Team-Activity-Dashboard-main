@@ -109,12 +109,37 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * Calculate various productivity metrics based on current and previous activities.
+ *
+ * This function computes commit frequency, average code review time, average issue resolution time,
+ * and collaboration scores by analyzing activities from two time periods. It utilizes helper functions
+ * to determine trends in these metrics, comparing current values against previous ones to assess
+ * performance changes over a specified number of days.
+ *
+ * @param currentActivities - An array of activity objects representing the current period's activities.
+ * @param previousActivities - An array of activity objects representing the previous period's activities.
+ * @param days - The number of days over which to calculate the metrics.
+ * @returns An object containing calculated productivity metrics including commit frequency,
+ *          code review time, issue resolution time, and collaboration score.
+ */
 function calculateMetrics(
   currentActivities: any[],
   previousActivities: any[],
   days: number
 ): ProductivityMetrics {
   // Helper function to calculate trends
+  /**
+   * Determines the trend of a value compared to its previous value.
+   *
+   * This function calculates the percentage change between the current and previous values.
+   * It returns 'up' if the change exceeds a 10% increase, 'down' for a 10% decrease,
+   * and 'stable' if the change is within the threshold. The calculation handles cases
+   * where the previous value is zero to avoid division by zero errors.
+   *
+   * @param current - The current value to compare.
+   * @param previous - The previous value to compare against.
+   */
   const getTrend = (
     current: number,
     previous: number
