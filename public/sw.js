@@ -161,7 +161,7 @@ self.addEventListener('fetch', (event) => {
  * @returns A Response object based on the request type and caching strategy.
  * @throws Error If there is an issue during the fetch process.
  */
-async function handleFetch(request) {
+async function handleFetch (request) {
   const url = new URL(request.url)
 
   try {
@@ -202,7 +202,7 @@ async function handleFetch(request) {
  * @param config - The configuration object containing the caching strategy.
  * @returns The result of the caching strategy function or the network fetch.
  */
-async function handleCachedRequest(request, config) {
+async function handleCachedRequest (request, config) {
   switch (config.strategy) {
     case 'cache-first':
       return cacheFirstStrategy(request, config)
@@ -228,7 +228,7 @@ async function handleCachedRequest(request, config) {
  * @returns The network response or a cached response if the network request fails.
  * @throws Error If the network request fails and no valid cached response is available.
  */
-async function networkFirstStrategy(request, config) {
+async function networkFirstStrategy (request, config) {
   const cache = await caches.open(config.name)
   const timeoutMs = (config.networkTimeoutSeconds || 10) * 1000
 
@@ -258,7 +258,7 @@ async function networkFirstStrategy(request, config) {
 }
 
 // Cache First Strategy - Try cache, fallback to network
-async function cacheFirstStrategy(request, config) {
+async function cacheFirstStrategy (request, config) {
   const cache = await caches.open(config.name)
   const cachedResponse = await cache.match(request)
 
@@ -292,7 +292,7 @@ async function cacheFirstStrategy(request, config) {
  * @param {Request} request - The request object to fetch the resource.
  * @param {Object} config - Configuration object containing cache settings.
  */
-async function staleWhileRevalidateStrategy(request, config) {
+async function staleWhileRevalidateStrategy (request, config) {
   const cache = await caches.open(config.name)
   const cachedResponse = await cache.match(request)
 
@@ -329,7 +329,7 @@ async function staleWhileRevalidateStrategy(request, config) {
  * @param {Request} request - The request object to match against the cache.
  * @param {Object} config - The configuration object containing cache settings.
  */
-async function cacheOnlyStrategy(request, config) {
+async function cacheOnlyStrategy (request, config) {
   const cache = await caches.open(config.name)
   const cachedResponse = await cache.match(request)
 
@@ -344,7 +344,7 @@ async function cacheOnlyStrategy(request, config) {
 /**
  * Checks if the given URL is a static asset.
  */
-function isStaticAsset(url) {
+function isStaticAsset (url) {
   return (
     url.pathname.startsWith('/_next/static/') ||
     url.pathname.startsWith('/static/') ||
@@ -365,7 +365,7 @@ self.addEventListener('sync', (event) => {
 /**
  * Handles background synchronization for offline actions.
  */
-async function handleBackgroundSync() {
+async function handleBackgroundSync () {
   try {
     console.log('[SW] Starting background sync for offline actions')
 
@@ -481,7 +481,7 @@ self.addEventListener('message', (event) => {
  *
  * @param {string} cacheName - The name of the cache to be deleted. If not provided, all caches will be cleared.
  */
-async function clearCache(cacheName) {
+async function clearCache (cacheName) {
   if (cacheName) {
     return caches.delete(cacheName)
   } else {
@@ -502,7 +502,7 @@ async function clearCache(cacheName) {
  *
  * @returns An array of objects containing cache statistics, including name, size, entries, and config.
  */
-async function getCacheStats() {
+async function getCacheStats () {
   const stats = []
 
   for (const [cacheName, config] of Object.entries(CACHE_CONFIGS)) {
@@ -546,7 +546,7 @@ async function getCacheStats() {
  * @param {Response} response - The response object to be cached.
  * @param {Object} config - Configuration object for cache cleanup.
  */
-async function putInCache(cache, request, response, config) {
+async function putInCache (cache, request, response, config) {
   // Don't cache non-successful responses
   if (!response.ok) {
     return
@@ -579,7 +579,7 @@ async function putInCache(cache, request, response, config) {
  * @param {Response} response - The response object containing headers to check for cache information.
  * @param {Object} config - Configuration object containing the maxAgeSeconds property.
  */
-function isExpired(response, config) {
+function isExpired (response, config) {
   if (!config.maxAgeSeconds) {
     return false
   }
@@ -602,7 +602,7 @@ function isExpired(response, config) {
  * @param cache - The cache object to be cleaned up.
  * @param config - Configuration object containing maxEntries and maxAgeSeconds.
  */
-async function cleanupCache(cache, config) {
+async function cleanupCache (cache, config) {
   if (!config.maxEntries && !config.maxAgeSeconds) {
     return
   }
@@ -653,7 +653,7 @@ async function cleanupCache(cache, config) {
  * If so, it retrieves the storage estimate, returning an object containing the quota, usage, and available space.
  * If the storage API is not supported, it returns an object with all values set to zero.
  */
-async function getStorageInfo() {
+async function getStorageInfo () {
   if ('storage' in navigator && 'estimate' in navigator.storage) {
     const estimate = await navigator.storage.estimate()
     return {
@@ -666,7 +666,7 @@ async function getStorageInfo() {
 }
 
 // Check if storage quota is exceeded
-async function isStorageQuotaExceeded() {
+async function isStorageQuotaExceeded () {
   const { quota, usage } = await getStorageInfo()
   if (quota === 0) return false
 
