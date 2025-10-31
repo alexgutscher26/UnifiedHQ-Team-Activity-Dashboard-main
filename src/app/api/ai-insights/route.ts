@@ -88,8 +88,13 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST /api/ai-insights/generate
- * Generate new AI insights based on recent activity
+ * Generate new AI insights based on recent user activity.
+ *
+ * This function retrieves the user's session and validates authorization. It then calculates the time range for user activities, fetches the relevant activities from the database, and generates insights based on those activities. If no activities are found, it returns an appropriate error message. The generated insights, along with metadata, are returned in the response.
+ *
+ * @param request - The incoming request containing user session and parameters for generating insights.
+ * @returns A JSON response containing the generated insights, activity count, and time range.
+ * @throws Error If there is an issue during the generation of AI insights.
  */
 export async function POST(request: NextRequest) {
   try {
