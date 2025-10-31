@@ -3,6 +3,9 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ShieldX, ArrowLeft, Home } from 'lucide-react'
 
+/**
+ * Renders an access denied page for unauthorized users.
+ */
 export default function UnauthorizedPage() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-background px-4">
