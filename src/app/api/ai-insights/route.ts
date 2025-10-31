@@ -7,11 +7,11 @@ const prisma = new PrismaClient();
 interface AIInsight {
   id: string;
   type:
-    | 'productivity'
-    | 'collaboration'
-    | 'code_quality'
-    | 'trend'
-    | 'recommendation';
+  | 'productivity'
+  | 'collaboration'
+  | 'code_quality'
+  | 'trend'
+  | 'recommendation';
   title: string;
   description: string;
   confidence: number;
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
 
     const userId = session.user.id;
     const body = await request.json();
-    const { timeRange = '30d', forceRegenerate = false } = body;
+    const { timeRange = '30d', forceRegenerate: _forceRegenerate = false } = body;
 
     // Calculate time range
     const now = new Date();

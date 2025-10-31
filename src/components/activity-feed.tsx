@@ -149,10 +149,8 @@ export function ActivityFeed() {
   const [showTopFade, setShowTopFade] = useState(false);
   const [showBottomFade, setShowBottomFade] = useState(false);
   const [isLiveConnected, setIsLiveConnected] = useState(false);
-  const [eventSource, setEventSource] = useState<EventSource | null>(null);
-  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(
-    null
-  );
+  const [, setEventSource] = useState<EventSource | null>(null);
+
 
   useEffect(() => {
     fetchActivities();
@@ -168,8 +166,6 @@ export function ActivityFeed() {
       fetchActivities();
     }, 60000); // 60 seconds
 
-    setRefreshInterval(interval);
-
     return () => {
       // Clean up EventSource connection
       setEventSource(currentEventSource => {
@@ -184,7 +180,6 @@ export function ActivityFeed() {
       if (interval) {
         clearInterval(interval);
       }
-      setRefreshInterval(null);
     };
   }, []);
 

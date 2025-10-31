@@ -245,7 +245,7 @@ export const useColorContrast = () => {
   /**
    * Calculates the contrast ratio between two colors
    */
-  const getContrastRatio = useCallback((color1: string, color2: string) => {
+  const getContrastRatio = useCallback((_color1: string, _color2: string) => {
     // Simplified contrast ratio calculation
     // In a real implementation, you'd parse colors and calculate luminance
     return 4.5; // Placeholder - should be calculated properly

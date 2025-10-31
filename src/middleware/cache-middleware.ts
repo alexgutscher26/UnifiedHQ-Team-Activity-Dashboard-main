@@ -510,10 +510,9 @@ export class CacheWarmer {
   static async warmEndpoints(
     endpoints: Array<{
       url: string;
-      headers?: Record<string, string>;
     }>
   ): Promise<void> {
-    const promises = endpoints.map(async ({ url, headers = {} }) => {
+    const promises = endpoints.map(async ({ url }) => {
       if (this.warmingQueue.has(url)) {
         return; // Already warming this endpoint
       }
@@ -540,7 +539,7 @@ export class CacheWarmer {
   static async warmUserCache(userId: string): Promise<void> {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const endpoints = [
-      { url: `${baseUrl}/api/user/profile`, headers: { 'x-user-id': userId } },
+      { url: `${baseUrl}/api/user/profile` },
       { url: `${baseUrl}/api/github/repos` },
       { url: `${baseUrl}/api/slack/channels` },
       { url: `${baseUrl}/api/slack/stats` },

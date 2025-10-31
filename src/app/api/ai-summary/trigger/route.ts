@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 /**
  * GET endpoint to check if trigger is available
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   return NextResponse.json({
     available: true,
     message: 'AI summary trigger is available',

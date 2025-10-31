@@ -13,7 +13,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Github, Slack } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+
 import { AuthErrorBoundary } from '@/components/error-boundaries';
 import { ValidatedInput, FormGroup, FormActions } from '@/components/ui/form';
 import { useFormValidation } from '@/lib/validation';
@@ -23,7 +23,6 @@ export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const router = useRouter();
 
   const { data, updateField, validateForm, getFieldError, isFormValid } =
     useFormValidation(
