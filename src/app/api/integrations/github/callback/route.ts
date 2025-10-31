@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     console.log('[GitHub Callback] Exchanging code for token...', {
       client_id: process.env.GITHUB_CLIENT_ID,
       code: code?.substring(0, 10) + '...',
-      state
+      state,
     });
 
     const tokenResponse = await fetch(

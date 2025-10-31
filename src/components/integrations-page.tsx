@@ -477,10 +477,10 @@ export function IntegrationsPage() {
       features: ['Commits', 'Pull Requests', 'Issues', 'Repository Events'],
       stats: githubConnected
         ? {
-          repositories: selectedRepos,
-          activities: totalActivities,
-          lastSync: lastSyncTime,
-        }
+            repositories: selectedRepos,
+            activities: totalActivities,
+            lastSync: lastSyncTime,
+          }
         : null,
       action: githubConnected ? (
         <div className='flex flex-col gap-2'>
@@ -551,10 +551,10 @@ export function IntegrationsPage() {
       features: ['Messages', 'Channels', 'Files', 'Reactions'],
       stats: slackConnected
         ? {
-          channels: selectedChannels,
-          activities: 0, // Will be calculated separately
-          lastSync: lastSyncTime,
-        }
+            channels: selectedChannels,
+            activities: 0, // Will be calculated separately
+            lastSync: lastSyncTime,
+          }
         : null,
       action: slackConnected ? (
         <div className='flex flex-col gap-2'>
@@ -872,10 +872,11 @@ export function IntegrationsPage() {
               {integrations.map(integration => (
                 <Card
                   key={integration.id}
-                  className={`relative overflow-hidden transition-all duration-200 hover:shadow-lg ${integration.connected
+                  className={`relative overflow-hidden transition-all duration-200 hover:shadow-lg ${
+                    integration.connected
                       ? 'ring-2 ring-green-200 dark:ring-green-800 bg-green-50/30 dark:bg-green-950/20'
                       : ''
-                    }`}
+                  }`}
                 >
                   {/* Gradient Background */}
                   <div
