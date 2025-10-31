@@ -330,7 +330,10 @@ export function ActivityFeed() {
         // The component will continue to work with periodic refresh
       };
     } catch (error) {
-      safeLogger.error('Failed to connect to live updates:', sanitizeError(error));
+      safeLogger.error(
+        'Failed to connect to live updates:',
+        sanitizeError(error)
+      );
       setIsLiveConnected(false);
     }
   };
@@ -360,7 +363,7 @@ export function ActivityFeed() {
         } else {
           safeLogger.error('Failed to fetch activities:', {
             status: response.status,
-            statusText: response.statusText
+            statusText: response.statusText,
           });
           setActivities([]);
         }

@@ -84,7 +84,8 @@ function sanitizeColor(color: string): string | null {
   }
 
   // Allow hex colors, rgb/rgba, hsl/hsla, and named colors
-  const colorRegex = /^(#[0-9a-fA-F]{3,8}|rgb\([^)]+\)|rgba\([^)]+\)|hsl\([^)]+\)|hsla\([^)]+\)|[a-zA-Z]+)$/;
+  const colorRegex =
+    /^(#[0-9a-fA-F]{3,8}|rgb\([^)]+\)|rgba\([^)]+\)|hsl\([^)]+\)|hsla\([^)]+\)|[a-zA-Z]+)$/;
 
   if (!colorRegex.test(color.trim())) {
     console.warn(`Invalid color value detected and sanitized: ${color}`);
@@ -445,8 +446,8 @@ function getPayloadConfigFromPayload(
 
   const payloadPayload =
     'payload' in payload &&
-      typeof payload.payload === 'object' &&
-      payload.payload !== null
+    typeof payload.payload === 'object' &&
+    payload.payload !== null
       ? payload.payload
       : undefined;
 
