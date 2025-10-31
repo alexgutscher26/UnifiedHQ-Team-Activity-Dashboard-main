@@ -7,6 +7,9 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { DashboardErrorBoundary } from '@/components/error-boundaries';
 import { getCurrentUser } from '@/lib/get-user';
 
+/**
+ * Renders the main page component, redirecting unauthenticated users to the sign-in page.
+ */
 export default async function Page() {
   const user = await getCurrentUser();
 
