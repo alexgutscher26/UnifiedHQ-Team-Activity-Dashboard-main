@@ -141,6 +141,16 @@ describe('Network Status Hook Logic', () => {
 
   describe('Ping Functionality', () => {
     it('should validate ping URL format', () => {
+      /**
+       * Checks if a given URL is a valid ping URL.
+       *
+       * The function first checks if the URL is a relative URL by verifying if it starts with '/'.
+       * If so, it returns true, assuming relative URLs are valid. For absolute URLs, it attempts
+       * to create a new URL object, which will throw an error if the URL is invalid. If the URL
+       * is successfully parsed, it returns true; otherwise, it catches the error and returns false.
+       *
+       * @param {string} url - The URL to be validated.
+       */
       const isValidPingUrl = url => {
         try {
           // For relative URLs, assume they're valid if they start with /
