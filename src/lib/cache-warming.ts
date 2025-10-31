@@ -1,6 +1,6 @@
 /**
  * Cache Warming Utilities
- * 
+ *
  * This module provides utilities to trigger cache warming for various scenarios
  * like user login, integration connections, and scheduled maintenance.
  */
@@ -16,7 +16,10 @@ export interface CacheWarmingOptions {
 /**
  * Warm cache after user login
  */
-export async function warmCacheOnLogin(userId: string, authToken?: string): Promise<void> {
+export async function warmCacheOnLogin(
+  userId: string,
+  authToken?: string
+): Promise<void> {
   try {
     console.log(`🔥 Warming cache for user login: ${userId}`);
 
@@ -49,7 +52,8 @@ export async function warmCacheOnIntegrationConnect(
       headers['Authorization'] = `Bearer ${authToken}`;
     }
 
-    let endpoints: Array<{ url: string; headers?: Record<string, string> }> = [];
+    let endpoints: Array<{ url: string; headers?: Record<string, string> }> =
+      [];
 
     if (integration === 'github') {
       endpoints = [
@@ -71,16 +75,20 @@ export async function warmCacheOnIntegrationConnect(
       { url: `${baseUrl}/api/activities`, headers },
       { url: `${baseUrl}/api/ai-summary?timeRange=24h&limit=1`, headers },
     ]);
-
   } catch (error) {
-    console.error(`Cache warming for ${integration} integration failed:`, error);
+    console.error(
+      `Cache warming for ${integration} integration failed:`,
+      error
+    );
   }
 }
 
 /**
  * Warm cache for dashboard on page load
  */
-export async function warmCacheOnDashboardLoad(authToken?: string): Promise<void> {
+export async function warmCacheOnDashboardLoad(
+  authToken?: string
+): Promise<void> {
   try {
     console.log('🔥 Warming dashboard cache on page load');
 
@@ -159,7 +167,7 @@ export async function triggerCacheWarmingAPI(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(authToken && { 'Authorization': `Bearer ${authToken}` }),
+        ...(authToken && { Authorization: `Bearer ${authToken}` }),
       },
       body: JSON.stringify({ type, authToken }),
     });
@@ -169,7 +177,11 @@ export async function triggerCacheWarmingAPI(
       console.log('✅ Cache warming API call successful:', result.message);
       return true;
     } else {
-      console.error('❌ Cache warming API call failed:', response.status, response.statusText);
+      console.error(
+        '❌ Cache warming API call failed:',
+        response.status,
+        response.statusText
+      );
       return false;
     }
   } catch (error) {

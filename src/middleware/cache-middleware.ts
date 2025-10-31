@@ -536,7 +536,9 @@ export class CacheWarmer {
         if (response.ok) {
           console.log(`✅ Cache warmed successfully for: ${url}`);
         } else {
-          console.warn(`⚠️ Cache warming failed for ${url}: ${response.status} ${response.statusText}`);
+          console.warn(
+            `⚠️ Cache warming failed for ${url}: ${response.status} ${response.statusText}`
+          );
         }
       } catch (error) {
         console.error(`❌ Failed to warm cache for ${url}:`, error);
@@ -551,7 +553,10 @@ export class CacheWarmer {
   /**
    * Warms cache for user-specific data by fetching from predefined endpoints.
    */
-  static async warmUserCache(userId: string, authToken?: string): Promise<void> {
+  static async warmUserCache(
+    userId: string,
+    authToken?: string
+  ): Promise<void> {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
     // Prepare headers for authenticated requests

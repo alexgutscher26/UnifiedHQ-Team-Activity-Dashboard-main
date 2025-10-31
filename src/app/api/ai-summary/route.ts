@@ -267,7 +267,7 @@ async function handleGET(request: NextRequest) {
     // Check if it's been 24 hours since last summary
     const hoursSinceLastSummary = mostRecentSummary
       ? (now.getTime() - new Date(mostRecentSummary.generatedAt).getTime()) /
-      (60 * 60 * 1000)
+        (60 * 60 * 1000)
       : 24; // If no summaries, consider it as 24+ hours
 
     // Auto-generate summary if it's been 24+ hours since last summary OR if no summaries exist
