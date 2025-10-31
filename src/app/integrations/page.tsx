@@ -6,6 +6,9 @@ import { IntegrationsPage } from '@/components/integrations-page';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { getCurrentUser } from '@/lib/get-user';
 
+/**
+ * Renders the main page component, redirecting to authentication if the user is not logged in.
+ */
 export default async function Page() {
   const user = await getCurrentUser();
 
