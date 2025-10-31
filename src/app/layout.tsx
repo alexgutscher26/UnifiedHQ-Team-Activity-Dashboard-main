@@ -1,10 +1,10 @@
 /**
  * @fileoverview Root Layout for UnifiedHQ Application
- * 
+ *
  * This file defines the root layout component that wraps all pages in the
  * UnifiedHQ application. It sets up essential providers, error boundaries,
  * and global components needed for the application to function properly.
- * 
+ *
  * Key responsibilities:
  * - Theme management (dark/light mode)
  * - Error boundary and error handling
@@ -14,7 +14,7 @@
  * - Global UI components (toasts, overlays, etc.)
  * - Analytics and monitoring integration
  * - Chatbot integration
- * 
+ *
  * @author UnifiedHQ Team
  * @since 1.0.0
  */
@@ -43,11 +43,11 @@ import './globals.css';
 
 /**
  * Application Metadata
- * 
+ *
  * Defines the default metadata for the UnifiedHQ application.
  * This metadata is used by Next.js for SEO, social sharing,
  * and browser tab information.
- * 
+ *
  * @type {Metadata}
  * @property {string} title - The default page title shown in browser tabs
  * @property {string} description - The default meta description for SEO
@@ -88,7 +88,7 @@ function LoadingMessage() {
 
 /**
  * Loading Progress Bars Component
- * 
+ *
  * Displays skeleton loading bars for visual feedback.
  */
 function LoadingProgress() {
@@ -103,7 +103,7 @@ function LoadingProgress() {
 
 /**
  * Loading Screen Component
- * 
+ *
  * Displays an animated loading screen while the application initializes.
  * Used as a Suspense fallback for async components and route transitions.
  */
