@@ -33,11 +33,11 @@ import {
 interface AIInsight {
   id: string;
   type:
-  | 'productivity'
-  | 'collaboration'
-  | 'code_quality'
-  | 'trend'
-  | 'recommendation';
+    | 'productivity'
+    | 'collaboration'
+    | 'code_quality'
+    | 'trend'
+    | 'recommendation';
   title: string;
   description: string;
   confidence: number;
@@ -359,9 +359,9 @@ export function AIInsightsContent() {
     selectedCategory === 'all'
       ? insights
       : insights.filter(
-        insight =>
-          insight.category.toLowerCase() === selectedCategory.toLowerCase()
-      );
+          insight =>
+            insight.category.toLowerCase() === selectedCategory.toLowerCase()
+        );
 
   const categories = [
     'all',
