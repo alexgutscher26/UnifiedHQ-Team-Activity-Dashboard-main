@@ -13,6 +13,9 @@ export const metadata: Metadata = {
     description: 'Centralized team activity tracking with intelligent caching',
 }
 
+/**
+ * Renders the root layout of the application with navigation and footer.
+ */
 export default function RootLayout({
     children,
 }: {
@@ -61,6 +64,9 @@ export default function RootLayout({
 import { useNavigationTracking } from '@/hooks/use-navigation-tracking'
 import { useEffect } from 'react'
 
+/**
+ * Renders the dashboard page with session information and preloads navigation.
+ */
 export default function DashboardPage() {
     const { preloadForCurrentPath, sessionId } = useNavigationTracking()
 
@@ -88,6 +94,9 @@ export default function DashboardPage() {
 // app/admin/navigation/page.tsx
 import { NavigationTrackingDashboard } from '@/components/navigation-tracking-dashboard'
 
+/**
+ * Renders the Navigation Admin Page with analytics and tracking dashboard.
+ */
 export default function NavigationAdminPage() {
     return (
         <div className="space-y-6">
@@ -118,9 +127,27 @@ interface NavigationLinkProps {
     preload?: boolean
 }
 
+/**
+ * Renders a navigation link that tracks navigation events.
+ *
+ * This component utilizes a navigation tracker to log navigation actions when the link is clicked.
+ * If the `preload` option is enabled, it preloads the destination for the current path after tracking.
+ * The `href` and `children` props define the link's destination and its display content, respectively.
+ *
+ * @param {Object} props - The properties for the NavigationLink component.
+ * @param {string} props.href - The URL to navigate to when the link is clicked.
+ * @param {ReactNode} props.children - The content to be displayed within the link.
+ * @param {boolean} [props.preload=false] - Indicates whether to preload the destination.
+ */
 export function NavigationLink({ href, children, preload = false }: NavigationLinkProps) {
     const tracker = useOptionalNavigationTracker()
 
+    /**
+     * Handles the click event by tracking navigation and optionally preloading the destination.
+     *
+     * This function checks if the tracker is available. If so, it tracks the navigation to the specified href.
+     * Additionally, if the preload flag is set, it preloads the current path for faster navigation.
+     */
     const handleClick = async () => {
         if (tracker) {
             // Track the navigation
@@ -148,6 +175,9 @@ export function NavigationLink({ href, children, preload = false }: NavigationLi
 
 import { useEffect } from 'react'
 
+/**
+ * Registers a service worker if supported by the browser.
+ */
 export function ServiceWorkerRegistration() {
     useEffect(() => {
         if ('serviceWorker' in navigator) {
@@ -186,6 +216,9 @@ export const navigationConfig = {
     }
 }
 
+/**
+ * Retrieves the navigation configuration based on the current environment.
+ */
 export function getNavigationConfig() {
     const env = process.env.NODE_ENV as keyof typeof navigationConfig
     return navigationConfig[env] || navigationConfig.development
