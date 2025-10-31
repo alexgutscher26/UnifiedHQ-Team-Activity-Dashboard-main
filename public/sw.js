@@ -564,9 +564,9 @@ async function putInCache(cache, request, response, config) {
 /**
  * Checks if a cached response has expired based on the provided configuration.
  *
- * The function first verifies if a maximum age is specified in the config. If not, it assumes the response is not expired.
- * It then retrieves the cached timestamp from the response headers. If the timestamp is absent, the function assumes the response is expired.
- * Finally, it calculates the age of the cache and compares it to the maximum age to determine if the response is expired.
+ * The function first checks if a maximum age is specified in the config; if not, it assumes the response is not expired.
+ * It retrieves the cached timestamp from the response headers, and if absent, assumes the response is expired.
+ * Finally, it calculates the cache age and compares it to the maximum age to determine if the response is expired.
  *
  * @param {Response} response - The response object containing headers to check for cache information.
  * @param {Object} config - Configuration object containing the maxAgeSeconds property.
@@ -641,9 +641,9 @@ async function cleanupCache(cache, config) {
 /**
  * Retrieves storage information from the browser's storage API.
  *
- * This function checks if the browser supports the storage API and if the estimate method is available.
- * If so, it retrieves the storage estimate, returning an object containing the quota, usage, and available space.
- * If the storage API is not supported, it returns an object with all values set to zero.
+ * This asynchronous function checks for the presence of the storage API and the estimate method within the navigator object.
+ * If both are available, it retrieves the storage estimate and returns an object containing the quota, usage, and available space.
+ * If the storage API is unsupported, it returns an object with all values set to zero.
  */
 async function getStorageInfo() {
   if ('storage' in navigator && 'estimate' in navigator.storage) {
