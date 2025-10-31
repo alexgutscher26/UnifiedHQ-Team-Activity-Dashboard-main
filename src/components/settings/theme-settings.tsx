@@ -272,11 +272,12 @@ export function ThemeSettings({ onSettingsChange }: ThemeSettingsProps) {
             {Object.entries(themes).map(([key, theme]) => (
               <button
                 key={key}
-                type="button"
-                className={`p-4 border rounded-lg cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 text-left w-full ${settings.theme === key
-                  ? 'border-primary ring-2 ring-primary/20'
-                  : 'border-border hover:border-primary/50'
-                  }`}
+                type='button'
+                className={`p-4 border rounded-lg cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 text-left w-full ${
+                  settings.theme === key
+                    ? 'border-primary ring-2 ring-primary/20'
+                    : 'border-border hover:border-primary/50'
+                }`}
                 onClick={() => saveSettings({ theme: key })}
                 onMouseEnter={() => previewTheme(key)}
                 onMouseLeave={resetPreview}
