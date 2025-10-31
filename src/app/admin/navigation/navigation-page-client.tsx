@@ -3,6 +3,9 @@
 import { NavigationTrackingDashboard } from '@/components/navigation-tracking-dashboard'
 import { AuthGuard, useAuthGuard } from '@/components/auth-guard'
 
+/**
+ * Renders the navigation page wrapped in an authentication guard.
+ */
 export function NavigationPageClient() {
     return (
         <AuthGuard>
@@ -11,6 +14,14 @@ export function NavigationPageClient() {
     )
 }
 
+/**
+ * Renders the navigation page content based on user authentication status.
+ *
+ * The function utilizes the useAuthGuard hook to retrieve the current user and loading state.
+ * If the data is still loading, a placeholder UI is displayed. Once loading is complete,
+ * it presents the navigation analytics header, user information if available, and the
+ * NavigationTrackingDashboard component.
+ */
 function NavigationPageContent() {
     const { user, isLoading } = useAuthGuard()
 
