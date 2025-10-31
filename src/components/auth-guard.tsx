@@ -18,6 +18,19 @@ interface AuthGuardProps {
     requireAdmin?: boolean
 }
 
+/**
+ * Authenticates a user and manages access to child components based on authentication status.
+ *
+ * The function checks the user's authentication status using an asynchronous call to authClient.getSession.
+ * If the user is authenticated and has the required admin role (if specified), it renders the children.
+ * If not authenticated, it redirects to the sign-in page, preserving the current path as a callback URL.
+ * While loading, it displays a loading indicator or a fallback UI.
+ *
+ * @param children - The child components to render if the user is authenticated.
+ * @param fallback - The fallback UI to display while loading or if not authenticated.
+ * @param redirectTo - The URL to redirect to for sign-in (default is '/auth/signin').
+ * @param requireAdmin - A flag indicating if admin role is required for access (default is false).
+ */
 export function AuthGuard({
     children,
     fallback,
@@ -32,6 +45,20 @@ export function AuthGuard({
     useEffect(() => {
         let mounted = true
 
+        /**
+         * Checks the authentication status of the user and manages session state.
+         *
+         * The function retrieves the current session using authClient.getSession(). If the session contains a user, it updates the user state and authentication status. If an admin role is required and the user is not an admin, it redirects to an unauthorized page. If no user is found, it redirects to the sign-in page with the current path as a callback. In case of an error, it logs the error and attempts to redirect to the sign-in page if still mounted. Finally, it updates the loading state.
+         *
+         * @param {boolean} requireAdmin - Indicates if admin role verification is required.
+         * @param {string} redirectTo - The URL to redirect to for signing in.
+         * @param {boolean} mounted - A flag indicating if the component is still mounted.
+         * @param {function} setUser - Function to set the authenticated user.
+         * @param {function} setIsAuthenticated - Function to update the authentication status.
+         * @param {function} setIsLoading - Function to update the loading state.
+         * @param {object} router - The router object used for navigation.
+         * @returns {Promise<void>} A promise that resolves when the authentication check is complete.
+         */
         const checkAuth = async () => {
             try {
                 const session = await authClient.getSession()
@@ -105,7 +132,13 @@ export function AuthGuard({
 }
 
 /**
- * Hook to get current user from auth guard context
+ * Hook to get current user from auth guard context.
+ *
+ * This hook manages the authentication state by fetching the current user from the auth client.
+ * It initializes the user state and loading state, then uses an effect to asynchronously retrieve
+ * the user session. If the component is still mounted, it updates the user state with the retrieved
+ * user data and sets the loading state to false once the operation is complete. The cleanup function
+ * ensures that state updates do not occur on unmounted components.
  */
 export function useAuthGuard() {
     const [user, setUser] = useState<any>(null)
