@@ -32,6 +32,9 @@ interface NavigationTrackerProviderProps {
     autoTrack?: boolean
 }
 
+/**
+ * Provides navigation tracking context to its children components.
+ */
 export function NavigationTrackerProvider({
     children,
     preloadOnStart = true,
@@ -70,7 +73,7 @@ export function NavigationTrackerProvider({
 }
 
 /**
- * Hook to access navigation tracker context
+ * Hook to access the navigation tracker context.
  */
 export function useNavigationTrackerContext() {
     const context = useContext(NavigationTrackerContext)
@@ -83,7 +86,7 @@ export function useNavigationTrackerContext() {
 }
 
 /**
- * Optional hook that doesn't throw if used outside provider
+ * Retrieves the NavigationTrackerContext without throwing if used outside the provider.
  */
 export function useOptionalNavigationTracker() {
     return useContext(NavigationTrackerContext)
