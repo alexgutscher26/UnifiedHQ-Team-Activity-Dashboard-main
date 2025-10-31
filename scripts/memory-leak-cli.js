@@ -61,6 +61,9 @@ class StatisticsManager {
     return this.stats;
   }
 
+  /**
+   * Saves the statistics to a file.
+   */
   async saveStats() {
     try {
       await fs.writeFile(this.statsFile, JSON.stringify(this.stats, null, 2), 'utf-8');
@@ -69,6 +72,17 @@ class StatisticsManager {
     }
   }
 
+  /**
+   * Records the results of a scan and updates the statistics accordingly.
+   *
+   * This function loads the current statistics, creates a scan record with details such as the number of issues found,
+   * severity breakdown, and leak types. It then updates the overall stats, including total scans, issues found,
+   * and performance metrics. Finally, it ensures that only the last 100 scan records are retained and saves the updated stats.
+   *
+   * @param reports - An array of report objects containing scan results.
+   * @param scanTime - The duration of the scan in milliseconds.
+   * @returns A promise that resolves when the stats are saved.
+   */
   async recordScan(reports, scanTime) {
     await this.loadStats();
 
@@ -123,6 +137,14 @@ class StatisticsManager {
     await this.saveStats();
   }
 
+  /**
+   * Records the applied fixes and updates the statistics.
+   *
+   * This function loads the current statistics, creates a fix record with the timestamp, number of fixes applied, and the time taken for the fixes. It counts the types of fixes applied and updates the overall statistics, including total issues fixed and performance metrics. Finally, it ensures that only the last 100 fix records are retained before saving the updated statistics.
+   *
+   * @param {Array} appliedFixes - An array of fix objects that were applied.
+   * @param {number} fixTime - The time taken to apply the fixes.
+   */
   async recordFix(appliedFixes, fixTime) {
     await this.loadStats();
 
@@ -156,11 +178,17 @@ class StatisticsManager {
     await this.saveStats();
   }
 
+  /**
+   * Retrieves the statistics after loading them.
+   */
   async getStats() {
     await this.loadStats();
     return this.stats;
   }
 
+  /**
+   * Resets the statistics to their initial values and saves the updated stats.
+   */
   async resetStats() {
     this.stats = {
       totalScans: 0,
@@ -188,6 +216,15 @@ class StatisticsManager {
     await this.saveStats();
   }
 
+  /**
+   * Calculate the trends in scan issues based on recent and older scan history.
+   *
+   * The function analyzes the last 10 scans and the 10 scans prior to that to determine the trend in issues found.
+   * It computes the average number of issues for both recent and older scans, then calculates the trend and percentage change.
+   * If there are not enough scans to analyze, it returns null.
+   *
+   * @returns {Object|null} An object containing the trend, change, change percentage, recent average, and previous average, or null if insufficient data.
+   */
   calculateTrends() {
     if (this.stats.scanHistory.length < 2) {
       return null;
@@ -480,13 +517,15 @@ function generateHTMLReport(reports) {
  *
  * This function filters the reports to identify those that have suggested fixes and do not require manual review.
  * If no fixable reports are found, a warning is logged. If the dryRun option is enabled, it displays the fixes
- * that would be applied without making any changes. Otherwise, it applies the fixes to the actual files.
+ * that would be applied without making any changes. Otherwise, it applies the fixes to the actual files,
+ * creating backups if requested and logging the results of the operation.
  *
  * @param {Array} reports - The list of reports to process for suggested fixes.
  * @param {Object} [options={}] - Options to customize the behavior of the function.
  * @param {boolean} [options.dryRun=false] - If true, performs a dry run without applying fixes.
  * @param {boolean} [options.backup=true] - If true, creates a backup before applying fixes.
  * @param {boolean} [options.interactive=false] - If true, enables interactive mode for user input.
+ * @returns {Object} An object containing statistics about the fix application process.
  */
 async function applyFixes(reports, options = {}) {
   const { dryRun = false, backup = true, interactive = false } = options;
@@ -594,7 +633,14 @@ async function createBackup(filePath) {
 }
 
 /**
- * Apply fixes to a specific file
+ * Apply fixes to a specific file.
+ *
+ * This function reads the content of a file, sorts the provided reports by line number in descending order, and applies fixes interactively if specified. It logs information about skipped fixes and warnings for any failures during the application of fixes. Finally, it writes the modified content back to the file.
+ *
+ * @param filePath - The path to the file that needs fixes applied.
+ * @param reports - An array of reports containing the fixes to be applied.
+ * @param interactive - A boolean indicating whether to prompt the user for each fix.
+ * @returns A boolean indicating the success of the operation.
  */
 async function applyFixesToFile(filePath, reports, interactive) {
   try {
@@ -632,7 +678,16 @@ async function applyFixesToFile(filePath, reports, interactive) {
 }
 
 /**
- * Apply an individual fix to the code lines
+ * Apply an individual fix to the specified line of code based on the report type.
+ *
+ * The function first converts the line number from the report to a 0-based index and checks for its validity.
+ * Depending on the report type, it applies the corresponding fix function to the original line.
+ * If no specific fix handler is found, it checks for a replacement in the report.
+ * It logs the applied fix or any warnings encountered during the process.
+ *
+ * @param lines - An array of code lines to be modified.
+ * @param report - An object containing the line number, file name, type of issue, and optional replacement.
+ * @returns A boolean indicating whether the fix was successfully applied.
  */
 async function applyIndividualFix(lines, report) {
   try {
@@ -690,7 +745,14 @@ async function applyIndividualFix(lines, report) {
 }
 
 /**
- * Fix event listener leaks
+ * Fix event listener leaks.
+ *
+ * This function checks if a line of code contains an 'addEventListener' call without a corresponding 'removeEventListener'.
+ * If such a case is found, it extracts the event type and handler, and appends a comment suggesting the addition of a cleanup
+ * statement to remove the event listener. The function returns the modified line or the original line if no changes are needed.
+ *
+ * @param {string} line - The line of code to be checked and potentially modified.
+ * @param {Object} report - An object for reporting issues, though not used in this function.
  */
 function applyEventListenerFix(line, report) {
   // Add cleanup for event listeners
@@ -708,7 +770,14 @@ function applyEventListenerFix(line, report) {
 }
 
 /**
- * Fix timer leaks
+ * Fix timer leaks by suggesting cleanup for timers.
+ *
+ * This function checks if a line of code contains `setInterval` or `setTimeout`.
+ * If found, it determines whether the line is an assignment and suggests storing the timer ID.
+ * It then appends a comment indicating the need for cleanup using the appropriate clear function.
+ *
+ * @param {string} line - The line of code to be analyzed for timer leaks.
+ * @param {string} report - A report string that may be used for logging or further processing.
  */
 function applyTimerFix(line, report) {
   // Add cleanup for timers
@@ -746,7 +815,15 @@ function applyClosureFix(line, report) {
 }
 
 /**
- * Fix DOM reference leaks
+ * Fix DOM reference leaks.
+ *
+ * This function checks if a given line of code contains DOM reference methods such as
+ * 'querySelector' or 'getElementById'. If found, it extracts the variable name and
+ * appends a comment suggesting to set the variable to null for cleanup. If no relevant
+ * methods are found, it returns the line unchanged.
+ *
+ * @param {string} line - The line of code to be checked and potentially modified.
+ * @param {Object} report - An object for reporting issues, though not used in this function.
  */
 function applyDOMReferenceFix(line, report) {
   // Add null assignments for DOM references
@@ -764,7 +841,7 @@ function applyDOMReferenceFix(line, report) {
 }
 
 /**
- * Fix async operation leaks
+ * Fixes async operation leaks by adding abort controllers for fetch requests.
  */
 function applyAsyncOperationFix(line, report) {
   // Add abort controllers for fetch requests
@@ -779,7 +856,14 @@ function applyAsyncOperationFix(line, report) {
 }
 
 /**
- * Fix observer leaks
+ * Fix observer leaks by adding disconnect calls for observers.
+ *
+ * This function checks if a line of code contains an observer declaration without a corresponding disconnect call.
+ * If such a case is found, it extracts the observer's name and appends a comment indicating where to add the cleanup
+ * code for the observer's disconnect method. The function returns the modified line or the original line if no changes are needed.
+ *
+ * @param {string} line - The line of code to be checked and potentially modified.
+ * @param {string} report - A report string that may be used for logging or further processing.
  */
 function applyObserverFix(line, report) {
   // Add disconnect calls for observers
@@ -1264,7 +1348,14 @@ program
   });
 
 /**
- * Compare reports from before and after fixes
+ * Compare reports from before and after fixes.
+ *
+ * This function indexes reports by their file, line, and type to facilitate comparison between two sets of reports.
+ * It identifies issues that have been fixed, those that remain, and any new issues that have arisen.
+ * The results include arrays of fixed issues, remaining issues, and new issues, along with the total counts of reports before and after the fixes.
+ *
+ * @param {Array} beforeReports - The reports generated before the fixes.
+ * @param {Array} afterReports - The reports generated after the fixes.
  */
 function compareReports(beforeReports, afterReports) {
   const beforeByLocation = new Map();
@@ -1311,7 +1402,18 @@ function compareReports(beforeReports, afterReports) {
 }
 
 /**
- * Display comparison results
+ * Display comparison results.
+ *
+ * This function logs the validation results of a comparison, including the total number of issues before and after fixes,
+ * the number of fixed, remaining, and new issues. It iterates through the fixed, remaining, and new issues to display
+ * detailed reports. Finally, it assesses the improvement percentage and logs an overall assessment based on the results.
+ *
+ * @param {Object} comparison - The comparison object containing validation results.
+ * @param {number} comparison.totalBefore - Total issues before fixes.
+ * @param {number} comparison.totalAfter - Total issues after fixes.
+ * @param {Array} comparison.fixed - List of fixed issues.
+ * @param {Array} comparison.remaining - List of remaining issues.
+ * @param {Array} comparison.newIssues - List of new issues.
  */
 function displayComparison(comparison) {
   console.log(colorize('\n📊 Fix Validation Results', 'bright'));
@@ -1366,7 +1468,16 @@ function displayComparison(comparison) {
 }
 
 /**
- * Create a comprehensive fix report
+ * Create a comprehensive fix report.
+ *
+ * This function generates a report summarizing the total issues, fixable issues, applied fixes, and success rate.
+ * It constructs an object containing the report data, including timestamps and details of applied fixes,
+ * and writes the report to the specified output path. The remaining issues are also identified based on the applied fixes.
+ *
+ * @param reports - An array of report objects containing issue details.
+ * @param appliedFixes - An array of applied fix objects with details about each fix.
+ * @param outputPath - The file path where the report will be saved.
+ * @returns A promise that resolves when the report is successfully written to the file.
  */
 async function createFixReport(reports, appliedFixes, outputPath) {
   const reportData = {
