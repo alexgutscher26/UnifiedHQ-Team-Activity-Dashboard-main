@@ -145,11 +145,13 @@ export const useEffectCleanupRule = ESLintUtils.RuleCreator(
 
         // Recursively visit child nodes
         for (const key in node) {
-          const child = (node as any)[key];
-          if (Array.isArray(child)) {
-            child.forEach(visit);
-          } else if (child && typeof child === 'object' && child.type) {
-            visit(child);
+          if (Object.prototype.hasOwnProperty.call(node, key)) {
+            const child = (node as any)[key];
+            if (Array.isArray(child)) {
+              child.forEach(visit);
+            } else if (child && typeof child === 'object' && child.type) {
+              visit(child);
+            }
           }
         }
       }

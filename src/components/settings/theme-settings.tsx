@@ -270,21 +270,14 @@ export function ThemeSettings({ onSettingsChange }: ThemeSettingsProps) {
         <CardContent className='space-y-6'>
           <div className='grid grid-cols-2 md:grid-cols-3 gap-4'>
             {Object.entries(themes).map(([key, theme]) => (
-              <div
+              <button
                 key={key}
-                role="button"
-                tabIndex={0}
-                className={`p-4 border rounded-lg cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 ${settings.theme === key
-                    ? 'border-primary ring-2 ring-primary/20'
-                    : 'border-border hover:border-primary/50'
+                type="button"
+                className={`p-4 border rounded-lg cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 text-left w-full ${settings.theme === key
+                  ? 'border-primary ring-2 ring-primary/20'
+                  : 'border-border hover:border-primary/50'
                   }`}
                 onClick={() => saveSettings({ theme: key })}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    saveSettings({ theme: key });
-                  }
-                }}
                 onMouseEnter={() => previewTheme(key)}
                 onMouseLeave={resetPreview}
                 aria-label={`Select ${theme.label} theme`}
@@ -311,7 +304,7 @@ export function ThemeSettings({ onSettingsChange }: ThemeSettingsProps) {
                     />
                   </div>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </CardContent>

@@ -47,15 +47,15 @@ global.testUtils = {
   }),
 };
 
-// Extend Jest matchers
-declare global {
-  namespace jest {
-    interface Matchers<R> {
-      toHaveMemoryLeak(): R;
-      toHaveCleanup(): R;
-    }
+// Extend Jest matchers using module augmentation
+declare module '@jest/expect' {
+  interface Matchers<R> {
+    toHaveMemoryLeak(): R;
+    toHaveCleanup(): R;
   }
+}
 
+declare global {
   var testUtils: {
     createMockASTNode: (type: string, properties?: Record<string, any>) => any;
     createMockESLintContext: (options?: Record<string, any>) => any;

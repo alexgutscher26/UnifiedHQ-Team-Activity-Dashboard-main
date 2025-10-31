@@ -55,7 +55,10 @@ const STATIC_ASSETS = [
 
 // Create a fallback cachePreloader object for now to avoid import issues
 self.cachePreloader = {
-  trackNavigation: () => { },
+  trackNavigation: () => {
+    // TODO: Implement navigation tracking when cache preloader is available
+    console.debug('[SW] Navigation tracking not implemented');
+  },
   preloadCriticalData: () => Promise.resolve(),
   getCacheStats: () => Promise.resolve({}),
   clearPatterns: () => Promise.resolve()

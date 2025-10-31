@@ -147,8 +147,8 @@ describe('Network Status Hook Logic', () => {
           if (url.startsWith('/')) return true;
 
           // For absolute URLs, validate with URL constructor
-          new URL(url);
-          return true;
+          const parsedUrl = new URL(url);
+          return Boolean(parsedUrl);
         } catch {
           return false;
         }

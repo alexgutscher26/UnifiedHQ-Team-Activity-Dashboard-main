@@ -256,8 +256,8 @@ function generateHTMLReport(reports) {
         </thead>
         <tbody>
             ${reports
-              .map(
-                r => `
+      .map(
+        r => `
                 <tr>
                     <td>${r.file}</td>
                     <td>${r.line}</td>
@@ -267,8 +267,8 @@ function generateHTMLReport(reports) {
                     <td class="fix">${r.suggestedFix || 'Manual review required'}</td>
                 </tr>
             `
-              )
-              .join('')}
+      )
+      .join('')}
         </tbody>
     </table>
 </body>
@@ -477,7 +477,10 @@ program
       // Keep process alive
       if (duration === 0) {
         logInfo('Monitoring started. Press Ctrl+C to stop.');
-        await new Promise(() => {}); // Keep alive indefinitely
+        await new Promise(() => {
+          // Intentionally empty - keeps process alive indefinitely
+          // Process will be terminated by SIGINT handler
+        });
       }
     } catch (error) {
       logError(`Monitor failed: ${error.message}`);
