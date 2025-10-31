@@ -24,7 +24,10 @@ const CLI_VERSION = '1.0.0';
 // Statistics tracking system
 class StatisticsManager {
   constructor() {
-    this.statsFile = path.join(path.dirname(__filename), '.memory-leak-stats.json');
+    this.statsFile = path.join(
+      path.dirname(__filename),
+      '.memory-leak-stats.json'
+    );
     this.stats = null;
   }
 
@@ -45,49 +48,68 @@ class StatisticsManager {
           critical: 0,
           high: 0,
           medium: 0,
-          low: 0
+          low: 0,
         },
         performanceStats: {
           averageScanTime: 0,
           averageFixTime: 0,
           totalScanTime: 0,
-          totalFixTime: 0
+          totalFixTime: 0,
         },
         firstScan: null,
         lastScan: null,
-        lastReset: new Date().toISOString()
+        lastReset: new Date().toISOString(),
       };
     }
     return this.stats;
   }
 
+  /**
+   * Saves the statistics to a file.
+   */
   async saveStats() {
     try {
-      await fs.writeFile(this.statsFile, JSON.stringify(this.stats, null, 2), 'utf-8');
+      await fs.writeFile(
+        this.statsFile,
+        JSON.stringify(this.stats, null, 2),
+        'utf-8'
+      );
     } catch (error) {
       console.warn(`Failed to save statistics: ${error.message}`);
     }
   }
 
+  /**
+   * Records the results of a scan and updates the statistics accordingly.
+   *
+   * This function loads the current statistics, creates a scan record with details such as the number of issues found,
+   * severity breakdown, and leak types. It then updates the overall stats, including total scans, issues found,
+   * and performance metrics. Finally, it ensures that only the last 100 scan records are retained and saves the updated stats.
+   *
+   * @param reports - An array of report objects containing scan results.
+   * @param scanTime - The duration of the scan in milliseconds.
+   * @returns A promise that resolves when the stats are saved.
+   */
   async recordScan(reports, scanTime) {
     await this.loadStats();
 
     const scanRecord = {
       timestamp: new Date().toISOString(),
       issuesFound: reports.length,
-      scanTime: scanTime,
+      scanTime,
       severityBreakdown: {
         critical: reports.filter(r => r.severity === 'critical').length,
         high: reports.filter(r => r.severity === 'high').length,
         medium: reports.filter(r => r.severity === 'medium').length,
-        low: reports.filter(r => r.severity === 'low').length
+        low: reports.filter(r => r.severity === 'low').length,
       },
-      leakTypes: {}
+      leakTypes: {},
     };
 
     // Count leak types
     reports.forEach(report => {
-      scanRecord.leakTypes[report.type] = (scanRecord.leakTypes[report.type] || 0) + 1;
+      scanRecord.leakTypes[report.type] =
+        (scanRecord.leakTypes[report.type] || 0) + 1;
     });
 
     // Update overall stats
@@ -97,17 +119,20 @@ class StatisticsManager {
 
     // Update severity stats
     Object.keys(scanRecord.severityBreakdown).forEach(severity => {
-      this.stats.severityStats[severity] += scanRecord.severityBreakdown[severity];
+      this.stats.severityStats[severity] +=
+        scanRecord.severityBreakdown[severity];
     });
 
     // Update leak type stats
     Object.keys(scanRecord.leakTypes).forEach(type => {
-      this.stats.leakTypeStats[type] = (this.stats.leakTypeStats[type] || 0) + scanRecord.leakTypes[type];
+      this.stats.leakTypeStats[type] =
+        (this.stats.leakTypeStats[type] || 0) + scanRecord.leakTypes[type];
     });
 
     // Update performance stats
     this.stats.performanceStats.totalScanTime += scanTime;
-    this.stats.performanceStats.averageScanTime = this.stats.performanceStats.totalScanTime / this.stats.totalScans;
+    this.stats.performanceStats.averageScanTime =
+      this.stats.performanceStats.totalScanTime / this.stats.totalScans;
 
     // Update timestamps
     if (!this.stats.firstScan) {
@@ -123,14 +148,22 @@ class StatisticsManager {
     await this.saveStats();
   }
 
+  /**
+   * Records the applied fixes and updates the statistics.
+   *
+   * This function loads the current statistics, creates a fix record with the timestamp, number of fixes applied, and the time taken for the fixes. It counts the types of fixes applied and updates the overall statistics, including total issues fixed and performance metrics. Finally, it ensures that only the last 100 fix records are retained before saving the updated statistics.
+   *
+   * @param {Array} appliedFixes - An array of fix objects that were applied.
+   * @param {number} fixTime - The time taken to apply the fixes.
+   */
   async recordFix(appliedFixes, fixTime) {
     await this.loadStats();
 
     const fixRecord = {
       timestamp: new Date().toISOString(),
       fixesApplied: appliedFixes.length,
-      fixTime: fixTime,
-      fixTypes: {}
+      fixTime,
+      fixTypes: {},
     };
 
     // Count fix types
@@ -145,7 +178,8 @@ class StatisticsManager {
     // Update performance stats
     this.stats.performanceStats.totalFixTime += fixTime;
     if (this.stats.fixHistory.length > 0) {
-      this.stats.performanceStats.averageFixTime = this.stats.performanceStats.totalFixTime / this.stats.fixHistory.length;
+      this.stats.performanceStats.averageFixTime =
+        this.stats.performanceStats.totalFixTime / this.stats.fixHistory.length;
     }
 
     // Keep only last 100 fix records
@@ -156,11 +190,17 @@ class StatisticsManager {
     await this.saveStats();
   }
 
+  /**
+   * Retrieves the statistics after loading them.
+   */
   async getStats() {
     await this.loadStats();
     return this.stats;
   }
 
+  /**
+   * Resets the statistics to their initial values and saves the updated stats.
+   */
   async resetStats() {
     this.stats = {
       totalScans: 0,
@@ -173,21 +213,30 @@ class StatisticsManager {
         critical: 0,
         high: 0,
         medium: 0,
-        low: 0
+        low: 0,
       },
       performanceStats: {
         averageScanTime: 0,
         averageFixTime: 0,
         totalScanTime: 0,
-        totalFixTime: 0
+        totalFixTime: 0,
       },
       firstScan: null,
       lastScan: null,
-      lastReset: new Date().toISOString()
+      lastReset: new Date().toISOString(),
     };
     await this.saveStats();
   }
 
+  /**
+   * Calculate the trends in scan issues based on recent and older scan history.
+   *
+   * The function analyzes the last 10 scans and the 10 scans prior to that to determine the trend in issues found.
+   * It computes the average number of issues for both recent and older scans, then calculates the trend and percentage change.
+   * If there are not enough scans to analyze, it returns null.
+   *
+   * @returns {Object|null} An object containing the trend, change, change percentage, recent average, and previous average, or null if insufficient data.
+   */
   calculateTrends() {
     if (this.stats.scanHistory.length < 2) {
       return null;
@@ -200,8 +249,10 @@ class StatisticsManager {
       return null;
     }
 
-    const recentAvg = recent.reduce((sum, scan) => sum + scan.issuesFound, 0) / recent.length;
-    const olderAvg = older.reduce((sum, scan) => sum + scan.issuesFound, 0) / older.length;
+    const recentAvg =
+      recent.reduce((sum, scan) => sum + scan.issuesFound, 0) / recent.length;
+    const olderAvg =
+      older.reduce((sum, scan) => sum + scan.issuesFound, 0) / older.length;
 
     const trend = recentAvg - olderAvg;
     const trendPercent = olderAvg > 0 ? (trend / olderAvg) * 100 : 0;
@@ -211,7 +262,7 @@ class StatisticsManager {
       change: Math.abs(trend),
       changePercent: Math.abs(trendPercent),
       recentAverage: recentAvg,
-      previousAverage: olderAvg
+      previousAverage: olderAvg,
     };
   }
 }
@@ -454,8 +505,8 @@ function generateHTMLReport(reports) {
         </thead>
         <tbody>
             ${reports
-      .map(
-        r => `
+              .map(
+                r => `
                 <tr>
                     <td>${r.file}</td>
                     <td>${r.line}</td>
@@ -465,8 +516,8 @@ function generateHTMLReport(reports) {
                     <td class="fix">${r.suggestedFix || 'Manual review required'}</td>
                 </tr>
             `
-      )
-      .join('')}
+              )
+              .join('')}
         </tbody>
     </table>
 </body>
@@ -480,13 +531,15 @@ function generateHTMLReport(reports) {
  *
  * This function filters the reports to identify those that have suggested fixes and do not require manual review.
  * If no fixable reports are found, a warning is logged. If the dryRun option is enabled, it displays the fixes
- * that would be applied without making any changes. Otherwise, it applies the fixes to the actual files.
+ * that would be applied without making any changes. Otherwise, it applies the fixes to the actual files,
+ * creating backups if requested and logging the results of the operation.
  *
  * @param {Array} reports - The list of reports to process for suggested fixes.
  * @param {Object} [options={}] - Options to customize the behavior of the function.
  * @param {boolean} [options.dryRun=false] - If true, performs a dry run without applying fixes.
  * @param {boolean} [options.backup=true] - If true, creates a backup before applying fixes.
  * @param {boolean} [options.interactive=false] - If true, enables interactive mode for user input.
+ * @returns {Object} An object containing statistics about the fix application process.
  */
 async function applyFixes(reports, options = {}) {
   const { dryRun = false, backup = true, interactive = false } = options;
@@ -526,7 +579,7 @@ async function applyFixes(reports, options = {}) {
     fixesByFile[report.file].push(report);
   });
 
-  let appliedFixes = [];
+  const appliedFixes = [];
   let failedFixes = 0;
 
   // Process each file
@@ -540,14 +593,20 @@ async function applyFixes(reports, options = {}) {
       }
 
       // Apply fixes to the file
-      const success = await applyFixesToFile(filePath, fileReports, interactive);
+      const success = await applyFixesToFile(
+        filePath,
+        fileReports,
+        interactive
+      );
 
       if (success) {
-        appliedFixes.push(...fileReports.map(report => ({
-          ...report,
-          fixedAt: new Date().toISOString(),
-          filePath
-        })));
+        appliedFixes.push(
+          ...fileReports.map(report => ({
+            ...report,
+            fixedAt: new Date().toISOString(),
+            filePath,
+          }))
+        );
         logSuccess(`Applied ${fileReports.length} fixes to ${filePath}`);
       } else {
         failedFixes += fileReports.length;
@@ -561,21 +620,25 @@ async function applyFixes(reports, options = {}) {
 
   // Summary
   console.log(colorize('\n📊 Fix Application Summary', 'bright'));
-  console.log(`Successfully applied: ${colorize(appliedFixes.length, 'green')} fixes`);
+  console.log(
+    `Successfully applied: ${colorize(appliedFixes.length, 'green')} fixes`
+  );
   if (failedFixes > 0) {
     console.log(`Failed to apply: ${colorize(failedFixes, 'red')} fixes`);
   }
 
   if (appliedFixes.length > 0) {
     logSuccess('Memory leak fixes have been applied!');
-    logInfo('Please review the changes and run tests to ensure everything works correctly.');
+    logInfo(
+      'Please review the changes and run tests to ensure everything works correctly.'
+    );
   }
 
   // Return statistics for tracking
   return {
     appliedFixes,
     failedFixes,
-    totalAttempted: fixableReports.length
+    totalAttempted: fixableReports.length,
   };
 }
 
@@ -594,11 +657,18 @@ async function createBackup(filePath) {
 }
 
 /**
- * Apply fixes to a specific file
+ * Apply fixes to a specific file.
+ *
+ * This function reads the content of a file, sorts the provided reports by line number in descending order, and applies fixes interactively if specified. It logs information about skipped fixes and warnings for any failures during the application of fixes. Finally, it writes the modified content back to the file.
+ *
+ * @param filePath - The path to the file that needs fixes applied.
+ * @param reports - An array of reports containing the fixes to be applied.
+ * @param interactive - A boolean indicating whether to prompt the user for each fix.
+ * @returns A boolean indicating the success of the operation.
  */
 async function applyFixesToFile(filePath, reports, interactive) {
   try {
-    let content = await fs.readFile(filePath, 'utf-8');
+    const content = await fs.readFile(filePath, 'utf-8');
     const lines = content.split('\n');
 
     // Sort reports by line number in descending order to avoid line number shifts
@@ -632,7 +702,16 @@ async function applyFixesToFile(filePath, reports, interactive) {
 }
 
 /**
- * Apply an individual fix to the code lines
+ * Apply an individual fix to the specified line of code based on the report type.
+ *
+ * The function first converts the line number from the report to a 0-based index and checks for its validity.
+ * Depending on the report type, it applies the corresponding fix function to the original line.
+ * If no specific fix handler is found, it checks for a replacement in the report.
+ * It logs the applied fix or any warnings encountered during the process.
+ *
+ * @param lines - An array of code lines to be modified.
+ * @param report - An object containing the line number, file name, type of issue, and optional replacement.
+ * @returns A boolean indicating whether the fix was successfully applied.
  */
 async function applyIndividualFix(lines, report) {
   try {
@@ -690,17 +769,34 @@ async function applyIndividualFix(lines, report) {
 }
 
 /**
- * Fix event listener leaks
+ * Fix event listener leaks.
+ *
+ * This function checks if a line of code contains an 'addEventListener' call without a corresponding 'removeEventListener'.
+ * If such a case is found, it extracts the event type and handler, and appends a comment suggesting the addition of a cleanup
+ * statement to remove the event listener. The function returns the modified line or the original line if no changes are needed.
+ *
+ * @param {string} line - The line of code to be checked and potentially modified.
+ * @param {Object} report - An object for reporting issues, though not used in this function.
  */
 function applyEventListenerFix(line, report) {
   // Add cleanup for event listeners
-  if (line.includes('addEventListener') && !line.includes('removeEventListener')) {
+  if (
+    line.includes('addEventListener') &&
+    !line.includes('removeEventListener')
+  ) {
     const indent = line.match(/^\s*/)[0];
-    const eventMatch = line.match(/addEventListener\s*\(\s*['"`]([^'"`]+)['"`]\s*,\s*([^,)]+)/);
+    const eventMatch = line.match(
+      /addEventListener\s*\(\s*['"`]([^'"`]+)['"`]\s*,\s*([^,)]+)/
+    );
 
     if (eventMatch) {
       const [, eventType, handler] = eventMatch;
-      return line + '\n' + indent + `// TODO: Add cleanup - element.removeEventListener('${eventType}', ${handler});`;
+      return (
+        line +
+        '\n' +
+        indent +
+        `// TODO: Add cleanup - element.removeEventListener('${eventType}', ${handler});`
+      );
     }
   }
 
@@ -708,23 +804,38 @@ function applyEventListenerFix(line, report) {
 }
 
 /**
- * Fix timer leaks
+ * Fix timer leaks by suggesting cleanup for timers.
+ *
+ * This function checks if a line of code contains `setInterval` or `setTimeout`.
+ * If found, it determines whether the line is an assignment and suggests storing the timer ID.
+ * It then appends a comment indicating the need for cleanup using the appropriate clear function.
+ *
+ * @param {string} line - The line of code to be analyzed for timer leaks.
+ * @param {string} report - A report string that may be used for logging or further processing.
  */
 function applyTimerFix(line, report) {
   // Add cleanup for timers
   if (line.includes('setInterval') || line.includes('setTimeout')) {
     const indent = line.match(/^\s*/)[0];
-    const timerType = line.includes('setInterval') ? 'clearInterval' : 'clearTimeout';
+    const timerType = line.includes('setInterval')
+      ? 'clearInterval'
+      : 'clearTimeout';
 
     // If it's an assignment, suggest storing the ID
     if (line.includes('=')) {
-      return line + '\n' + indent + `// TODO: Add cleanup - ${timerType}(timerId);`;
+      return (
+        line + '\n' + indent + `// TODO: Add cleanup - ${timerType}(timerId);`
+      );
     } else {
       // Suggest storing the timer ID
       const timerCall = line.match(/(set(?:Interval|Timeout)\([^)]+\))/);
       if (timerCall) {
-        return line.replace(timerCall[1], `const timerId = ${timerCall[1]}`) +
-          '\n' + indent + `// TODO: Add cleanup - ${timerType}(timerId);`;
+        return (
+          line.replace(timerCall[1], `const timerId = ${timerCall[1]}`) +
+          '\n' +
+          indent +
+          `// TODO: Add cleanup - ${timerType}(timerId);`
+        );
       }
     }
   }
@@ -746,7 +857,15 @@ function applyClosureFix(line, report) {
 }
 
 /**
- * Fix DOM reference leaks
+ * Fix DOM reference leaks.
+ *
+ * This function checks if a given line of code contains DOM reference methods such as
+ * 'querySelector' or 'getElementById'. If found, it extracts the variable name and
+ * appends a comment suggesting to set the variable to null for cleanup. If no relevant
+ * methods are found, it returns the line unchanged.
+ *
+ * @param {string} line - The line of code to be checked and potentially modified.
+ * @param {Object} report - An object for reporting issues, though not used in this function.
  */
 function applyDOMReferenceFix(line, report) {
   // Add null assignments for DOM references
@@ -764,22 +883,34 @@ function applyDOMReferenceFix(line, report) {
 }
 
 /**
- * Fix async operation leaks
+ * Fixes async operation leaks by adding abort controllers for fetch requests.
  */
 function applyAsyncOperationFix(line, report) {
   // Add abort controllers for fetch requests
   if (line.includes('fetch(')) {
     const indent = line.match(/^\s*/)[0];
-    return indent + 'const controller = new AbortController();\n' +
+    return (
+      indent +
+      'const controller = new AbortController();\n' +
       line.replace('fetch(', 'fetch(') +
-      '\n' + indent + '// TODO: Add cleanup - controller.abort();';
+      '\n' +
+      indent +
+      '// TODO: Add cleanup - controller.abort();'
+    );
   }
 
   return line;
 }
 
 /**
- * Fix observer leaks
+ * Fix observer leaks by adding disconnect calls for observers.
+ *
+ * This function checks if a line of code contains an observer declaration without a corresponding disconnect call.
+ * If such a case is found, it extracts the observer's name and appends a comment indicating where to add the cleanup
+ * code for the observer's disconnect method. The function returns the modified line or the original line if no changes are needed.
+ *
+ * @param {string} line - The line of code to be checked and potentially modified.
+ * @param {string} report - A report string that may be used for logging or further processing.
  */
 function applyObserverFix(line, report) {
   // Add disconnect calls for observers
@@ -789,7 +920,12 @@ function applyObserverFix(line, report) {
 
     if (observerMatch) {
       const observerName = observerMatch[1];
-      return line + '\n' + indent + `// TODO: Add cleanup - ${observerName}.disconnect();`;
+      return (
+        line +
+        '\n' +
+        indent +
+        `// TODO: Add cleanup - ${observerName}.disconnect();`
+      );
     }
   }
 
@@ -802,7 +938,9 @@ function applyObserverFix(line, report) {
 async function promptForFix(report) {
   // Note: In a real implementation, you'd use a proper CLI prompt library like 'inquirer'
   // For now, we'll just return true to apply all fixes
-  console.log(colorize(`\nApply fix for ${report.file}:${report.line}?`, 'yellow'));
+  console.log(
+    colorize(`\nApply fix for ${report.file}:${report.line}?`, 'yellow')
+  );
   console.log(`Issue: ${report.description}`);
   console.log(`Fix: ${report.suggestedFix}`);
 
@@ -888,7 +1026,11 @@ program
   .option('--dry-run', 'show fixes without applying them')
   .option('--no-backup', 'skip creating backup files')
   .option('-i, --interactive', 'prompt before applying each fix')
-  .option('-s, --severity <level>', 'minimum severity to fix (medium|high|critical)', 'medium')
+  .option(
+    '-s, --severity <level>',
+    'minimum severity to fix (medium|high|critical)',
+    'medium'
+  )
   .option('--type <types...>', 'specific leak types to fix')
   .option('--exclude <patterns...>', 'exclude files matching patterns')
   .action(async options => {
@@ -912,7 +1054,9 @@ program
       let filteredReports = reports;
       if (options.type) {
         filteredReports = reports.filter(r => options.type.includes(r.type));
-        logInfo(`Filtered to ${filteredReports.length} reports matching types: ${options.type.join(', ')}`);
+        logInfo(
+          `Filtered to ${filteredReports.length} reports matching types: ${options.type.join(', ')}`
+        );
       }
 
       const fixResults = await applyFixes(filteredReports, {
@@ -928,12 +1072,19 @@ program
       }
 
       // Suggest running tests after fixes
-      if (!options.dryRun && filteredReports.some(r => !r.requiresManualReview)) {
+      if (
+        !options.dryRun &&
+        filteredReports.some(r => !r.requiresManualReview)
+      ) {
         console.log(colorize('\n💡 Recommendations:', 'bright'));
         console.log('1. Review the applied changes carefully');
         console.log('2. Run your test suite to ensure nothing is broken');
-        console.log('3. Test the application manually in areas where fixes were applied');
-        console.log('4. Consider running the scan again to verify fixes worked');
+        console.log(
+          '3. Test the application manually in areas where fixes were applied'
+        );
+        console.log(
+          '4. Consider running the scan again to verify fixes worked'
+        );
       }
     } catch (error) {
       logError(`Fix failed: ${error.message}`);
@@ -1122,10 +1273,16 @@ program
         generateDetailedReport(currentReports);
 
         if (currentReports.length === 0) {
-          logSuccess('🎉 No memory leaks detected! All fixes appear to be working.');
+          logSuccess(
+            '🎉 No memory leaks detected! All fixes appear to be working.'
+          );
         } else {
-          logWarning(`${currentReports.length} memory leak issues still remain.`);
-          console.log('Consider running the fix command again or reviewing these issues manually.');
+          logWarning(
+            `${currentReports.length} memory leak issues still remain.`
+          );
+          console.log(
+            'Consider running the fix command again or reviewing these issues manually.'
+          );
         }
       }
     } catch (error) {
@@ -1155,21 +1312,36 @@ program
 
       // Overview
       console.log(colorize('\n📈 Overview:', 'bright'));
-      console.log(`Total scans performed: ${colorize(stats.totalScans, 'cyan')}`);
-      console.log(`Total issues found: ${colorize(stats.totalIssuesFound, 'yellow')}`);
-      console.log(`Total issues fixed: ${colorize(stats.totalIssuesFixed, 'green')}`);
+      console.log(
+        `Total scans performed: ${colorize(stats.totalScans, 'cyan')}`
+      );
+      console.log(
+        `Total issues found: ${colorize(stats.totalIssuesFound, 'yellow')}`
+      );
+      console.log(
+        `Total issues fixed: ${colorize(stats.totalIssuesFixed, 'green')}`
+      );
 
       if (stats.totalIssuesFound > 0) {
-        const fixRate = ((stats.totalIssuesFixed / stats.totalIssuesFound) * 100).toFixed(1);
-        console.log(`Fix rate: ${colorize(fixRate + '%', fixRate > 70 ? 'green' : fixRate > 40 ? 'yellow' : 'red')}`);
+        const fixRate = (
+          (stats.totalIssuesFixed / stats.totalIssuesFound) *
+          100
+        ).toFixed(1);
+        console.log(
+          `Fix rate: ${colorize(fixRate + '%', fixRate > 70 ? 'green' : fixRate > 40 ? 'yellow' : 'red')}`
+        );
       }
 
       // Timestamps
       if (stats.firstScan) {
-        console.log(`First scan: ${colorize(new Date(stats.firstScan).toLocaleString(), 'cyan')}`);
+        console.log(
+          `First scan: ${colorize(new Date(stats.firstScan).toLocaleString(), 'cyan')}`
+        );
       }
       if (stats.lastScan) {
-        console.log(`Last scan: ${colorize(new Date(stats.lastScan).toLocaleString(), 'cyan')}`);
+        console.log(
+          `Last scan: ${colorize(new Date(stats.lastScan).toLocaleString(), 'cyan')}`
+        );
       }
 
       // Severity breakdown
@@ -1194,23 +1366,37 @@ program
       // Performance stats
       console.log(colorize('\n⚡ Performance:', 'bright'));
       if (stats.performanceStats.averageScanTime > 0) {
-        console.log(`Average scan time: ${colorize((stats.performanceStats.averageScanTime / 1000).toFixed(2) + 's', 'cyan')}`);
+        console.log(
+          `Average scan time: ${colorize((stats.performanceStats.averageScanTime / 1000).toFixed(2) + 's', 'cyan')}`
+        );
       }
       if (stats.performanceStats.averageFixTime > 0) {
-        console.log(`Average fix time: ${colorize((stats.performanceStats.averageFixTime / 1000).toFixed(2) + 's', 'cyan')}`);
+        console.log(
+          `Average fix time: ${colorize((stats.performanceStats.averageFixTime / 1000).toFixed(2) + 's', 'cyan')}`
+        );
       }
 
       // Trends
       if (trends) {
         console.log(colorize('\n📊 Trends (Last 20 scans):', 'bright'));
-        const trendColor = trends.trend === 'decreasing' ? 'green' :
-          trends.trend === 'increasing' ? 'red' : 'yellow';
+        const trendColor =
+          trends.trend === 'decreasing'
+            ? 'green'
+            : trends.trend === 'increasing'
+              ? 'red'
+              : 'yellow';
         console.log(`Issue trend: ${colorize(trends.trend, trendColor)}`);
 
         if (trends.trend !== 'stable') {
-          console.log(`Change: ${colorize(trends.changePercent.toFixed(1) + '%', trendColor)}`);
-          console.log(`Recent average: ${colorize(trends.recentAverage.toFixed(1), 'cyan')} issues per scan`);
-          console.log(`Previous average: ${colorize(trends.previousAverage.toFixed(1), 'cyan')} issues per scan`);
+          console.log(
+            `Change: ${colorize(trends.changePercent.toFixed(1) + '%', trendColor)}`
+          );
+          console.log(
+            `Recent average: ${colorize(trends.recentAverage.toFixed(1), 'cyan')} issues per scan`
+          );
+          console.log(
+            `Previous average: ${colorize(trends.previousAverage.toFixed(1), 'cyan')} issues per scan`
+          );
         }
       }
 
@@ -1221,7 +1407,9 @@ program
         recentScans.forEach((scan, index) => {
           const date = new Date(scan.timestamp).toLocaleDateString();
           const time = new Date(scan.timestamp).toLocaleTimeString();
-          console.log(`${index + 1}. ${date} ${time} - ${colorize(scan.issuesFound, 'yellow')} issues (${(scan.scanTime / 1000).toFixed(1)}s)`);
+          console.log(
+            `${index + 1}. ${date} ${time} - ${colorize(scan.issuesFound, 'yellow')} issues (${(scan.scanTime / 1000).toFixed(1)}s)`
+          );
         });
       }
 
@@ -1231,7 +1419,9 @@ program
         recentFixes.forEach((fix, index) => {
           const date = new Date(fix.timestamp).toLocaleDateString();
           const time = new Date(fix.timestamp).toLocaleTimeString();
-          console.log(`${index + 1}. ${date} ${time} - ${colorize(fix.fixesApplied, 'green')} fixes applied (${(fix.fixTime / 1000).toFixed(1)}s)`);
+          console.log(
+            `${index + 1}. ${date} ${time} - ${colorize(fix.fixesApplied, 'green')} fixes applied (${(fix.fixTime / 1000).toFixed(1)}s)`
+          );
         });
       }
 
@@ -1243,10 +1433,14 @@ program
         console.log('• Great! No memory leaks detected in recent scans');
       } else {
         if (stats.totalIssuesFixed < stats.totalIssuesFound) {
-          console.log('• Consider running the fix command to resolve outstanding issues');
+          console.log(
+            '• Consider running the fix command to resolve outstanding issues'
+          );
         }
         if (trends && trends.trend === 'increasing') {
-          console.log('• Memory leak issues are increasing - review recent code changes');
+          console.log(
+            '• Memory leak issues are increasing - review recent code changes'
+          );
         }
         if (stats.severityStats.critical > 0) {
           console.log('• Address critical severity issues immediately');
@@ -1256,7 +1450,6 @@ program
       console.log(colorize('\n📁 Statistics file:', 'bright'));
       console.log(`Location: ${statsManager.statsFile}`);
       console.log('Use --reset to clear all statistics');
-
     } catch (error) {
       logError(`Stats command failed: ${error.message}`);
       process.exit(1);
@@ -1264,7 +1457,14 @@ program
   });
 
 /**
- * Compare reports from before and after fixes
+ * Compare reports from before and after fixes.
+ *
+ * This function indexes reports by their file, line, and type to facilitate comparison between two sets of reports.
+ * It identifies issues that have been fixed, those that remain, and any new issues that have arisen.
+ * The results include arrays of fixed issues, remaining issues, and new issues, along with the total counts of reports before and after the fixes.
+ *
+ * @param {Array} beforeReports - The reports generated before the fixes.
+ * @param {Array} afterReports - The reports generated after the fixes.
  */
 function compareReports(beforeReports, afterReports) {
   const beforeByLocation = new Map();
@@ -1311,23 +1511,40 @@ function compareReports(beforeReports, afterReports) {
 }
 
 /**
- * Display comparison results
+ * Display comparison results.
+ *
+ * This function logs the validation results of a comparison, including the total number of issues before and after fixes,
+ * the number of fixed, remaining, and new issues. It iterates through the fixed, remaining, and new issues to display
+ * detailed reports. Finally, it assesses the improvement percentage and logs an overall assessment based on the results.
+ *
+ * @param {Object} comparison - The comparison object containing validation results.
+ * @param {number} comparison.totalBefore - Total issues before fixes.
+ * @param {number} comparison.totalAfter - Total issues after fixes.
+ * @param {Array} comparison.fixed - List of fixed issues.
+ * @param {Array} comparison.remaining - List of remaining issues.
+ * @param {Array} comparison.newIssues - List of new issues.
  */
 function displayComparison(comparison) {
   console.log(colorize('\n📊 Fix Validation Results', 'bright'));
   console.log('='.repeat(50));
 
   console.log(`\n${colorize('Summary:', 'bright')}`);
-  console.log(`Issues before fixes: ${colorize(comparison.totalBefore, 'cyan')}`);
+  console.log(
+    `Issues before fixes: ${colorize(comparison.totalBefore, 'cyan')}`
+  );
   console.log(`Issues after fixes: ${colorize(comparison.totalAfter, 'cyan')}`);
   console.log(`Fixed issues: ${colorize(comparison.fixed.length, 'green')}`);
-  console.log(`Remaining issues: ${colorize(comparison.remaining.length, 'yellow')}`);
+  console.log(
+    `Remaining issues: ${colorize(comparison.remaining.length, 'yellow')}`
+  );
   console.log(`New issues: ${colorize(comparison.newIssues.length, 'red')}`);
 
   if (comparison.fixed.length > 0) {
     console.log(colorize('\n✅ Fixed Issues:', 'green'));
     comparison.fixed.forEach((report, index) => {
-      console.log(`  ${index + 1}. ${report.file}:${report.line} - ${report.type}`);
+      console.log(
+        `  ${index + 1}. ${report.file}:${report.line} - ${report.type}`
+      );
       console.log(`     ${report.description}`);
     });
   }
@@ -1335,7 +1552,9 @@ function displayComparison(comparison) {
   if (comparison.remaining.length > 0) {
     console.log(colorize('\n⚠️  Remaining Issues:', 'yellow'));
     comparison.remaining.forEach((report, index) => {
-      console.log(`  ${index + 1}. ${report.file}:${report.line} - ${report.type}`);
+      console.log(
+        `  ${index + 1}. ${report.file}:${report.line} - ${report.type}`
+      );
       console.log(`     ${report.description}`);
     });
   }
@@ -1343,21 +1562,30 @@ function displayComparison(comparison) {
   if (comparison.newIssues.length > 0) {
     console.log(colorize('\n🚨 New Issues:', 'red'));
     comparison.newIssues.forEach((report, index) => {
-      console.log(`  ${index + 1}. ${report.file}:${report.line} - ${report.type}`);
+      console.log(
+        `  ${index + 1}. ${report.file}:${report.line} - ${report.type}`
+      );
       console.log(`     ${report.description}`);
     });
   }
 
   // Overall assessment
-  const improvementPercent = comparison.totalBefore > 0
-    ? Math.round(((comparison.totalBefore - comparison.totalAfter) / comparison.totalBefore) * 100)
-    : 0;
+  const improvementPercent =
+    comparison.totalBefore > 0
+      ? Math.round(
+          ((comparison.totalBefore - comparison.totalAfter) /
+            comparison.totalBefore) *
+            100
+        )
+      : 0;
 
   console.log(colorize('\n🎯 Assessment:', 'bright'));
   if (comparison.totalAfter === 0) {
     logSuccess('🎉 Perfect! All memory leaks have been resolved!');
   } else if (improvementPercent > 0) {
-    logSuccess(`👍 Improvement: ${improvementPercent}% reduction in memory leaks`);
+    logSuccess(
+      `👍 Improvement: ${improvementPercent}% reduction in memory leaks`
+    );
   } else if (improvementPercent === 0) {
     logWarning('⚡ No change in memory leak count');
   } else {
@@ -1366,16 +1594,29 @@ function displayComparison(comparison) {
 }
 
 /**
- * Create a comprehensive fix report
+ * Create a comprehensive fix report.
+ *
+ * This function generates a report summarizing the total issues, fixable issues, applied fixes, and success rate.
+ * It constructs an object containing the report data, including timestamps and details of applied fixes,
+ * and writes the report to the specified output path. The remaining issues are also identified based on the applied fixes.
+ *
+ * @param reports - An array of report objects containing issue details.
+ * @param appliedFixes - An array of applied fix objects with details about each fix.
+ * @param outputPath - The file path where the report will be saved.
+ * @returns A promise that resolves when the report is successfully written to the file.
  */
 async function createFixReport(reports, appliedFixes, outputPath) {
   const reportData = {
     timestamp: new Date().toISOString(),
     summary: {
       totalIssues: reports.length,
-      fixableIssues: reports.filter(r => r.suggestedFix && !r.requiresManualReview).length,
+      fixableIssues: reports.filter(
+        r => r.suggestedFix && !r.requiresManualReview
+      ).length,
       appliedFixes: appliedFixes.length,
-      successRate: appliedFixes.length / reports.filter(r => r.suggestedFix).length * 100,
+      successRate:
+        (appliedFixes.length / reports.filter(r => r.suggestedFix).length) *
+        100,
     },
     appliedFixes: appliedFixes.map(fix => ({
       file: fix.file,
@@ -1385,9 +1626,12 @@ async function createFixReport(reports, appliedFixes, outputPath) {
       appliedFix: fix.suggestedFix,
       timestamp: fix.fixedAt || new Date().toISOString(),
     })),
-    remainingIssues: reports.filter(r => !appliedFixes.some(f =>
-      f.file === r.file && f.line === r.line && f.type === r.type
-    )),
+    remainingIssues: reports.filter(
+      r =>
+        !appliedFixes.some(
+          f => f.file === r.file && f.line === r.line && f.type === r.type
+        )
+    ),
   };
 
   await fs.writeFile(outputPath, JSON.stringify(reportData, null, 2), 'utf-8');
