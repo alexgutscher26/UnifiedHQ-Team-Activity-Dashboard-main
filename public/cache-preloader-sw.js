@@ -1,584 +1,673 @@
 /**
- * Service Worker Cache Preloader
- * Intelligent cache preloading based on user navigation patterns
- * Version: 1.0.1
+ * Cache Preloader for UnifiedHQ Service Worker
+ * Advanced caching and preloading strategies based on navigation patterns
  */
 
-class ServiceWorkerCachePreloader {
-  constructor () {
-    this.patterns = new Map()
-    this.config = {
-      maxPatterns: 100,
-      minFrequency: 3,
-      preloadThreshold: 0.7,
-      idleTimeout: 5000,
-      criticalPaths: [
-        '/',
-        '/dashboard',
-        '/api/github/activity',
-        '/api/slack/messages',
-        '/api/ai/summary'
-      ]
-    }
+// Ensure this script is only loaded in service worker context
+if (typeof importScripts !== 'function') {
+  throw new Error('cache-preloader-sw.js must be loaded in a service worker context')
+}
 
-    this.isIdle = false
-    this.idleTimer = null
-    this.lastNavigationTime = Date.now()
+// Cache preloader configuration
+const PRELOADER_CONFIG = {
+  // Preloading strategies
+  strategies: {
+    immediate: 'immediate',     // Preload immediately on navigation
+    idle: 'idle',              // Preload during idle time
+    predictive: 'predictive',   // Preload based on patterns
+    critical: 'critical'       // Always preload critical resources
+  },
 
-    this.loadPatterns()
-    this.setupIdleDetection()
-  }
+  // Resource priorities
+  priorities: {
+    critical: 1,
+    high: 2,
+    normal: 3,
+    low: 4
+  },
 
-  /**
-   * Track user navigation to build patterns.
-   * @param {string} path - The path of the navigation.
-   */
-  trackNavigation (path) {
-    const now = Date.now()
-    const hour = new Date().getHours()
-    const dayOfWeek = new Date().getDay()
+  // Timing configurations
+  idleTimeout: 2000,           // Wait 2s before idle preloading
+  preloadBatchSize: 3,         // Max concurrent preloads
+  maxPreloadAge: 5 * 60 * 1000, // 5 minutes max age for preloaded resources
 
-    let pattern = this.patterns.get(path)
+  // Pattern matching
+  patternConfidence: 0.7,      // Minimum confidence for predictive preloading
+  minPatternOccurrences: 3     // Minimum occurrences to establish pattern
+}
 
-    if (!pattern) {
-      pattern = {
-        path,
-        frequency: 0,
-        lastAccessed: now,
-        timeOfDay: [],
-        dayOfWeek: [],
-        nextPaths: {}
-      }
-      this.patterns.set(path, pattern)
-    }
-
-    // Update pattern data
-    pattern.frequency++
-    pattern.lastAccessed = now
-
-    // Track time patterns
-    if (!pattern.timeOfDay.includes(hour)) {
-      pattern.timeOfDay.push(hour)
-    }
-
-    if (!pattern.dayOfWeek.includes(dayOfWeek)) {
-      pattern.dayOfWeek.push(dayOfWeek)
-    }
-
-    // Update next path predictions
-    this.updateNextPathPredictions(path)
-
-    // Cleanup and save
-    this.cleanupPatterns()
-    this.savePatterns()
-
-    // Trigger predictive preloading
-    this.triggerPredictivePreload(path)
-
-    // Reset idle detection
-    this.resetIdleTimer()
-  }
-
-  /**
-   * Update predictions for what paths come after the current path.
-   *
-   * This function retrieves the last accessed path using the currentPath parameter.
-   * If a valid lastPath is found and it differs from currentPath, it checks for an
-   * associated pattern. If the pattern exists and does not already include currentPath
-   * in its nextPaths, it initializes the count and then increments the count for
-   * currentPath in the nextPaths of the lastPattern.
-   *
-   * @param {string} currentPath - The path for which predictions are being updated.
-   */
-  updateNextPathPredictions (currentPath) {
-    const lastPath = this.getLastAccessedPath(currentPath)
-
-    if (lastPath && lastPath !== currentPath) {
-      const lastPattern = this.patterns.get(lastPath)
-      if (lastPattern) {
-        if (!lastPattern.nextPaths[currentPath]) {
-          lastPattern.nextPaths[currentPath] = 0
-        }
-        lastPattern.nextPaths[currentPath]++
-      }
-    }
-  }
-
-  /**
-     * Retrieves the most recently accessed path, excluding the specified path.
-     */
-  getLastAccessedPath (excludePath) {
-    let lastPath = null
-    let lastTime = 0
-
-    for (const [path, pattern] of this.patterns) {
-      if (path !== excludePath && pattern.lastAccessed > lastTime) {
-        lastTime = pattern.lastAccessed
-        lastPath = path
-      }
-    }
-
-    return lastPath
-  }
-
-  /**
-   * Trigger predictive preloading based on current path.
-   *
-   * This function retrieves a pattern associated with the given currentPath. If a pattern exists, it calls
-   * getPredictedPaths to obtain potential next paths. For each predicted path, it checks if its probability
-   * meets or exceeds the configured preloadThreshold, and if so, it invokes preloadPath to preload that path.
-   *
-   * @param {string} currentPath - The current path used to determine predictive preloading.
-   */
-  async triggerPredictivePreload (currentPath) {
-    const pattern = this.patterns.get(currentPath)
-    if (!pattern) return
-
-    // Get predicted next paths
-    const predictions = this.getPredictedPaths(currentPath)
-
-    // Preload high-probability paths
-    for (const { path, probability } of predictions) {
-      if (probability >= this.config.preloadThreshold) {
-        await this.preloadPath(path)
-      }
-    }
-  }
-
-  /**
-   * Get predicted next paths with probabilities.
-   *
-   * This function retrieves the predicted next paths based on the current path provided.
-   * It first checks if there is a pattern associated with the current path; if no pattern exists,
-   * it returns an empty array. If a pattern is found, it calculates the total number of transitions
-   * to determine the probabilities for each next path, which are then sorted in descending order
-   * before being returned.
-   *
-   * @param {string} currentPath - The current path for which to predict next paths.
-   */
-  getPredictedPaths (currentPath) {
-    const pattern = this.patterns.get(currentPath)
-    if (!pattern) return []
-
-    const predictions = []
-    const totalTransitions = Object.values(pattern.nextPaths).reduce((sum, count) => sum + count, 0)
-
-    if (totalTransitions === 0) return []
-
-    // Calculate probabilities for each next path
-    for (const [nextPath, count] of Object.entries(pattern.nextPaths)) {
-      const probability = count / totalTransitions
-      predictions.push({ path: nextPath, probability })
-    }
-
-    // Sort by probability (highest first)
-    return predictions.sort((a, b) => b.probability - a.probability)
-  }
-
-  /**
-   * Preload a specific path into the service worker cache.
-   *
-   * This function determines the appropriate cache to use based on the provided path, checking if the path is already cached and whether it has expired. If not cached or expired, it fetches the resource and stores it in the appropriate cache. It also handles fallback cache names and configurations if not defined in the service worker context.
-   *
-   * @param path - The path to preload into the cache.
-   * @returns {Promise<void>} A promise that resolves when the preloading is complete.
-   */
-  async preloadPath (path) {
-    try {
-      console.log(`[SW Cache Preloader] Preloading path: ${path}`)
-
-      // Fallback cache names if not available from main SW
-      const cacheNames = self.CACHE_NAMES || {
-        static: 'unifiedhq-static-v1',
-        dynamic: 'unifiedhq-dynamic-v1',
-        api: 'unifiedhq-api-v1',
-        offline: 'unifiedhq-offline-v1'
-      }
-
-      const cacheConfigs = self.CACHE_CONFIGS || {
-        [cacheNames.dynamic]: { maxAgeSeconds: 3600, maxEntries: 75 },
-        [cacheNames.api]: { maxAgeSeconds: 900, maxEntries: 50 },
-        [cacheNames.static]: { maxAgeSeconds: 86400, maxEntries: 100 }
-      }
-
-      // Determine appropriate cache based on path
-      let cacheName = cacheNames.dynamic
-      if (path.startsWith('/api/')) {
-        cacheName = cacheNames.api
-      } else if (this.isStaticAsset(path)) {
-        cacheName = cacheNames.static
-      }
-
-      // Check if already cached
-      const cache = await caches.open(cacheName)
-      const cached = await cache.match(path)
-
-      if (cached && !this.isExpired(cached, cacheConfigs[cacheName])) {
-        console.log(`[SW Cache Preloader] Path already cached: ${path}`)
-        return
-      }
-
-      // Fetch and cache the path
-      const response = await fetch(path)
-      if (response.ok) {
-        await this.putInCache(cache, new Request(path), response.clone(), cacheConfigs[cacheName])
-        console.log(`[SW Cache Preloader] Successfully preloaded: ${path}`)
-      }
-    } catch (error) {
-      console.error(`[SW Cache Preloader] Failed to preload ${path}:`, error)
-    }
-  }
-
-  /**
-   * Check if the given path is a static asset.
-   */
-  isStaticAsset (path) {
-    return (
-      path.startsWith('/_next/static/') ||
-      path.startsWith('/static/') ||
-      path.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/)
-    )
-  }
-
-  /**
-   * Caches the response with a timestamp if the response is successful.
-   *
-   * This function checks if the response is OK before creating a new Response object that includes the original response body, status, and headers, along with a timestamp indicating when it was cached. It then stores this response in the provided cache and performs a cleanup operation on the cache using the specified config.
-   *
-   * @param {Cache} cache - The cache object where the response will be stored.
-   * @param {Request} request - The request object associated with the response.
-   * @param {Response} response - The response object to be cached.
-   * @param {Object} config - Configuration options for cache cleanup.
-   */
-  async putInCache (cache, request, response, config) {
-    if (!response.ok) return
-
-    const responseWithTimestamp = new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: {
-        ...Object.fromEntries(response.headers.entries()),
-        'sw-cached-at': Date.now().toString()
-      }
-    })
-
-    await cache.put(request, responseWithTimestamp)
-    await this.cleanupCache(cache, config)
-  }
-
-  /**
-     * Check if cached response is expired.
-     *
-     * This function determines if the cached response has exceeded its maximum age.
-     * It first checks if a maximum age is defined in the config. If not, it returns false.
-     * Then, it retrieves the cached timestamp from the response headers and calculates the age
-     * of the cache. If the age exceeds the maximum allowed age, it returns true, indicating
-     * the cache is expired.
-     *
-     * @param {Response} response - The cached response object to check.
-     * @param {Object} config - Configuration object containing cache settings.
-     * @param {number} config.maxAgeSeconds - The maximum age in seconds for the cached response.
-     */
-  isExpired (response, config) {
-    if (!config.maxAgeSeconds) return false
-
-    const cachedAt = response.headers.get('sw-cached-at')
-    if (!cachedAt) return true
-
-    const age = (Date.now() - parseInt(cachedAt)) / 1000
-    return age > config.maxAgeSeconds
-  }
-
-  /**
-   * Cleanup cache based on size and age limits.
-   *
-   * This asynchronous function checks the cache for entries that are either expired based on the maxAgeSeconds configuration or exceed the maxEntries limit. It first removes expired entries, then evaluates the remaining entries to delete the oldest ones if the total exceeds the specified maximum. The function utilizes the cache's keys and match methods to access and manage the cache entries effectively.
-   *
-   * @param cache - The cache object to be cleaned up.
-   * @param config - Configuration object containing maxEntries and maxAgeSeconds limits.
-   * @returns A promise that resolves when the cache cleanup is complete.
-   */
-  async cleanupCache (cache, config) {
-    if (!config.maxEntries && !config.maxAgeSeconds) return
-
-    const requests = await cache.keys()
-
-    // Remove expired entries
-    if (config.maxAgeSeconds) {
-      for (const request of requests) {
-        const response = await cache.match(request)
-        if (response && this.isExpired(response, config)) {
-          await cache.delete(request)
-        }
-      }
-    }
-
-    // Remove oldest entries if over limit
-    if (config.maxEntries) {
-      const remainingRequests = await cache.keys()
-      if (remainingRequests.length > config.maxEntries) {
-        const entriesToRemove = remainingRequests.length - config.maxEntries
-
-        const requestsWithTimestamp = await Promise.all(
-          remainingRequests.map(async (request) => {
-            const response = await cache.match(request)
-            const timestamp = response?.headers.get('sw-cached-at') || '0'
-            return { request, timestamp: parseInt(timestamp) }
-          })
-        )
-
-        const toDelete = requestsWithTimestamp
-          .sort((a, b) => a.timestamp - b.timestamp)
-          .slice(0, entriesToRemove)
-
-        await Promise.all(
-          toDelete.map(({ request }) => cache.delete(request))
-        )
-      }
-    }
-  }
-
-  /**
-   * Preloads critical dashboard data from specified endpoints with delays.
-   */
-  async preloadCriticalData () {
-    console.log('[SW Cache Preloader] Starting critical data preload')
-
-    const criticalEndpoints = [
-      '/api/github/activity',
-      '/api/slack/messages/recent',
-      '/api/ai/summary/today',
-      '/api/dashboard/stats'
+// Resource definitions for different app sections
+const RESOURCE_DEFINITIONS = {
+  '/dashboard': {
+    priority: PRELOADER_CONFIG.priorities.critical,
+    strategy: PRELOADER_CONFIG.strategies.immediate,
+    resources: [
+      { url: '/api/activities/recent', type: 'api', cacheName: self.CACHE_NAMES?.api },
+      { url: '/api/integrations/status', type: 'api', cacheName: self.CACHE_NAMES?.api },
+      { url: '/api/user/preferences', type: 'api', cacheName: self.CACHE_NAMES?.api }
     ]
+  },
 
-    // Preload with delays to avoid overwhelming the server
-    for (let i = 0; i < criticalEndpoints.length; i++) {
-      setTimeout(async () => {
-        await this.preloadPath(criticalEndpoints[i])
-      }, i * 500)
-    }
-  }
+  '/integrations': {
+    priority: PRELOADER_CONFIG.priorities.high,
+    strategy: PRELOADER_CONFIG.strategies.predictive,
+    resources: [
+      { url: '/api/integrations', type: 'api', cacheName: self.CACHE_NAMES?.api },
+      { url: '/api/integrations/github', type: 'api', cacheName: self.CACHE_NAMES?.api },
+      { url: '/api/integrations/slack', type: 'api', cacheName: self.CACHE_NAMES?.api }
+    ]
+  },
 
-  /**
-   * Setup idle detection for background preloading.
-   */
-  setupIdleDetection () {
-    this.resetIdleTimer()
-  }
+  '/settings': {
+    priority: PRELOADER_CONFIG.priorities.normal,
+    strategy: PRELOADER_CONFIG.strategies.idle,
+    resources: [
+      { url: '/api/user/profile', type: 'api', cacheName: self.CACHE_NAMES?.api },
+      { url: '/api/user/settings', type: 'api', cacheName: self.CACHE_NAMES?.api },
+      { url: '/api/user/preferences', type: 'api', cacheName: self.CACHE_NAMES?.api }
+    ]
+  },
 
-  /**
-   * Resets the idle timer and updates the last navigation time.
-   */
-  resetIdleTimer () {
-    this.isIdle = false
-    this.lastNavigationTime = Date.now()
-
-    if (this.idleTimer) {
-      clearTimeout(this.idleTimer)
-    }
-
-    this.idleTimer = setTimeout(() => {
-      this.isIdle = true
-      this.performIdlePreloading()
-    }, this.config.idleTimeout)
-  }
-
-  /**
-   * Perform background preloading during idle time.
-   *
-   * This function checks if the system is idle and proceeds to preload frequently accessed paths, critical paths, and time-based recommendations. It filters and sorts paths based on their access frequency, ensuring that only the most relevant paths are preloaded. The function also includes delays between preloading actions to manage resource usage effectively.
-   *
-   * @returns {Promise<void>} A promise that resolves when the preloading is completed.
-   */
-  async performIdlePreloading () {
-    if (!this.isIdle) return
-
-    console.log('[SW Cache Preloader] Starting idle preloading')
-
-    // Get frequently accessed paths that might need refreshing
-    const frequentPaths = Array.from(this.patterns.values())
-      .filter(pattern => pattern.frequency >= this.config.minFrequency)
-      .sort((a, b) => b.frequency - a.frequency)
-      .slice(0, 10)
-
-    for (const pattern of frequentPaths) {
-      if (!this.isIdle) break
-
-      await this.preloadPath(pattern.path)
-      await new Promise(resolve => setTimeout(resolve, 200))
-    }
-
-    // Preload critical paths during idle time
-    for (const path of this.config.criticalPaths) {
-      if (!this.isIdle) break
-
-      await this.preloadPath(path)
-      await new Promise(resolve => setTimeout(resolve, 200))
-    }
-
-    // Preload time-based recommendations
-    const timeBasedPaths = this.getTimeBasedRecommendations()
-    for (const path of timeBasedPaths.slice(0, 5)) {
-      if (!this.isIdle) break
-
-      await this.preloadPath(path)
-      await new Promise(resolve => setTimeout(resolve, 200))
-    }
-
-    console.log('[SW Cache Preloader] Idle preloading completed')
-  }
-
-  /**
-     * Get current time-based recommendations.
-     *
-     * This function retrieves recommendations based on the current hour and day of the week.
-     * It iterates through the defined patterns, checking if the current time and day match
-     * the specified criteria, and if the frequency meets the minimum requirement.
-     * The resulting recommendations are then sorted by frequency in descending order before being returned.
-     */
-  getTimeBasedRecommendations () {
-    const currentHour = new Date().getHours()
-    const currentDay = new Date().getDay()
-
-    const recommendations = []
-
-    for (const [path, pattern] of this.patterns) {
-      const isTimeMatch = pattern.timeOfDay.includes(currentHour)
-      const isDayMatch = pattern.dayOfWeek.includes(currentDay)
-
-      if (isTimeMatch && isDayMatch && pattern.frequency >= this.config.minFrequency) {
-        recommendations.push(path)
-      }
-    }
-
-    return recommendations.sort((a, b) => {
-      const patternA = this.patterns.get(a)
-      const patternB = this.patterns.get(b)
-      return patternB.frequency - patternA.frequency
-    })
-  }
-
-  /**
-   * Cleans up old or infrequent patterns based on configured limits.
-   */
-  cleanupPatterns () {
-    if (this.patterns.size <= this.config.maxPatterns) return
-
-    const patternArray = Array.from(this.patterns.entries()).map(([path, pattern]) => ({
-      path,
-      pattern,
-      score: pattern.frequency + (Date.now() - pattern.lastAccessed) / (1000 * 60 * 60 * 24)
-    }))
-
-    patternArray.sort((a, b) => b.score - a.score)
-
-    const toKeep = patternArray.slice(0, this.config.maxPatterns)
-
-    this.patterns.clear()
-    toKeep.forEach(({ path, pattern }) => {
-      this.patterns.set(path, pattern)
-    })
-  }
-
-  /**
-   * Save patterns to IndexedDB.
-   *
-   * This function opens a connection to the IndexedDB, creates a transaction for the 'patterns' object store,
-   * and saves the current patterns along with a timestamp. It handles any errors that may occur during
-   * the database operations by logging them to the console.
-   */
-  async savePatterns () {
-    try {
-      const db = await this.openDB()
-      const transaction = db.transaction(['patterns'], 'readwrite')
-      const store = transaction.objectStore('patterns')
-
-      const patternsData = {
-        id: 'navigation-patterns',
-        patterns: Array.from(this.patterns.entries()),
-        lastUpdated: Date.now()
-      }
-
-      await store.put(patternsData)
-    } catch (error) {
-      console.error('[SW Cache Preloader] Failed to save patterns:', error)
-    }
-  }
-
-  /**
-   * Load patterns from IndexedDB.
-   *
-   * This asynchronous function opens a connection to the IndexedDB and initiates a read-only transaction on the 'patterns' store.
-   * It retrieves the 'navigation-patterns' and, if found, stores them in the `this.patterns` Map.
-   * A message is logged indicating the number of loaded patterns, and any errors during the process are caught and logged.
-   */
-  async loadPatterns () {
-    try {
-      const db = await this.openDB()
-      const transaction = db.transaction(['patterns'], 'readonly')
-      const store = transaction.objectStore('patterns')
-
-      const result = await store.get('navigation-patterns')
-
-      if (result?.patterns) {
-        this.patterns = new Map(result.patterns)
-        console.log(`[SW Cache Preloader] Loaded ${this.patterns.size} navigation patterns`)
-      }
-    } catch (error) {
-      console.error('[SW Cache Preloader] Failed to load patterns:', error)
-    }
-  }
-
-  /**
-     * Opens IndexedDB for pattern storage and handles version upgrades.
-     */
-  openDB () {
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open('unifiedhq-cache-preloader', 1)
-
-      request.onerror = () => reject(request.error)
-      request.onsuccess = () => resolve(request.result)
-
-      request.onupgradeneeded = (event) => {
-        const db = event.target.result
-
-        if (!db.objectStoreNames.contains('patterns')) {
-          db.createObjectStore('patterns', { keyPath: 'id' })
-        }
-      }
-    })
-  }
-
-  /**
-   * Retrieves cache statistics including total patterns, frequent paths, predictions, and time-based recommendations.
-   */
-  async getCacheStats () {
-    const frequentPaths = Array.from(this.patterns.values())
-      .filter(pattern => pattern.frequency >= this.config.minFrequency)
-      .sort((a, b) => b.frequency - a.frequency)
-      .slice(0, 5)
-      .map(pattern => pattern.path)
-
-    const lastPath = this.getLastAccessedPath()
-    const predictions = lastPath ? this.getPredictedPaths(lastPath) : []
-
-    return {
-      totalPatterns: this.patterns.size,
-      frequentPaths,
-      predictions: predictions.slice(0, 5),
-      timeBasedRecommendations: this.getTimeBasedRecommendations().slice(0, 5)
-    }
-  }
-
-  /**
-     * Clear all patterns and save the changes.
-     */
-  async clearPatterns () {
-    this.patterns.clear()
-    await this.savePatterns()
+  '/activities': {
+    priority: PRELOADER_CONFIG.priorities.normal,
+    strategy: PRELOADER_CONFIG.strategies.predictive,
+    resources: [
+      { url: '/api/activities', type: 'api', cacheName: self.CACHE_NAMES?.api },
+      { url: '/api/activities/github', type: 'api', cacheName: self.CACHE_NAMES?.api },
+      { url: '/api/activities/slack', type: 'api', cacheName: self.CACHE_NAMES?.api }
+    ]
   }
 }
 
-// Initialize cache preloader and expose globally
-const cachePreloader = new ServiceWorkerCachePreloader()
-self.cachePreloader = cachePreloader
+// Preload queue and state management
+const PRELOAD_STATE = {
+  queue: new Map(),           // url -> { priority, strategy, timestamp, attempts }
+  active: new Set(),          // Currently preloading URLs
+  completed: new Map(),       // url -> { timestamp, success, cacheHit }
+  patterns: new Map(),        // Enhanced pattern storage
+  idleTimer: null,
+  isIdle: false
+}
+
+/**
+ * Enhanced cache preloader that integrates with navigation tracking
+ */
+class CachePreloader {
+  constructor() {
+    this.initializeIdleDetection()
+    this.bindToNavigationTracking()
+  }
+
+  /**
+   * Track navigation and trigger appropriate preloading
+   */
+  trackNavigation(path, sessionId = 'default') {
+    try {
+      // Call the original navigation tracking if it exists
+      if (self.cachePreloader?.trackNavigation && typeof self.cachePreloader.trackNavigation === 'function') {
+        // Don't call if we're replacing it
+        if (self.cachePreloader.trackNavigation.toString().includes('Navigation tracking not implemented')) {
+          this.enhancedTrackNavigation(path, sessionId)
+        }
+      } else {
+        this.enhancedTrackNavigation(path, sessionId)
+      }
+
+      // Trigger preloading based on the navigation
+      this.handleNavigationPreload(path, sessionId)
+
+    } catch (error) {
+      console.error('[CachePreloader] Navigation tracking error:', error)
+    }
+  }
+
+  /**
+   * Enhanced navigation tracking with pattern analysis
+   */
+  enhancedTrackNavigation(path, sessionId) {
+    const now = Date.now()
+
+    // Update navigation tracking if available
+    if (self.NAVIGATION_TRACKING) {
+      // Update path patterns
+      const existing = self.NAVIGATION_TRACKING.patterns.get(path) || {
+        count: 0,
+        lastAccessed: 0,
+        preloadTargets: new Set(),
+        firstAccessed: now
+      }
+
+      existing.count++
+      existing.lastAccessed = now
+      self.NAVIGATION_TRACKING.patterns.set(path, existing)
+
+      // Update session tracking
+      let session = self.NAVIGATION_TRACKING.sessions.get(sessionId)
+      if (!session || (now - session.lastActivity) > (self.NAVIGATION_TRACKING.sessionTimeout || 30 * 60 * 1000)) {
+        session = {
+          startTime: now,
+          lastActivity: now,
+          paths: [],
+          patterns: new Set()
+        }
+        self.NAVIGATION_TRACKING.sessions.set(sessionId, session)
+      }
+
+      session.lastActivity = now
+      session.paths.push({ path, timestamp: now })
+
+      // Detect navigation patterns within session
+      if (session.paths.length >= 2) {
+        const previousPath = session.paths[session.paths.length - 2].path
+        const pattern = `${previousPath} -> ${path}`
+        session.patterns.add(pattern)
+
+        // Update preload targets for the previous path
+        const prevPattern = self.NAVIGATION_TRACKING.patterns.get(previousPath)
+        if (prevPattern) {
+          prevPattern.preloadTargets.add(path)
+        }
+      }
+    }
+
+    console.debug('[CachePreloader] Enhanced navigation tracked:', { path, sessionId })
+  }
+
+  /**
+   * Handle preloading based on navigation event
+   */
+  async handleNavigationPreload(path, sessionId) {
+    try {
+      // Get resource definition for this path
+      const resourceDef = this.getResourceDefinition(path)
+
+      if (resourceDef) {
+        await this.schedulePreload(resourceDef.resources, resourceDef.strategy, resourceDef.priority)
+      }
+
+      // Predictive preloading based on patterns
+      await this.predictivePreload(path, sessionId)
+
+    } catch (error) {
+      console.error('[CachePreloader] Navigation preload error:', error)
+    }
+  }
+
+  /**
+   * Get resource definition for a path
+   */
+  getResourceDefinition(path) {
+    // Exact match first
+    if (RESOURCE_DEFINITIONS[path]) {
+      return RESOURCE_DEFINITIONS[path]
+    }
+
+    // Pattern matching for dynamic routes
+    for (const [pattern, definition] of Object.entries(RESOURCE_DEFINITIONS)) {
+      if (path.startsWith(pattern)) {
+        return definition
+      }
+    }
+
+    return null
+  }
+
+  /**
+   * Schedule resources for preloading
+   */
+  async schedulePreload(resources, strategy, priority) {
+    const now = Date.now()
+
+    for (const resource of resources) {
+      const queueItem = {
+        ...resource,
+        priority,
+        strategy,
+        timestamp: now,
+        attempts: 0
+      }
+
+      PRELOAD_STATE.queue.set(resource.url, queueItem)
+    }
+
+    // Execute preloading based on strategy
+    switch (strategy) {
+      case PRELOADER_CONFIG.strategies.immediate:
+        await this.executePreload()
+        break
+
+      case PRELOADER_CONFIG.strategies.idle:
+        this.scheduleIdlePreload()
+        break
+
+      case PRELOADER_CONFIG.strategies.predictive:
+        await this.executePredictivePreload()
+        break
+
+      case PRELOADER_CONFIG.strategies.critical:
+        await this.executeCriticalPreload()
+        break
+    }
+  }
+
+  /**
+   * Execute immediate preloading
+   */
+  async executePreload() {
+    const batch = this.getNextBatch()
+    const promises = batch.map(item => this.preloadResource(item))
+
+    await Promise.allSettled(promises)
+  }
+
+  /**
+   * Execute predictive preloading based on confidence
+   */
+  async executePredictivePreload() {
+    const highConfidenceItems = Array.from(PRELOAD_STATE.queue.values())
+      .filter(item => this.calculatePreloadConfidence(item) >= PRELOADER_CONFIG.patternConfidence)
+
+    if (highConfidenceItems.length > 0) {
+      const promises = highConfidenceItems
+        .slice(0, PRELOADER_CONFIG.preloadBatchSize)
+        .map(item => this.preloadResource(item))
+
+      await Promise.allSettled(promises)
+    }
+  }
+
+  /**
+   * Execute critical resource preloading
+   */
+  async executeCriticalPreload() {
+    const criticalItems = Array.from(PRELOAD_STATE.queue.values())
+      .filter(item => item.priority === PRELOADER_CONFIG.priorities.critical)
+
+    const promises = criticalItems.map(item => this.preloadResource(item))
+    await Promise.allSettled(promises)
+  }
+
+  /**
+   * Get next batch of resources to preload
+   */
+  getNextBatch() {
+    const available = Array.from(PRELOAD_STATE.queue.values())
+      .filter(item => !PRELOAD_STATE.active.has(item.url))
+      .sort((a, b) => a.priority - b.priority)
+
+    return available.slice(0, PRELOADER_CONFIG.preloadBatchSize)
+  }
+
+  /**
+   * Preload a single resource
+   */
+  async preloadResource(item) {
+    if (PRELOAD_STATE.active.has(item.url)) {
+      return
+    }
+
+    PRELOAD_STATE.active.add(item.url)
+
+    try {
+      console.debug('[CachePreloader] Preloading:', item.url)
+
+      const response = await fetch(item.url, {
+        method: 'GET',
+        headers: {
+          'X-Preload': 'true',
+          'X-Cache-Strategy': item.strategy
+        }
+      })
+
+      if (response.ok && item.cacheName) {
+        const cache = await caches.open(item.cacheName)
+        await cache.put(item.url, response.clone())
+
+        PRELOAD_STATE.completed.set(item.url, {
+          timestamp: Date.now(),
+          success: true,
+          cacheHit: false,
+          strategy: item.strategy
+        })
+
+        console.debug('[CachePreloader] Successfully preloaded and cached:', item.url)
+      }
+
+      PRELOAD_STATE.queue.delete(item.url)
+
+    } catch (error) {
+      console.warn('[CachePreloader] Preload failed:', item.url, error)
+
+      item.attempts++
+      if (item.attempts < 3) {
+        // Retry with exponential backoff
+        setTimeout(() => {
+          PRELOAD_STATE.queue.set(item.url, item)
+        }, Math.pow(2, item.attempts) * 1000)
+      } else {
+        PRELOAD_STATE.queue.delete(item.url)
+      }
+
+      PRELOAD_STATE.completed.set(item.url, {
+        timestamp: Date.now(),
+        success: false,
+        error: error.message,
+        strategy: item.strategy
+      })
+
+    } finally {
+      PRELOAD_STATE.active.delete(item.url)
+    }
+  }
+
+  /**
+   * Predictive preloading based on navigation patterns
+   */
+  async predictivePreload(currentPath, sessionId) {
+    if (!self.NAVIGATION_TRACKING) return
+
+    const pattern = self.NAVIGATION_TRACKING.patterns.get(currentPath)
+    if (!pattern || pattern.preloadTargets.size === 0) return
+
+    // Get likely next destinations
+    const targets = Array.from(pattern.preloadTargets)
+      .map(targetPath => ({
+        path: targetPath,
+        confidence: this.calculatePathConfidence(currentPath, targetPath)
+      }))
+      .filter(target => target.confidence >= PRELOADER_CONFIG.patternConfidence)
+      .sort((a, b) => b.confidence - a.confidence)
+      .slice(0, 3)
+
+    // Preload resources for likely destinations
+    for (const target of targets) {
+      const resourceDef = this.getResourceDefinition(target.path)
+      if (resourceDef) {
+        await this.schedulePreload(
+          resourceDef.resources,
+          PRELOADER_CONFIG.strategies.predictive,
+          resourceDef.priority
+        )
+      }
+    }
+  }
+
+  /**
+   * Calculate confidence for path transition
+   */
+  calculatePathConfidence(fromPath, toPath) {
+    if (!self.NAVIGATION_TRACKING) return 0
+
+    const fromPattern = self.NAVIGATION_TRACKING.patterns.get(fromPath)
+    if (!fromPattern) return 0
+
+    const transitionCount = Array.from(fromPattern.preloadTargets).filter(p => p === toPath).length
+    const totalTransitions = fromPattern.preloadTargets.size
+
+    return totalTransitions > 0 ? transitionCount / totalTransitions : 0
+  }
+
+  /**
+   * Calculate preload confidence for a resource
+   */
+  calculatePreloadConfidence(item) {
+    const now = Date.now()
+    const age = now - item.timestamp
+    const maxAge = PRELOADER_CONFIG.maxPreloadAge
+
+    // Base confidence on priority and age
+    let confidence = 1 - (item.priority / 4) // Higher priority = higher confidence
+    confidence *= Math.max(0, 1 - (age / maxAge)) // Newer = higher confidence
+
+    return confidence
+  }
+
+  /**
+   * Initialize idle detection for idle preloading
+   */
+  initializeIdleDetection() {
+    // Use requestIdleCallback if available
+    if (typeof requestIdleCallback !== 'undefined') {
+      const scheduleIdleWork = () => {
+        requestIdleCallback((deadline) => {
+          if (deadline.timeRemaining() > 0) {
+            PRELOAD_STATE.isIdle = true
+            this.processIdleQueue()
+          }
+          scheduleIdleWork()
+        })
+      }
+      scheduleIdleWork()
+    } else {
+      // Fallback to setTimeout
+      setInterval(() => {
+        PRELOAD_STATE.isIdle = true
+        this.processIdleQueue()
+      }, PRELOADER_CONFIG.idleTimeout)
+    }
+  }
+
+  /**
+   * Schedule preloading during idle time
+   */
+  scheduleIdlePreload() {
+    if (PRELOAD_STATE.isIdle) {
+      this.processIdleQueue()
+    }
+  }
+
+  /**
+   * Process preload queue during idle time
+   */
+  async processIdleQueue() {
+    if (!PRELOAD_STATE.isIdle) return
+
+    const idleItems = Array.from(PRELOAD_STATE.queue.values())
+      .filter(item => item.strategy === PRELOADER_CONFIG.strategies.idle)
+
+    if (idleItems.length > 0) {
+      const batch = idleItems.slice(0, Math.min(2, PRELOADER_CONFIG.preloadBatchSize))
+      const promises = batch.map(item => this.preloadResource(item))
+
+      await Promise.allSettled(promises)
+    }
+
+    PRELOAD_STATE.isIdle = false
+  }
+
+  /**
+   * Bind to existing navigation tracking system
+   */
+  bindToNavigationTracking() {
+    // Enhance existing cachePreloader if it exists
+    if (self.cachePreloader) {
+      // Store original methods
+      const originalMethods = {
+        preloadCriticalData: self.cachePreloader.preloadCriticalData,
+        getCacheStats: self.cachePreloader.getCacheStats,
+        clearPatterns: self.cachePreloader.clearPatterns
+      }
+
+      // Enhance with new functionality
+      self.cachePreloader.trackNavigation = this.trackNavigation.bind(this)
+      self.cachePreloader.preloadCriticalData = this.enhancedPreloadCriticalData.bind(this, originalMethods.preloadCriticalData)
+      self.cachePreloader.getCacheStats = this.enhancedGetCacheStats.bind(this, originalMethods.getCacheStats)
+      self.cachePreloader.clearPatterns = this.enhancedClearPatterns.bind(this, originalMethods.clearPatterns)
+
+      // Add new methods
+      self.cachePreloader.getPreloadStats = this.getPreloadStats.bind(this)
+      self.cachePreloader.forcePreload = this.forcePreload.bind(this)
+      self.cachePreloader.clearPreloadQueue = this.clearPreloadQueue.bind(this)
+    }
+  }
+
+  /**
+   * Enhanced critical data preloading
+   */
+  async enhancedPreloadCriticalData(originalMethod) {
+    try {
+      // Call original method if it exists
+      if (originalMethod) {
+        await originalMethod()
+      }
+
+      // Add enhanced critical preloading
+      const criticalPaths = ['/dashboard', '/api/activities/recent', '/api/integrations/status']
+
+      for (const path of criticalPaths) {
+        const resourceDef = this.getResourceDefinition(path)
+        if (resourceDef) {
+          await this.schedulePreload(
+            resourceDef.resources,
+            PRELOADER_CONFIG.strategies.critical,
+            PRELOADER_CONFIG.priorities.critical
+          )
+        }
+      }
+
+      await this.executeCriticalPreload()
+
+    } catch (error) {
+      console.error('[CachePreloader] Enhanced critical preload error:', error)
+    }
+  }
+
+  /**
+   * Enhanced cache statistics
+   */
+  async enhancedGetCacheStats(originalMethod) {
+    try {
+      const originalStats = originalMethod ? await originalMethod() : {}
+
+      const preloadStats = {
+        ...originalStats,
+        preloader: {
+          queueSize: PRELOAD_STATE.queue.size,
+          activePreloads: PRELOAD_STATE.active.size,
+          completedPreloads: PRELOAD_STATE.completed.size,
+          successRate: this.calculateSuccessRate(),
+          averagePreloadTime: this.calculateAveragePreloadTime(),
+          resourceDefinitions: Object.keys(RESOURCE_DEFINITIONS).length
+        }
+      }
+
+      return preloadStats
+
+    } catch (error) {
+      console.error('[CachePreloader] Enhanced stats error:', error)
+      return {}
+    }
+  }
+
+  /**
+   * Enhanced pattern clearing
+   */
+  async enhancedClearPatterns(originalMethod) {
+    try {
+      // Call original method
+      if (originalMethod) {
+        await originalMethod()
+      }
+
+      // Clear preloader state
+      PRELOAD_STATE.queue.clear()
+      PRELOAD_STATE.active.clear()
+      PRELOAD_STATE.completed.clear()
+      PRELOAD_STATE.patterns.clear()
+
+      console.debug('[CachePreloader] Enhanced patterns cleared')
+
+    } catch (error) {
+      console.error('[CachePreloader] Enhanced clear patterns error:', error)
+    }
+  }
+
+  /**
+   * Get preloader-specific statistics
+   */
+  getPreloadStats() {
+    return {
+      queue: {
+        size: PRELOAD_STATE.queue.size,
+        items: Array.from(PRELOAD_STATE.queue.entries()).map(([url, item]) => ({
+          url,
+          priority: item.priority,
+          strategy: item.strategy,
+          attempts: item.attempts,
+          age: Date.now() - item.timestamp
+        }))
+      },
+      active: Array.from(PRELOAD_STATE.active),
+      completed: {
+        total: PRELOAD_STATE.completed.size,
+        successful: Array.from(PRELOAD_STATE.completed.values()).filter(c => c.success).length,
+        failed: Array.from(PRELOAD_STATE.completed.values()).filter(c => !c.success).length
+      },
+      performance: {
+        successRate: this.calculateSuccessRate(),
+        averageTime: this.calculateAveragePreloadTime()
+      }
+    }
+  }
+
+  /**
+   * Force preload specific resources
+   */
+  async forcePreload(urls) {
+    const resources = urls.map(url => ({
+      url,
+      type: 'api',
+      cacheName: self.CACHE_NAMES?.api || 'default'
+    }))
+
+    await this.schedulePreload(
+      resources,
+      PRELOADER_CONFIG.strategies.immediate,
+      PRELOADER_CONFIG.priorities.high
+    )
+
+    await this.executePreload()
+  }
+
+  /**
+   * Clear preload queue
+   */
+  clearPreloadQueue() {
+    PRELOAD_STATE.queue.clear()
+    PRELOAD_STATE.active.clear()
+  }
+
+  /**
+   * Calculate success rate
+   */
+  calculateSuccessRate() {
+    const completed = Array.from(PRELOAD_STATE.completed.values())
+    if (completed.length === 0) return 0
+
+    const successful = completed.filter(c => c.success).length
+    return successful / completed.length
+  }
+
+  /**
+   * Calculate average preload time
+   */
+  calculateAveragePreloadTime() {
+    const completed = Array.from(PRELOAD_STATE.completed.values())
+      .filter(c => c.success && c.duration)
+
+    if (completed.length === 0) return 0
+
+    const totalTime = completed.reduce((sum, c) => sum + (c.duration || 0), 0)
+    return totalTime / completed.length
+  }
+}
+
+// Initialize the cache preloader
+const cachePreloader = new CachePreloader()
+
+// Export for external access
+self.CachePreloader = CachePreloader
+self.PRELOADER_CONFIG = PRELOADER_CONFIG
+self.RESOURCE_DEFINITIONS = RESOURCE_DEFINITIONS
+
+console.log('[CachePreloader] Cache preloader initialized successfully')

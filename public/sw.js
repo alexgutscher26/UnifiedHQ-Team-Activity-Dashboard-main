@@ -53,23 +53,238 @@ const STATIC_ASSETS = [
   '/offline'
 ]
 
-// Create a fallback cachePreloader object for now to avoid import issues
-self.cachePreloader = {
-  trackNavigation: () => {
-    // TODO: Implement navigation tracking when cache preloader is available
-    console.debug('[SW] Navigation tracking not implemented');
-  },
-  preloadCriticalData: () => Promise.resolve(),
-  getCacheStats: () => Promise.resolve({}),
-  clearPatterns: () => Promise.resolve()
+// Navigation tracking system
+const NAVIGATION_TRACKING = {
+  patterns: new Map(), // path -> { count, lastAccessed, preloadTargets }
+  sessions: new Map(), // sessionId -> { startTime, paths, patterns }
+  maxPatterns: 100,
+  maxSessions: 50,
+  minAccessCount: 2, // Minimum accesses to consider a pattern
+  sessionTimeout: 30 * 60 * 1000, // 30 minutes
 }
 
-// TODO: Re-enable cache preloader once import issues are resolved
-// try {
-//     importScripts('/cache-preloader-sw.js');
-// } catch (error) {
-//     console.warn('[SW] Cache preloader not available:', error);
-// }
+// Enhanced cache preloader with navigation tracking
+self.cachePreloader = {
+  trackNavigation: (path, sessionId = 'default') => {
+    try {
+      const now = Date.now()
+
+      // Update path patterns
+      const existing = NAVIGATION_TRACKING.patterns.get(path) || {
+        count: 0,
+        lastAccessed: 0,
+        preloadTargets: new Set(),
+        firstAccessed: now
+      }
+
+      existing.count++
+      existing.lastAccessed = now
+      NAVIGATION_TRACKING.patterns.set(path, existing)
+
+      // Update session tracking
+      let session = NAVIGATION_TRACKING.sessions.get(sessionId)
+      if (!session || (now - session.lastActivity) > NAVIGATION_TRACKING.sessionTimeout) {
+        session = {
+          startTime: now,
+          lastActivity: now,
+          paths: [],
+          patterns: new Set()
+        }
+        NAVIGATION_TRACKING.sessions.set(sessionId, session)
+      }
+
+      session.lastActivity = now
+      session.paths.push({ path, timestamp: now })
+
+      // Detect navigation patterns within session
+      if (session.paths.length >= 2) {
+        const previousPath = session.paths[session.paths.length - 2].path
+        const pattern = `${previousPath} -> ${path}`
+        session.patterns.add(pattern)
+
+        // Update preload targets for the previous path
+        const prevPattern = NAVIGATION_TRACKING.patterns.get(previousPath)
+        if (prevPattern) {
+          prevPattern.preloadTargets.add(path)
+        }
+      }
+
+      // Cleanup old patterns and sessions
+      this.cleanupTracking()
+
+      // Trigger preloading for frequently accessed patterns
+      this.preloadBasedOnPatterns(path)
+
+      console.debug('[SW] Navigation tracked:', { path, sessionId, patternCount: existing.count })
+    } catch (error) {
+      console.error('[SW] Navigation tracking error:', error)
+    }
+  },
+
+  preloadCriticalData: async () => {
+    try {
+      const criticalPaths = this.getCriticalPaths()
+      const preloadPromises = []
+
+      for (const path of criticalPaths) {
+        // Preload API data for critical paths
+        if (path.startsWith('/dashboard') || path.startsWith('/api/')) {
+          preloadPromises.push(this.preloadPath(path))
+        }
+      }
+
+      await Promise.allSettled(preloadPromises)
+      console.debug('[SW] Critical data preloaded for paths:', criticalPaths)
+    } catch (error) {
+      console.error('[SW] Critical data preload error:', error)
+    }
+  },
+
+  getCacheStats: async () => {
+    try {
+      const stats = {
+        patterns: NAVIGATION_TRACKING.patterns.size,
+        sessions: NAVIGATION_TRACKING.sessions.size,
+        topPatterns: this.getTopPatterns(10),
+        criticalPaths: this.getCriticalPaths(),
+        sessionActivity: this.getSessionActivity()
+      }
+      return stats
+    } catch (error) {
+      console.error('[SW] Cache stats error:', error)
+      return {}
+    }
+  },
+
+  clearPatterns: async () => {
+    try {
+      NAVIGATION_TRACKING.patterns.clear()
+      NAVIGATION_TRACKING.sessions.clear()
+      console.debug('[SW] Navigation patterns cleared')
+    } catch (error) {
+      console.error('[SW] Clear patterns error:', error)
+    }
+  },
+
+  // Helper methods
+  cleanupTracking: () => {
+    const now = Date.now()
+
+    // Remove old sessions
+    for (const [sessionId, session] of NAVIGATION_TRACKING.sessions.entries()) {
+      if ((now - session.lastActivity) > NAVIGATION_TRACKING.sessionTimeout) {
+        NAVIGATION_TRACKING.sessions.delete(sessionId)
+      }
+    }
+
+    // Limit pattern storage
+    if (NAVIGATION_TRACKING.patterns.size > NAVIGATION_TRACKING.maxPatterns) {
+      const sortedPatterns = Array.from(NAVIGATION_TRACKING.patterns.entries())
+        .sort((a, b) => a[1].lastAccessed - b[1].lastAccessed)
+
+      const toRemove = sortedPatterns.slice(0, NAVIGATION_TRACKING.patterns.size - NAVIGATION_TRACKING.maxPatterns)
+      toRemove.forEach(([path]) => NAVIGATION_TRACKING.patterns.delete(path))
+    }
+
+    // Limit session storage
+    if (NAVIGATION_TRACKING.sessions.size > NAVIGATION_TRACKING.maxSessions) {
+      const sortedSessions = Array.from(NAVIGATION_TRACKING.sessions.entries())
+        .sort((a, b) => a[1].lastActivity - b[1].lastActivity)
+
+      const toRemove = sortedSessions.slice(0, NAVIGATION_TRACKING.sessions.size - NAVIGATION_TRACKING.maxSessions)
+      toRemove.forEach(([sessionId]) => NAVIGATION_TRACKING.sessions.delete(sessionId))
+    }
+  },
+
+  getCriticalPaths: () => {
+    return Array.from(NAVIGATION_TRACKING.patterns.entries())
+      .filter(([_, data]) => data.count >= NAVIGATION_TRACKING.minAccessCount)
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, 20)
+      .map(([path]) => path)
+  },
+
+  getTopPatterns: (limit = 10) => {
+    return Array.from(NAVIGATION_TRACKING.patterns.entries())
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, limit)
+      .map(([path, data]) => ({
+        path,
+        count: data.count,
+        lastAccessed: data.lastAccessed,
+        preloadTargets: Array.from(data.preloadTargets)
+      }))
+  },
+
+  getSessionActivity: () => {
+    const now = Date.now()
+    return Array.from(NAVIGATION_TRACKING.sessions.entries())
+      .map(([sessionId, session]) => ({
+        sessionId,
+        duration: now - session.startTime,
+        pathCount: session.paths.length,
+        patternCount: session.patterns.size,
+        isActive: (now - session.lastActivity) < NAVIGATION_TRACKING.sessionTimeout
+      }))
+  },
+
+  preloadBasedOnPatterns: async (currentPath) => {
+    try {
+      const pattern = NAVIGATION_TRACKING.patterns.get(currentPath)
+      if (!pattern || pattern.preloadTargets.size === 0) return
+
+      // Preload likely next destinations
+      const preloadPromises = Array.from(pattern.preloadTargets)
+        .slice(0, 3) // Limit to top 3 targets
+        .map(targetPath => this.preloadPath(targetPath))
+
+      await Promise.allSettled(preloadPromises)
+    } catch (error) {
+      console.error('[SW] Pattern-based preload error:', error)
+    }
+  },
+
+  preloadPath: async (path) => {
+    try {
+      // Determine what to preload based on path type
+      const preloadTargets = []
+
+      if (path.startsWith('/dashboard')) {
+        preloadTargets.push('/api/activities/recent')
+        preloadTargets.push('/api/integrations/status')
+      } else if (path.startsWith('/integrations')) {
+        preloadTargets.push('/api/integrations')
+      } else if (path.startsWith('/settings')) {
+        preloadTargets.push('/api/user/profile')
+        preloadTargets.push('/api/user/preferences')
+      }
+
+      // Preload the targets
+      for (const target of preloadTargets) {
+        try {
+          const response = await fetch(target)
+          if (response.ok) {
+            const cache = await caches.open(CACHE_NAMES.api)
+            await cache.put(target, response.clone())
+          }
+        } catch (error) {
+          console.debug('[SW] Preload failed for:', target, error)
+        }
+      }
+    } catch (error) {
+      console.error('[SW] Path preload error:', error)
+    }
+  }
+}
+
+// Import enhanced cache preloader
+try {
+  importScripts('/cache-preloader-sw.js')
+  console.log('[SW] Cache preloader loaded successfully')
+} catch (error) {
+  console.warn('[SW] Cache preloader not available:', error)
+  // Fallback behavior is already implemented above
+}
 
 // Install Event - Cache static assets
 self.addEventListener('install', (event) => {
@@ -145,9 +360,14 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Track navigation for cache preloading
+  // Track navigation for cache preloading with session support
   if (request.mode === 'navigate' || url.pathname.startsWith('/api/')) {
-    cachePreloader.trackNavigation(url.pathname)
+    // Extract session ID from request headers or generate one
+    const sessionId = request.headers.get('x-session-id') ||
+      request.headers.get('cookie')?.match(/session-id=([^;]+)/)?.[1] ||
+      'default'
+
+    cachePreloader.trackNavigation(url.pathname, sessionId)
   }
 
   event.respondWith(handleFetch(request))
@@ -452,10 +672,83 @@ self.addEventListener('message', (event) => {
     case 'TRACK_NAVIGATION':
       // Manual navigation tracking
       if (payload?.path) {
-        cachePreloader.trackNavigation(payload.path)
+        const sessionId = payload.sessionId || 'manual'
+        cachePreloader.trackNavigation(payload.path, sessionId)
         event.ports[0].postMessage({ success: true })
       } else {
         event.ports[0].postMessage({ success: false, error: 'Path required' })
+      }
+      break
+
+    case 'GET_NAVIGATION_PATTERNS':
+      // Get navigation patterns and statistics
+      try {
+        const patterns = {
+          topPatterns: cachePreloader.getTopPatterns(payload?.limit || 10),
+          criticalPaths: cachePreloader.getCriticalPaths(),
+          sessionActivity: cachePreloader.getSessionActivity(),
+          totalPatterns: NAVIGATION_TRACKING.patterns.size,
+          totalSessions: NAVIGATION_TRACKING.sessions.size
+        }
+        event.ports[0].postMessage({ success: true, patterns })
+      } catch (error) {
+        event.ports[0].postMessage({ success: false, error: error.message })
+      }
+      break
+
+    case 'PRELOAD_FOR_PATH':
+      // Manually trigger preloading for a specific path
+      if (payload?.path) {
+        cachePreloader.preloadBasedOnPatterns(payload.path).then(() => {
+          event.ports[0].postMessage({ success: true })
+        }).catch(error => {
+          event.ports[0].postMessage({ success: false, error: error.message })
+        })
+      } else {
+        event.ports[0].postMessage({ success: false, error: 'Path required' })
+      }
+      break
+
+    case 'GET_PRELOADER_STATS':
+      // Get detailed preloader statistics
+      try {
+        const preloaderStats = cachePreloader.getPreloadStats ?
+          cachePreloader.getPreloadStats() :
+          { error: 'Preloader stats not available' }
+        event.ports[0].postMessage({ success: true, stats: preloaderStats })
+      } catch (error) {
+        event.ports[0].postMessage({ success: false, error: error.message })
+      }
+      break
+
+    case 'FORCE_PRELOAD':
+      // Force preload specific URLs
+      if (payload?.urls && Array.isArray(payload.urls)) {
+        if (cachePreloader.forcePreload) {
+          cachePreloader.forcePreload(payload.urls).then(() => {
+            event.ports[0].postMessage({ success: true })
+          }).catch(error => {
+            event.ports[0].postMessage({ success: false, error: error.message })
+          })
+        } else {
+          event.ports[0].postMessage({ success: false, error: 'Force preload not available' })
+        }
+      } else {
+        event.ports[0].postMessage({ success: false, error: 'URLs array required' })
+      }
+      break
+
+    case 'CLEAR_PRELOAD_QUEUE':
+      // Clear preload queue
+      try {
+        if (cachePreloader.clearPreloadQueue) {
+          cachePreloader.clearPreloadQueue()
+          event.ports[0].postMessage({ success: true })
+        } else {
+          event.ports[0].postMessage({ success: false, error: 'Clear preload queue not available' })
+        }
+      } catch (error) {
+        event.ports[0].postMessage({ success: false, error: error.message })
       }
       break
 
