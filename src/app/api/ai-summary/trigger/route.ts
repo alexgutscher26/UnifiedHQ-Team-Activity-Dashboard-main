@@ -2,8 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { safeLogger, sanitizeError } from '@/lib/safe-logger';
 
 /**
- * Manual trigger for AI summary generation
- * This endpoint can be called to manually trigger the cron job
+ * Manual trigger for AI summary generation.
+ *
+ * This function initiates a manual trigger for the AI summary generation by calling the internal cron endpoint. It logs the initiation, handles the response, and returns a success or error message based on the outcome of the cron job. If an error occurs during the process, it logs the error and returns an appropriate response.
+ *
+ * @param request - The incoming request object of type NextRequest.
+ * @returns A JSON response indicating the success or failure of the AI summary generation trigger.
+ * @throws Error If an error occurs during the fetch operation or processing of the response.
  */
 export async function POST(request: NextRequest) {
   try {

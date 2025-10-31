@@ -6,16 +6,33 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { safeLogger, sanitizeError } from '@/lib/safe-logger';
 
+/**
+ * Renders the Offline Page when the user is not connected to the internet.
+ *
+ * This component manages the offline state by checking the network connection periodically and updating the last updated time.
+ * It listens for online events to redirect the user back to the home page when connectivity is restored.
+ * The component also provides user feedback and options to retry or navigate to the dashboard.
+ *
+ * @returns {JSX.Element} The rendered Offline Page component.
+ */
 export default function OfflinePage() {
   const [lastUpdated, setLastUpdated] = useState<string>('');
   const [isCheckingConnection, setIsCheckingConnection] = useState(false);
 
   // Update last updated time
+  /**
+   * Updates the last updated timestamp to the current date and time.
+   */
   const updateLastUpdated = () => {
     setLastUpdated(new Date().toLocaleString());
   };
 
   // Check connection periodically
+  /**
+   * Checks the network connection status and attempts to verify connectivity.
+   *
+   * The function first checks if a connection check is already in progress. If not, it sets the checking state to true. It then verifies if the browser is online and attempts to fetch a small resource from the '/api/health' endpoint. If the fetch is successful, it redirects the user to the home page. If an error occurs during the fetch, it logs the error. Regardless of the outcome, it resets the checking state and schedules the next connection check after 5 seconds.
+   */
   const checkConnection = async () => {
     if (isCheckingConnection) return;
 
@@ -27,7 +44,7 @@ export default function OfflinePage() {
         const response = await fetch('/api/health', {
           method: 'HEAD',
           cache: 'no-cache',
-          signal: AbortSignal.timeout(5000) // 5 second timeout
+          signal: AbortSignal.timeout(5000), // 5 second timeout
         });
 
         if (response.ok) {
@@ -48,6 +65,9 @@ export default function OfflinePage() {
   };
 
   // Handle online event
+  /**
+   * Redirects the user to the home page after a 1 second delay.
+   */
   const handleOnline = () => {
     setTimeout(() => {
       window.location.href = '/';

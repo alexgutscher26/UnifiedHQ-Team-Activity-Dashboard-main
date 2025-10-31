@@ -193,15 +193,14 @@ export function ActivityFeed() {
   /**
    * Establishes a Server-Sent Events (SSE) connection for real-time activity updates.
    *
-   * Handles:
-   * - EventSource connection management with cleanup
-   * - Connection timeout and error handling
-   * - Message parsing for different event types (connected, error, heartbeat, activity_update)
-   * - Toast notifications for connection status and errors
-   * - Automatic activity refresh on sync completion events
+   * This function manages the EventSource connection, including cleanup of existing connections,
+   * handling connection timeouts, and parsing messages for various event types such as connected,
+   * error, heartbeat, and activity updates. It also provides toast notifications for connection
+   * status and errors, and refreshes activities upon sync completion events. The connection is
+   * established with credentials and implements a 15-second timeout for the initial connection.
    *
-   * The connection includes credentials and implements a 10-second timeout for initial connection.
-   * On successful connection, it listens for various message types and updates the UI accordingly.
+   * @returns {void}
+   * @throws Error If an error occurs during the connection process or message parsing.
    */
   const connectToLiveUpdates = () => {
     try {
@@ -330,7 +329,10 @@ export function ActivityFeed() {
         // The component will continue to work with periodic refresh
       };
     } catch (error) {
-      safeLogger.error('Failed to connect to live updates:', sanitizeError(error));
+      safeLogger.error(
+        'Failed to connect to live updates:',
+        sanitizeError(error)
+      );
       setIsLiveConnected(false);
     }
   };
@@ -339,7 +341,7 @@ export function ActivityFeed() {
    * Fetches the latest activities from the API endpoint.
    *
    * Makes a GET request to `/api/activities` and updates the activities state based on the response.
-   * It handles various error scenarios, including authentication issues and server errors,
+   * It handles various error scenarios, including authentication issues (401) and server errors (500),
    * ensuring that the activities state is set to an empty array when errors occur.
    * Finally, it sets the loading state to false regardless of the outcome.
    */
@@ -360,7 +362,7 @@ export function ActivityFeed() {
         } else {
           safeLogger.error('Failed to fetch activities:', {
             status: response.status,
-            statusText: response.statusText
+            statusText: response.statusText,
           });
           setActivities([]);
         }

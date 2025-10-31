@@ -88,7 +88,11 @@ class CacheInfrastructureDeployment {
   }
 
   /**
-   * Validate environment configuration
+   * Validate environment configuration.
+   *
+   * This function checks for the presence of required and optional environment variables, validates the existence of necessary configuration files, and tests the loading of configuration settings. If any required variables or files are missing, or if validation fails, it logs the errors and updates the status of the validation step accordingly.
+   *
+   * @throws Error If required environment variables are missing, configuration files do not exist, or configuration validation fails.
    */
   async validateEnvironment() {
     console.log('🔍 Step 1: Validating Environment Configuration...');
@@ -166,7 +170,10 @@ class CacheInfrastructureDeployment {
       step.endTime = Date.now();
       step.duration = step.endTime - step.startTime;
 
-      safeLogger.error(`   ❌ Environment validation failed:`, sanitizeError(error));
+      safeLogger.error(
+        '   ❌ Environment validation failed:',
+        sanitizeError(error)
+      );
       throw error;
     } finally {
       this.deploymentSteps.push(step);
@@ -176,7 +183,7 @@ class CacheInfrastructureDeployment {
   /**
    * Sets up Redis infrastructure by executing a setup script.
    *
-   * This function logs the start of the Redis setup process, initializes a step object to track the setup's status, and attempts to run the Redis setup script. If the script fails, an error is thrown, and the step status is updated accordingly. Regardless of success or failure, the step details are pushed to the deploymentSteps array for tracking.
+   * This function logs the start of the Redis setup process and initializes a step object to track the setup's status. It attempts to run the Redis setup script using the runScript method. If the script fails, an error is thrown, and the step status is updated accordingly. Regardless of the outcome, the step details are pushed to the deploymentSteps array for tracking.
    */
   async setupRedis() {
     console.log('\n🔧 Step 2: Setting up Redis Infrastructure...');
@@ -209,7 +216,7 @@ class CacheInfrastructureDeployment {
       step.endTime = Date.now();
       step.duration = step.endTime - step.startTime;
 
-      safeLogger.error(`   ❌ Redis setup failed:`, sanitizeError(error));
+      safeLogger.error('   ❌ Redis setup failed:', sanitizeError(error));
       throw error;
     } finally {
       this.deploymentSteps.push(step);
@@ -266,7 +273,10 @@ class CacheInfrastructureDeployment {
       step.endTime = Date.now();
       step.duration = step.endTime - step.startTime;
 
-      safeLogger.error(`   ❌ Application deployment failed:`, sanitizeError(error));
+      safeLogger.error(
+        '   ❌ Application deployment failed:',
+        sanitizeError(error)
+      );
       throw error;
     } finally {
       this.deploymentSteps.push(step);
@@ -276,7 +286,7 @@ class CacheInfrastructureDeployment {
   /**
    * Run health checks for the application services.
    *
-   * This function initiates a series of health checks by first waiting for the services to be ready, then testing the main health endpoint and the cache health endpoint. If any of the checks fail, an error is thrown. The results, including the duration of the checks and health data, are logged and stored in the deployment steps.
+   * This function initiates a series of health checks by waiting for the services to be ready, testing the main health endpoint, and the cache health endpoint. If any of the checks fail, an error is thrown. The results, including the duration of the checks and health data, are logged and stored in the deployment steps.
    *
    * @returns {Promise<void>} A promise that resolves when health checks are completed.
    * @throws Error If any health check fails.
@@ -323,14 +333,14 @@ class CacheInfrastructureDeployment {
       step.healthData = healthData;
 
       safeLogger.log(`   ✅ Health checks completed (${step.duration}ms)`);
-      safeLogger.log(`   📊 Overall health:`, healthData.overall);
+      safeLogger.log('   📊 Overall health:', healthData.overall);
     } catch (error) {
       step.status = 'failed';
       step.error = error.message;
       step.endTime = Date.now();
       step.duration = step.endTime - step.startTime;
 
-      safeLogger.error(`   ❌ Health checks failed:`, sanitizeError(error));
+      safeLogger.error('   ❌ Health checks failed:', sanitizeError(error));
       throw error;
     } finally {
       this.deploymentSteps.push(step);
@@ -384,7 +394,7 @@ class CacheInfrastructureDeployment {
       step.endTime = Date.now();
       step.duration = step.endTime - step.startTime;
 
-      safeLogger.error(`   ❌ Monitoring failed:`, sanitizeError(error));
+      safeLogger.error('   ❌ Monitoring failed:', sanitizeError(error));
       // Don't throw error for monitoring failure - it's not critical
     } finally {
       this.deploymentSteps.push(step);

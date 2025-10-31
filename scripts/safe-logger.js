@@ -3,160 +3,174 @@
  */
 
 /**
- * Sanitizes a value for safe logging by removing potentially dangerous content
- * and limiting the size of logged data
+ * Sanitizes a value for safe logging by removing potentially dangerous content and limiting the size of logged data.
+ *
+ * The function checks if the input value is null or undefined, converting it to a string if so.
+ * If the value is a string, it is used as is. For objects, it attempts to remove sensitive fields using
+ * the removeSensitiveFields function before stringifying the object. Control characters are removed,
+ * newlines, carriage returns, and tabs are escaped, and the final string is truncated to a maximum length
+ * of 1000 characters to prevent log flooding.
+ *
+ * @param {any} value - The value to sanitize for logging.
  */
 function sanitizeForLogging(value) {
-    if (value === null || value === undefined) {
-        return String(value);
+  if (value === null || value === undefined) {
+    return String(value);
+  }
+
+  let sanitized;
+
+  if (typeof value === 'string') {
+    sanitized = value;
+  } else if (typeof value === 'object') {
+    try {
+      // Remove potentially sensitive fields before stringifying
+      const cleaned = removeSensitiveFields(value);
+      sanitized = JSON.stringify(cleaned, null, 2);
+    } catch (error) {
+      sanitized = '[Object - could not serialize]';
     }
+  } else {
+    sanitized = String(value);
+  }
 
-    let sanitized;
+  // Remove control characters and limit length
+  sanitized = sanitized
+    .replace(/[\x00-\x1F\x7F-\x9F]/g, '') // Remove control characters
+    .replace(/\n/g, '\\n') // Escape newlines
+    .replace(/\r/g, '\\r') // Escape carriage returns
+    .replace(/\t/g, '\\t'); // Escape tabs
 
-    if (typeof value === 'string') {
-        sanitized = value;
-    } else if (typeof value === 'object') {
-        try {
-            // Remove potentially sensitive fields before stringifying
-            const cleaned = removeSensitiveFields(value);
-            sanitized = JSON.stringify(cleaned, null, 2);
-        } catch (error) {
-            sanitized = '[Object - could not serialize]';
-        }
-    } else {
-        sanitized = String(value);
-    }
+  // Limit length to prevent log flooding
+  if (sanitized.length > 1000) {
+    sanitized = sanitized.substring(0, 997) + '...';
+  }
 
-    // Remove control characters and limit length
-    sanitized = sanitized
-        .replace(/[\x00-\x1F\x7F-\x9F]/g, '') // Remove control characters
-        .replace(/\n/g, '\\n') // Escape newlines
-        .replace(/\r/g, '\\r') // Escape carriage returns
-        .replace(/\t/g, '\\t'); // Escape tabs
-
-    // Limit length to prevent log flooding
-    if (sanitized.length > 1000) {
-        sanitized = sanitized.substring(0, 997) + '...';
-    }
-
-    return sanitized;
+  return sanitized;
 }
 
 /**
- * Removes potentially sensitive fields from an object before logging
+ * Removes potentially sensitive fields from an object before logging.
+ *
+ * The function checks if the input is an object or an array and recursively processes its properties.
+ * It identifies sensitive fields based on a predefined list of keys and replaces their values with '[REDACTED]'.
+ * Non-sensitive fields are retained, and the function handles nested objects and arrays appropriately.
+ *
+ * @param obj - The object or array to be sanitized.
+ * @returns A new object or array with sensitive fields redacted.
  */
 function removeSensitiveFields(obj) {
-    if (obj === null || typeof obj !== 'object') {
-        return obj;
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => removeSensitiveFields(item));
+  }
+
+  const sensitiveKeys = [
+    'password',
+    'token',
+    'secret',
+    'key',
+    'auth',
+    'authorization',
+    'cookie',
+    'session',
+    'csrf',
+    'api_key',
+    'apikey',
+    'access_token',
+    'refresh_token',
+    'private_key',
+    'client_secret',
+  ];
+
+  const cleaned = {};
+
+  for (const [key, value] of Object.entries(obj)) {
+    const lowerKey = key.toLowerCase();
+
+    // Check if this is a sensitive field
+    const isSensitive = sensitiveKeys.some(sensitiveKey =>
+      lowerKey.includes(sensitiveKey)
+    );
+
+    if (isSensitive) {
+      cleaned[key] = '[REDACTED]';
+    } else if (typeof value === 'object') {
+      cleaned[key] = removeSensitiveFields(value);
+    } else {
+      cleaned[key] = value;
     }
+  }
 
-    if (Array.isArray(obj)) {
-        return obj.map(item => removeSensitiveFields(item));
-    }
-
-    const sensitiveKeys = [
-        'password',
-        'token',
-        'secret',
-        'key',
-        'auth',
-        'authorization',
-        'cookie',
-        'session',
-        'csrf',
-        'api_key',
-        'apikey',
-        'access_token',
-        'refresh_token',
-        'private_key',
-        'client_secret',
-    ];
-
-    const cleaned = {};
-
-    for (const [key, value] of Object.entries(obj)) {
-        const lowerKey = key.toLowerCase();
-
-        // Check if this is a sensitive field
-        const isSensitive = sensitiveKeys.some(sensitiveKey =>
-            lowerKey.includes(sensitiveKey)
-        );
-
-        if (isSensitive) {
-            cleaned[key] = '[REDACTED]';
-        } else if (typeof value === 'object') {
-            cleaned[key] = removeSensitiveFields(value);
-        } else {
-            cleaned[key] = value;
-        }
-    }
-
-    return cleaned;
+  return cleaned;
 }
 
 /**
  * Safe logger that sanitizes inputs before logging
  */
 const safeLogger = {
-    log: (...args) => {
-        const sanitizedArgs = args.map(sanitizeForLogging);
-        console.log(...sanitizedArgs);
-    },
+  log: (...args) => {
+    const sanitizedArgs = args.map(sanitizeForLogging);
+    console.log(...sanitizedArgs);
+  },
 
-    error: (...args) => {
-        const sanitizedArgs = args.map(sanitizeForLogging);
-        console.error(...sanitizedArgs);
-    },
+  error: (...args) => {
+    const sanitizedArgs = args.map(sanitizeForLogging);
+    console.error(...sanitizedArgs);
+  },
 
-    warn: (...args) => {
-        const sanitizedArgs = args.map(sanitizeForLogging);
-        console.warn(...sanitizedArgs);
-    },
+  warn: (...args) => {
+    const sanitizedArgs = args.map(sanitizeForLogging);
+    console.warn(...sanitizedArgs);
+  },
 
-    info: (...args) => {
-        const sanitizedArgs = args.map(sanitizeForLogging);
-        console.info(...sanitizedArgs);
-    },
+  info: (...args) => {
+    const sanitizedArgs = args.map(sanitizeForLogging);
+    console.info(...sanitizedArgs);
+  },
 
-    debug: (...args) => {
-        const sanitizedArgs = args.map(sanitizeForLogging);
-        console.debug(...sanitizedArgs);
-    },
+  debug: (...args) => {
+    const sanitizedArgs = args.map(sanitizeForLogging);
+    console.debug(...sanitizedArgs);
+  },
 };
 
 /**
  * Sanitizes error objects for safe logging
  */
 function sanitizeError(error) {
-    if (error instanceof Error) {
-        return sanitizeForLogging({
-            name: error.name,
-            message: error.message,
-            stack: error.stack?.split('\n').slice(0, 5).join('\n'), // Limit stack trace
-        });
-    }
+  if (error instanceof Error) {
+    return sanitizeForLogging({
+      name: error.name,
+      message: error.message,
+      stack: error.stack?.split('\n').slice(0, 5).join('\n'), // Limit stack trace
+    });
+  }
 
-    return sanitizeForLogging(error);
+  return sanitizeForLogging(error);
 }
 
 /**
- * Creates a safe logging context with a prefix
+ * Creates a safe logging context with a sanitized prefix.
  */
 function createSafeLogger(prefix) {
-    const sanitizedPrefix = sanitizeForLogging(prefix);
+  const sanitizedPrefix = sanitizeForLogging(prefix);
 
-    return {
-        log: (...args) => safeLogger.log(`[${sanitizedPrefix}]`, ...args),
-        error: (...args) => safeLogger.error(`[${sanitizedPrefix}]`, ...args),
-        warn: (...args) => safeLogger.warn(`[${sanitizedPrefix}]`, ...args),
-        info: (...args) => safeLogger.info(`[${sanitizedPrefix}]`, ...args),
-        debug: (...args) => safeLogger.debug(`[${sanitizedPrefix}]`, ...args),
-    };
+  return {
+    log: (...args) => safeLogger.log(`[${sanitizedPrefix}]`, ...args),
+    error: (...args) => safeLogger.error(`[${sanitizedPrefix}]`, ...args),
+    warn: (...args) => safeLogger.warn(`[${sanitizedPrefix}]`, ...args),
+    info: (...args) => safeLogger.info(`[${sanitizedPrefix}]`, ...args),
+    debug: (...args) => safeLogger.debug(`[${sanitizedPrefix}]`, ...args),
+  };
 }
 
 module.exports = {
-    safeLogger,
-    sanitizeError,
-    createSafeLogger,
-    sanitizeForLogging,
+  safeLogger,
+  sanitizeError,
+  createSafeLogger,
+  sanitizeForLogging,
 };
