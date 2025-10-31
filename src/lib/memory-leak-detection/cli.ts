@@ -13,6 +13,15 @@ import * as path from 'path';
 import { analyzeCodeForMemoryLeaks, generateMemoryLeakReport } from './code-analyzer';
 import { runTests } from './__tests__/run-tests';
 
+/**
+ * Main entry point for the memory leak detection CLI.
+ *
+ * This function processes command-line arguments to determine the action to perform.
+ * It supports running tests, analyzing a project, or analyzing a specific file based on the provided command.
+ * If no arguments are given, it displays usage instructions and exits the process.
+ *
+ * @returns A promise that resolves when the command has been executed.
+ */
 async function main() {
     const args = process.argv.slice(2);
 
@@ -135,7 +144,12 @@ async function analyzeProject() {
 }
 
 /**
- * Find all React files in a directory
+ * Find all React files in a directory.
+ *
+ * This function recursively searches through the specified directory and its subdirectories for files that match the React component file extensions (.js, .jsx, .ts, .tsx), while excluding certain directories like node_modules and .git. It uses fs and path modules to read directory entries and construct full file paths, accumulating valid React file paths in an array.
+ *
+ * @param dir - The directory path to search for React files.
+ * @returns An array of paths to the found React files.
  */
 function findReactFiles(dir: string): string[] {
     const files: string[] = [];
@@ -166,7 +180,7 @@ function findReactFiles(dir: string): string[] {
 }
 
 /**
- * Interactive mode for analyzing specific patterns
+ * Initiates interactive mode for memory leak analysis in React code.
  */
 async function interactiveMode() {
     console.log('🔍 Interactive Memory Leak Analysis');
