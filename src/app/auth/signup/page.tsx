@@ -19,6 +19,16 @@ import { ValidatedInput, FormGroup, FormActions } from '@/components/ui/form';
 import { useFormValidation } from '@/lib/validation';
 import { validationSchemas } from '@/lib/validation';
 
+/**
+ * Sign up page component for user registration.
+ *
+ * This component manages the state for loading, error, and success messages during the sign-up process.
+ * It utilizes the useFormValidation hook to handle form data and validation. The handleEmailSignUp function
+ * processes the email sign-up, ensuring the form is valid and passwords match before invoking the sign-up logic.
+ * Additionally, it provides options for social sign-in through GitHub and Slack.
+ *
+ * @param e - The form event triggered by the sign-up form submission.
+ */
 export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
