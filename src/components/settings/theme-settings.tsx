@@ -39,9 +39,7 @@ interface ThemeSettings {
 /**
  * Manages theme settings for the application, allowing users to customize their appearance preferences.
  *
- * This component initializes with default theme settings and loads any saved settings from local storage.
- * It provides functionality to save updated settings, apply the selected theme, and preview themes.
- * The component also handles loading states and displays a user interface for selecting color schemes, themes, and display options.
+ * This component initializes with default theme settings, loads saved settings from local storage, and provides functionality to save updated settings, apply the selected theme, and preview themes. It also handles loading states and displays a user interface for selecting color schemes, themes, and display options.
  *
  * @param {ThemeSettingsProps} props - The properties for the ThemeSettings component.
  * @param {function} props.onSettingsChange - Callback function to be called when settings are changed.
