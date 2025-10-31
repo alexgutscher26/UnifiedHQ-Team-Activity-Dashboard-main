@@ -4,20 +4,10 @@ import { useEffect } from 'react';
 
 /**
  * ThinkStack Chatbot Component
- * 
- * Safely loads the ThinkStack chatbot script with security considerations.
- * This component dynamically injects a third-party script which requires
- * careful security handling to prevent XSS attacks.
- * 
- * Security measures implemented:
- * - Script source validation
- * - Proper cleanup on unmount
- * - Error handling for script loading failures
- * - Production-safe logging
- * 
- * @security This component loads external scripts from thinkstack.ai
- * @todo Add SRI (Subresource Integrity) hash when available from vendor
- * @todo Consider CSP implications for script-src directive
+ *
+ * Safely loads the ThinkStack chatbot script with security considerations. It dynamically injects a third-party script while ensuring that existing scripts are removed to prevent duplicates. The function validates the chatbot ID format and handles errors during script loading, providing appropriate logging based on the environment.
+ *
+ * @returns null This function does not return any value.
  */
 export function ThinkStackChatbot() {
     useEffect(() => {
