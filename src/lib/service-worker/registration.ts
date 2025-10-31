@@ -297,7 +297,10 @@ class ServiceWorkerManager {
             break;
 
           default:
-            console.warn('[SW Manager] Unknown service worker state:', newWorker.state);
+            console.warn(
+              '[SW Manager] Unknown service worker state:',
+              newWorker.state
+            );
             break;
         }
       });

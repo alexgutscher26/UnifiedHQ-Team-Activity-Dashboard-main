@@ -637,10 +637,10 @@ interface EventListenerContext {
 
 interface CleanupStrategy {
   type:
-  | 'add-to-existing-cleanup'
-  | 'create-cleanup-function'
-  | 'media-query-cleanup'
-  | 'global-event-cleanup';
+    | 'add-to-existing-cleanup'
+    | 'create-cleanup-function'
+    | 'media-query-cleanup'
+    | 'global-event-cleanup';
   requiresManualReview: boolean;
   needsVariableExtraction: boolean;
   needsUseEffectWrapper: boolean;

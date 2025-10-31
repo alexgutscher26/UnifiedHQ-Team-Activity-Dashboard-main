@@ -65,7 +65,9 @@ function PaginationLink({
   const hasAccessibleContent = children || ariaLabel;
 
   if (!hasAccessibleContent) {
-    console.warn('PaginationLink: Either children or aria-label must be provided for accessibility');
+    console.warn(
+      'PaginationLink: Either children or aria-label must be provided for accessibility'
+    );
   }
 
   return (

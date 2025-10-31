@@ -272,14 +272,15 @@ export function ThemeSettings({ onSettingsChange }: ThemeSettingsProps) {
             {Object.entries(themes).map(([key, theme]) => (
               <div
                 key={key}
-                role="button"
+                role='button'
                 tabIndex={0}
-                className={`p-4 border rounded-lg cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 ${settings.theme === key
+                className={`p-4 border rounded-lg cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 ${
+                  settings.theme === key
                     ? 'border-primary ring-2 ring-primary/20'
                     : 'border-border hover:border-primary/50'
-                  }`}
+                }`}
                 onClick={() => saveSettings({ theme: key })}
-                onKeyDown={(e) => {
+                onKeyDown={e => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     saveSettings({ theme: key });
