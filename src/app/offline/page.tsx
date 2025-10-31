@@ -27,7 +27,7 @@ export default function OfflinePage() {
         const response = await fetch('/api/health', {
           method: 'HEAD',
           cache: 'no-cache',
-          signal: AbortSignal.timeout(5000) // 5 second timeout
+          signal: AbortSignal.timeout(5000), // 5 second timeout
         });
 
         if (response.ok) {
@@ -137,8 +137,6 @@ export default function OfflinePage() {
           </p>
         </div>
       </div>
-
-
     </div>
   );
 }
