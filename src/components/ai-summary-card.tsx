@@ -65,9 +65,12 @@ export function AISummaryCard({
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Optimized time range change handler
-  const handleTimeRangeChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setTimeRange(e.target.value as '24h' | '7d' | '30d');
-  }, []);
+  const handleTimeRangeChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      setTimeRange(e.target.value as '24h' | '7d' | '30d');
+    },
+    []
+  );
 
   useEffect(() => {
     fetchSummary();

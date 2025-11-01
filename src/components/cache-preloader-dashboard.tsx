@@ -249,7 +249,7 @@ export function CachePreloaderDashboard() {
             </CardHeader>
             <CardContent>
               {stats?.timeBasedRecommendations &&
-                stats.timeBasedRecommendations.length > 0 ? (
+              stats.timeBasedRecommendations.length > 0 ? (
                 <div className='flex flex-wrap gap-2'>
                   {stats.timeBasedRecommendations.map((path, index) => (
                     <Badge key={index} variant='secondary'>

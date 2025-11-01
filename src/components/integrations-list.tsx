@@ -60,10 +60,10 @@ export function IntegrationsList() {
             prev.map(integration =>
               integration.id === 'github'
                 ? {
-                  ...integration,
-                  connected: data.connected,
-                  status: data.connected ? 'connected' : 'disconnected',
-                }
+                    ...integration,
+                    connected: data.connected,
+                    status: data.connected ? 'connected' : 'disconnected',
+                  }
                 : integration
             )
           );
@@ -90,10 +90,10 @@ export function IntegrationsList() {
             prev.map(integration =>
               integration.id === 'slack'
                 ? {
-                  ...integration,
-                  connected: data.connected,
-                  status: data.connected ? 'connected' : 'disconnected',
-                }
+                    ...integration,
+                    connected: data.connected,
+                    status: data.connected ? 'connected' : 'disconnected',
+                  }
                 : integration
             )
           );
@@ -138,10 +138,13 @@ export function IntegrationsList() {
   /**
    * Navigates to the integrations page.
    */
-  const handleIntegrationClick = useCallback((integration: Integration) => {
-    // Navigate to integrations page
-    router.push('/integrations');
-  }, [router]);
+  const handleIntegrationClick = useCallback(
+    (integration: Integration) => {
+      // Navigate to integrations page
+      router.push('/integrations');
+    },
+    [router]
+  );
 
   /**
    * Navigates to the integrations page for adding new integrations.

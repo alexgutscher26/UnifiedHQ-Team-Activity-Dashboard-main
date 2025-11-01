@@ -243,13 +243,13 @@ export class SimpleASTParser {
       }
     }
     return line;
-  }
+  };
 
   // Get column number from character index and line number
   public getColumnNumber = (index: number, lineNumber: number): number => {
     const lineStart = this.getLineStartIndex(lineNumber);
     return index - lineStart + 1;
-  }
+  };
 
   // Get the start index of a line
   private getLineStartIndex(lineNumber: number): number {
