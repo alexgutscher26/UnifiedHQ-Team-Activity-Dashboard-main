@@ -63,11 +63,11 @@ const DEFAULT_CONFIG: MemoryLeakDetectionConfig = {
 
 /**
  * Main implementation of the memory leak detector.
- * 
+ *
  * This class provides comprehensive memory leak detection capabilities including
  * static code analysis, runtime monitoring, and fix validation. It integrates
  * multiple specialized analyzers and provides caching for performance.
- * 
+ *
  * @example
  * ```typescript
  * const detector = new MemoryLeakDetectorImpl({
@@ -76,7 +76,7 @@ const DEFAULT_CONFIG: MemoryLeakDetectionConfig = {
  *     confidenceThreshold: 0.7
  *   }
  * });
- * 
+ *
  * const leaks = await detector.scanFile('src/MyComponent.tsx');
  * ```
  */
@@ -84,11 +84,14 @@ export class MemoryLeakDetectorImpl implements MemoryLeakDetector {
   private config: MemoryLeakDetectionConfig;
   private readonly staticAnalyzer: StaticCodeAnalyzer;
   private readonly timerDetector: TimerLeakDetector;
-  private readonly scanCache: Map<string, { reports: LeakReport[]; timestamp: Date }>;
+  private readonly scanCache: Map<
+    string,
+    { reports: LeakReport[]; timestamp: Date }
+  >;
 
   /**
    * Creates a new memory leak detector instance.
-   * 
+   *
    * @param config - Optional partial configuration to override defaults
    */
   constructor(config?: Partial<MemoryLeakDetectionConfig>) {
@@ -100,7 +103,7 @@ export class MemoryLeakDetectorImpl implements MemoryLeakDetector {
 
   /**
    * Merges user configuration with default configuration.
-   * 
+   *
    * @private
    * @param defaultConfig - Default configuration to use as base
    * @param userConfig - User-provided configuration overrides
@@ -120,14 +123,14 @@ export class MemoryLeakDetectorImpl implements MemoryLeakDetector {
 
   /**
    * Scans a single file for memory leaks using static analysis.
-   * 
+   *
    * This method performs comprehensive analysis including static code analysis
    * and timer-specific leak detection. Results are cached for performance.
-   * 
+   *
    * @param filePath - Path to the file to scan
    * @returns Promise resolving to array of leak reports found in the file
    * @throws Error if file cannot be read or analyzed
-   * 
+   *
    * @example
    * ```typescript
    * const detector = new MemoryLeakDetectorImpl();
@@ -197,15 +200,15 @@ export class MemoryLeakDetectorImpl implements MemoryLeakDetector {
 
   /**
    * Scans the entire project for memory leaks.
-   * 
+   *
    * This method discovers files matching the configured patterns and scans
    * them for memory leaks. Supports both parallel and sequential scanning
    * based on configuration.
-   * 
+   *
    * @param options - Optional scan configuration to override defaults
    * @returns Promise resolving to comprehensive project leak report
    * @throws Error if project scanning fails
-   * 
+   *
    * @example
    * ```typescript
    * const detector = new MemoryLeakDetectorImpl();
@@ -269,14 +272,14 @@ export class MemoryLeakDetectorImpl implements MemoryLeakDetector {
 
   /**
    * Analyzes the current runtime environment for memory leaks.
-   * 
+   *
    * This method examines active resources, memory usage patterns, and
    * long-running processes to identify potential runtime memory leaks.
    * Requires runtime detection to be enabled in configuration.
-   * 
+   *
    * @returns Promise resolving to runtime leak analysis report
    * @throws Error if runtime detection is disabled or analysis fails
-   * 
+   *
    * @example
    * ```typescript
    * const detector = new MemoryLeakDetectorImpl();
@@ -360,14 +363,14 @@ export class MemoryLeakDetectorImpl implements MemoryLeakDetector {
 
   /**
    * Validates proposed fixes before they are applied to source code.
-   * 
+   *
    * This method performs syntax validation, file existence checks, and
    * risk assessment for each proposed fix. It categorizes fixes as
    * applied, failed, or skipped based on validation results.
-   * 
+   *
    * @param fixes - Array of fixes to validate
    * @returns Promise resolving to validation results with categorized fixes
-   * 
+   *
    * @example
    * ```typescript
    * const detector = new MemoryLeakDetectorImpl();
@@ -692,9 +695,9 @@ export class MemoryLeakDetectorImpl implements MemoryLeakDetector {
 
   /**
    * Updates the detector configuration with new values.
-   * 
+   *
    * @param newConfig - Partial configuration updates to apply
-   * 
+   *
    * @example
    * ```typescript
    * detector.updateConfig({
@@ -708,7 +711,7 @@ export class MemoryLeakDetectorImpl implements MemoryLeakDetector {
 
   /**
    * Gets a copy of the current detector configuration.
-   * 
+   *
    * @returns Copy of the current configuration
    */
   getConfig(): MemoryLeakDetectionConfig {
@@ -717,10 +720,10 @@ export class MemoryLeakDetectorImpl implements MemoryLeakDetector {
 
   /**
    * Cleans up detector resources and clears caches.
-   * 
+   *
    * Should be called when the detector is no longer needed to free up memory
    * and stop any background processes.
-   * 
+   *
    * @example
    * ```typescript
    * detector.cleanup();

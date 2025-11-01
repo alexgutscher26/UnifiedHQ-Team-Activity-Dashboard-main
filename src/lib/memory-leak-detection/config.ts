@@ -146,7 +146,7 @@ export class ConfigManager {
 
   /**
    * Gets the default configuration based on the current environment.
-   * 
+   *
    * @private
    * @returns Default configuration for the current NODE_ENV
    */
@@ -164,13 +164,13 @@ export class ConfigManager {
 
   /**
    * Loads configuration from the configuration file.
-   * 
+   *
    * If no configuration file exists, uses default configuration based on environment.
    * Merges user configuration with defaults to ensure all required properties are present.
-   * 
+   *
    * @returns Promise resolving to the loaded configuration
    * @throws Error if configuration file is malformed
-   * 
+   *
    * @example
    * ```typescript
    * const manager = new ConfigManager();
@@ -204,10 +204,10 @@ export class ConfigManager {
 
   /**
    * Saves configuration to the configuration file.
-   * 
+   *
    * @param config - Optional partial configuration to merge and save
    * @throws Error if unable to write configuration file
-   * 
+   *
    * @example
    * ```typescript
    * const manager = new ConfigManager();
@@ -235,9 +235,9 @@ export class ConfigManager {
 
   /**
    * Checks if the configuration file exists.
-   * 
+   *
    * @returns Promise resolving to true if configuration file exists
-   * 
+   *
    * @example
    * ```typescript
    * const manager = new ConfigManager();
@@ -257,9 +257,9 @@ export class ConfigManager {
 
   /**
    * Creates a default configuration file based on the current environment.
-   * 
+   *
    * @throws Error if unable to create configuration file
-   * 
+   *
    * @example
    * ```typescript
    * const manager = new ConfigManager();
@@ -273,7 +273,7 @@ export class ConfigManager {
 
   /**
    * Merges user configuration with base configuration.
-   * 
+   *
    * @private
    * @param baseConfig - Base configuration to merge into
    * @param userConfig - User configuration to merge from
@@ -293,9 +293,9 @@ export class ConfigManager {
 
   /**
    * Gets the current configuration.
-   * 
+   *
    * @returns Copy of the current configuration
-   * 
+   *
    * @example
    * ```typescript
    * const manager = new ConfigManager();
@@ -309,9 +309,9 @@ export class ConfigManager {
 
   /**
    * Updates the current configuration with new values.
-   * 
+   *
    * @param updates - Partial configuration updates to apply
-   * 
+   *
    * @example
    * ```typescript
    * const manager = new ConfigManager();
@@ -559,10 +559,10 @@ let configManager: ConfigManager | null = null;
 
 /**
  * Gets the global configuration manager instance (singleton pattern).
- * 
+ *
  * @param configPath - Optional custom path to configuration file
  * @returns Global ConfigManager instance
- * 
+ *
  * @example
  * ```typescript
  * const manager = getConfigManager();
@@ -578,18 +578,18 @@ export function getConfigManager(configPath?: string): ConfigManager {
 
 /**
  * Initializes the configuration system by loading configuration from file.
- * 
+ *
  * This is a convenience function that gets the global config manager and loads
  * the configuration. Should be called once at application startup.
- * 
+ *
  * @param configPath - Optional custom path to configuration file
  * @returns Promise resolving to the loaded configuration
- * 
+ *
  * @example
  * ```typescript
  * // Initialize with default config file location
  * const config = await initializeConfig();
- * 
+ *
  * // Initialize with custom config file
  * const config = await initializeConfig('./custom-config.json');
  * ```
@@ -603,18 +603,18 @@ export async function initializeConfig(
 
 /**
  * Creates a default configuration file at the specified location.
- * 
+ *
  * This is a convenience function for setting up the configuration file
  * with environment-appropriate defaults.
- * 
+ *
  * @param configPath - Optional custom path for configuration file
  * @throws Error if unable to create configuration file
- * 
+ *
  * @example
  * ```typescript
  * // Create default config file
  * await createDefaultConfigFile();
- * 
+ *
  * // Create config file at custom location
  * await createDefaultConfigFile('./config/memory-leak.json');
  * ```
@@ -628,17 +628,17 @@ export async function createDefaultConfigFile(
 
 /**
  * Utility functions for common configuration tasks.
- * 
+ *
  * This object provides convenient helper functions for modifying configuration
  * without needing to work with the full configuration structure.
  */
 export const configUtils = {
   /**
    * Enables or disables detection for a specific leak type.
-   * 
+   *
    * @param leakType - The type of leak to toggle
    * @param enabled - Whether to enable or disable detection
-   * 
+   *
    * @example
    * ```typescript
    * configUtils.toggleLeakType('uncleaned-event-listener', false);
@@ -657,9 +657,9 @@ export const configUtils = {
 
   /**
    * Sets the minimum severity threshold for reporting leaks.
-   * 
+   *
    * @param threshold - Minimum severity level to report
-   * 
+   *
    * @example
    * ```typescript
    * configUtils.setSeverityThreshold('high');
@@ -677,10 +677,10 @@ export const configUtils = {
 
   /**
    * Sets the minimum confidence threshold for reporting leaks.
-   * 
+   *
    * @param threshold - Minimum confidence level (0-1)
    * @throws Error if threshold is not between 0 and 1
-   * 
+   *
    * @example
    * ```typescript
    * configUtils.setConfidenceThreshold(0.8);
@@ -702,9 +702,9 @@ export const configUtils = {
 
   /**
    * Enables or disables automatic fixing for low-risk issues.
-   * 
+   *
    * @param enabled - Whether to enable automatic fixes
-   * 
+   *
    * @example
    * ```typescript
    * configUtils.toggleAutoFix(true);

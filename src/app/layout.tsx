@@ -1,10 +1,10 @@
 /**
  * @fileoverview Root Layout for UnifiedHQ Application
- * 
+ *
  * This file defines the root layout component that wraps all pages in the
  * UnifiedHQ application. It sets up essential providers, error boundaries,
  * and global components needed for the application to function properly.
- * 
+ *
  * Key responsibilities:
  * - Theme management (dark/light mode)
  * - Error boundary and error handling
@@ -14,7 +14,7 @@
  * - Global UI components (toasts, overlays, etc.)
  * - Analytics and monitoring integration
  * - Chatbot integration
- * 
+ *
  * @author UnifiedHQ Team
  * @since 1.0.0
  */
@@ -44,11 +44,11 @@ import './globals.css';
 
 /**
  * Application Metadata
- * 
+ *
  * Defines the default metadata for the UnifiedHQ application.
  * This metadata is used by Next.js for SEO, social sharing,
  * and browser tab information.
- * 
+ *
  * @type {Metadata}
  * @property {string} title - The default page title shown in browser tabs
  * @property {string} description - The default meta description for SEO
@@ -60,7 +60,7 @@ export const metadata: Metadata = {
 
 /**
  * Animated Loading Dots Component
- * 
+ *
  * Displays three bouncing dots with staggered animation timing.
  */
 function LoadingDots() {
@@ -75,7 +75,7 @@ function LoadingDots() {
 
 /**
  * Loading Message Component
- * 
+ *
  * Displays the loading text and description.
  */
 function LoadingMessage() {
@@ -93,7 +93,7 @@ function LoadingMessage() {
 
 /**
  * Loading Progress Bars Component
- * 
+ *
  * Displays skeleton loading bars for visual feedback.
  */
 function LoadingProgress() {
@@ -108,7 +108,7 @@ function LoadingProgress() {
 
 /**
  * Loading Screen Component
- * 
+ *
  * Displays an animated loading screen while the application initializes.
  * Used as a Suspense fallback for async components and route transitions.
  */
@@ -126,7 +126,7 @@ function LoadingScreen() {
 
 /**
  * Theme and Context Providers Component
- * 
+ *
  * Groups all theme-related providers to reduce nesting in main layout.
  */
 function ThemeProviders({ children }: { children: React.ReactNode }) {
@@ -139,7 +139,7 @@ function ThemeProviders({ children }: { children: React.ReactNode }) {
 
 /**
  * Service and Network Providers Component
- * 
+ *
  * Groups service worker and network-related providers.
  */
 function ServiceProviders({ children }: { children: React.ReactNode }) {
@@ -154,7 +154,7 @@ function ServiceProviders({ children }: { children: React.ReactNode }) {
 
 /**
  * Global UI Components
- * 
+ *
  * Groups all global UI components that should be rendered at the root level.
  */
 function GlobalComponents() {
@@ -172,7 +172,7 @@ function GlobalComponents() {
 
 /**
  * Application Content Wrapper
- * 
+ *
  * Wraps the main application content with error boundary and suspense.
  */
 function AppContent({ children }: { children: React.ReactNode }) {
@@ -185,7 +185,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
 
 /**
  * Application Providers Wrapper
- * 
+ *
  * Groups all application-level providers and components to reduce nesting.
  */
 function ApplicationWrapper({ children }: { children: React.ReactNode }) {
@@ -204,7 +204,7 @@ function ApplicationWrapper({ children }: { children: React.ReactNode }) {
 
 /**
  * Root Layout Component
- * 
+ *
  * The main layout wrapper for the entire UnifiedHQ application.
  * Provides essential providers, error boundaries, and global components
  * that are needed across all pages.

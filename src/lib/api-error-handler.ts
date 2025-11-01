@@ -308,11 +308,11 @@ export function withErrorHandling<T = any>(
 
       const response = options?.retry
         ? await withRetry(
-          executeHandler,
-          typeof options.retry === 'boolean'
-            ? RetryPresets.standard
-            : options.retry
-        ).then(result => result.data)
+            executeHandler,
+            typeof options.retry === 'boolean'
+              ? RetryPresets.standard
+              : options.retry
+          ).then(result => result.data)
         : await executeHandler();
 
       return response;

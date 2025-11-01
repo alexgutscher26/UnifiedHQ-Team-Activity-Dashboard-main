@@ -38,7 +38,9 @@ class ServiceWorkerManager {
     this.isDisabled = process.env.NEXT_PUBLIC_DISABLE_SW === 'true';
 
     if (this.isDisabled) {
-      console.log('[SW Manager] Service worker permanently disabled via environment variable');
+      console.log(
+        '[SW Manager] Service worker permanently disabled via environment variable'
+      );
       this.state.isSupported = false;
       return;
     }
@@ -68,7 +70,6 @@ class ServiceWorkerManager {
     }
 
     try {
-
       console.log('[SW Manager] Registering service worker...');
 
       this.registration = await navigator.serviceWorker.register('/sw.js', {
@@ -219,7 +220,9 @@ class ServiceWorkerManager {
         ]);
       } else {
         console.warn('Service worker not active, cannot get version');
-        messageChannel.port1.postMessage({ error: 'Service worker not active' });
+        messageChannel.port1.postMessage({
+          error: 'Service worker not active',
+        });
         return;
       }
 
@@ -258,7 +261,9 @@ class ServiceWorkerManager {
         );
       } else {
         console.warn('Service worker not active, cannot clear cache');
-        messageChannel.port1.postMessage({ error: 'Service worker not active' });
+        messageChannel.port1.postMessage({
+          error: 'Service worker not active',
+        });
         return;
       }
 
@@ -342,7 +347,10 @@ class ServiceWorkerManager {
             break;
 
           default:
-            console.warn('[SW Manager] Unknown service worker state:', newWorker.state);
+            console.warn(
+              '[SW Manager] Unknown service worker state:',
+              newWorker.state
+            );
             break;
         }
       });
