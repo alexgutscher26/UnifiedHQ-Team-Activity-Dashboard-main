@@ -22,17 +22,70 @@ export {
   DEFAULT_CONFIGS,
 } from './config';
 
+
 // Import the detector class for internal use
 import { MemoryLeakDetectorImpl } from './detector';
 
-// Convenience factory function
+/**
+ * Creates a new memory leak detector instance with optional configuration.
+ * 
+ * This factory function provides a convenient way to create a detector instance
+ * without directly importing the implementation class. The detector can be
+ * configured with custom settings for detection, fixes, monitoring, and prevention.
+ * 
+ * @param config - Optional partial configuration to override defaults
+ * @returns A new MemoryLeakDetector instance
+ * 
+ * @example
+ * ```typescript
+ * // Create with default configuration
+ * const detector = createMemoryLeakDetector();
+ * 
+ * // Create with custom configuration
+ * const detector = createMemoryLeakDetector({
+ *   detection: {
+ *     severityThreshold: 'high',
+ *     confidenceThreshold: 0.8
+ *   }
+ * });
+ * ```
+ */
 export function createMemoryLeakDetector(
   config?: Partial<import('./types').MemoryLeakDetectionConfig>
 ) {
   return new MemoryLeakDetectorImpl(config);
 }
 
-// Quick start function for common use cases
+/**
+ * Performs a quick memory leak scan with minimal configuration.
+ * 
+ * This function provides a simple interface for scanning either specific files
+ * or the entire project. It's designed for quick checks and integrations where
+ * you need immediate results without complex setup.
+ * 
+ * @param options - Optional scan configuration
+ * @param options.files - Specific files to scan (if omitted, scans entire project)
+ * @param options.severity - Minimum severity level to report
+ * @param options.confidence - Minimum confidence threshold (0-1)
+ * @returns Promise resolving to array of leak reports
+ * 
+ * @example
+ * ```typescript
+ * // Scan entire project
+ * const leaks = await quickScan();
+ * 
+ * // Scan specific files with high confidence
+ * const leaks = await quickScan({
+ *   files: ['src/components/MyComponent.tsx'],
+ *   confidence: 0.8
+ * });
+ * 
+ * // Only show critical issues
+ * const criticalLeaks = await quickScan({
+ *   severity: 'critical'
+ * });
+ * ```
+ */
 export async function quickScan(options?: {
   files?: string[];
   severity?: import('./types').LeakSeverity;
@@ -59,7 +112,38 @@ export async function quickScan(options?: {
   }
 }
 
-// Runtime monitoring helper
+/**
+ * Starts continuous runtime memory leak monitoring.
+ * 
+ * This function sets up a monitoring system that periodically checks for memory
+ * leaks during application runtime. It can detect memory threshold breaches and
+ * suspicious patterns, calling the provided callback when issues are found.
+ * 
+ * @param options - Optional monitoring configuration
+ * @param options.interval - Monitoring interval in milliseconds (default: 5000)
+ * @param options.memoryThreshold - Memory usage threshold in MB to trigger alerts
+ * @param options.onLeak - Callback function called when leaks are detected
+ * @returns Cleanup function to stop monitoring
+ * 
+ * @example
+ * ```typescript
+ * // Basic monitoring
+ * const stopMonitoring = startRuntimeMonitoring();
+ * 
+ * // Custom monitoring with alerts
+ * const stopMonitoring = startRuntimeMonitoring({
+ *   interval: 2000,
+ *   memoryThreshold: 100,
+ *   onLeak: (report) => {
+ *     console.warn('Memory leak detected:', report);
+ *     // Send alert to monitoring service
+ *   }
+ * });
+ * 
+ * // Stop monitoring when done
+ * stopMonitoring();
+ * ```
+ */
 export function startRuntimeMonitoring(options?: {
   interval?: number;
   memoryThreshold?: number;
@@ -96,7 +180,25 @@ export function startRuntimeMonitoring(options?: {
   };
 }
 
-// Development helper for immediate feedback
+/**
+ * Performs a development-friendly scan with detailed console output.
+ * 
+ * This function is optimized for development workflows, providing immediate
+ * feedback with detailed console logging. It uses relaxed thresholds to catch
+ * potential issues early and provides actionable suggestions for fixes.
+ * 
+ * @param filePath - Optional specific file to scan (if omitted, scans entire project)
+ * @returns Promise resolving to leak reports or project report
+ * 
+ * @example
+ * ```typescript
+ * // Scan entire project with dev-friendly output
+ * await devScan();
+ * 
+ * // Scan specific file
+ * await devScan('src/components/MyComponent.tsx');
+ * ```
+ */
 export async function devScan(filePath?: string) {
   const detector = createMemoryLeakDetector({
     detection: {
@@ -151,7 +253,40 @@ export async function devScan(filePath?: string) {
   }
 }
 
-// CLI-friendly scan function
+/**
+ * Performs a CLI-optimized scan with configurable output formats.
+ * 
+ * This function is designed for command-line interfaces and CI/CD pipelines.
+ * It supports multiple output formats and filtering options, making it suitable
+ * for automated workflows and scripting.
+ * 
+ * @param args - CLI scan configuration
+ * @param args.files - Specific files to scan (if omitted, scans entire project)
+ * @param args.output - Output format: 'json', 'table', or 'summary' (default: 'summary')
+ * @param args.severity - Filter by severity level
+ * @param args.confidence - Minimum confidence threshold (0-1)
+ * @param args.fix - Whether to apply automatic fixes (not implemented yet)
+ * @returns Promise resolving to filtered leak reports
+ * 
+ * @example
+ * ```typescript
+ * // Basic CLI scan with summary output
+ * await cliScan({ output: 'summary' });
+ * 
+ * // JSON output for CI/CD integration
+ * await cliScan({ 
+ *   output: 'json',
+ *   severity: 'high',
+ *   confidence: 0.8
+ * });
+ * 
+ * // Table format for human-readable output
+ * await cliScan({ 
+ *   files: ['src/**/*.tsx'],
+  * output: 'table'
+    * });
+ * ```
+ */
 export async function cliScan(args: {
   files?: string[];
   output?: 'json' | 'table' | 'summary';
@@ -213,33 +348,50 @@ export async function cliScan(args: {
       };
 
       console.log('Memory Leak Detection Summary:');
-      console.log(`Total issues: ${summary.total}`);
-      console.log(`Critical: ${summary.critical}`);
-      console.log(`High: ${summary.high}`);
-      console.log(`Medium: ${summary.medium}`);
-      console.log(`Low: ${summary.low}`);
+      console.log(`Total issues: ${ summary.total } `);
+      console.log(`Critical: ${ summary.critical } `);
+      console.log(`High: ${ summary.high } `);
+      console.log(`Medium: ${ summary.medium } `);
+      console.log(`Low: ${ summary.low } `);
       break;
   }
 
   return reports;
 }
 
-// Integration helpers
+/**
+ * Integration helpers for popular development tools.
+ * 
+ * This object provides factory functions for integrating memory leak detection
+ * with common development tools like ESLint, Webpack, and Jest. These integrations
+ * allow you to incorporate leak detection into your existing development workflow.
+ */
 export const integrations = {
-  // ESLint integration helper
+  /**
+   * Creates an ESLint rule for detecting specific memory leak types.
+   * 
+   * @param leakType - The type of memory leak to detect
+   * @returns ESLint rule configuration object
+   * 
+   * @example
+   * ```typescript
+  * const rule = integrations.createESLintRule('uncleaned-event-listener');
+   * // Add to your ESLint configuration
+   * ```
+   */
   createESLintRule: (leakType: import('./types').LeakType) => {
     return {
       meta: {
         type: 'problem',
         docs: {
-          description: `Detect ${leakType} memory leaks`,
+          description: `Detect ${ leakType } memory leaks`,
           category: 'Possible Errors',
           recommended: true,
         },
         fixable: 'code',
         schema: [],
       },
-      create: (context: any) => {
+      create: (_context: any) => {
         // ESLint rule implementation would go here
         // This is a placeholder for the actual ESLint integration
         return {};
@@ -247,7 +399,23 @@ export const integrations = {
     };
   },
 
-  // Webpack plugin helper
+  /**
+   * Creates a Webpack plugin for build-time memory leak detection.
+   * 
+   * @param options - Plugin configuration options
+   * @param options.failOnError - Whether to fail the build when leaks are found
+   * @param options.severity - Minimum severity level to report
+   * @returns Webpack plugin object
+   * 
+   * @example
+   * ```typescript
+  * const plugin = integrations.createWebpackPlugin({
+    *   failOnError: true,
+    *   severity: 'high'
+   * });
+   * // Add to your Webpack configuration
+   * ```
+   */
   createWebpackPlugin: (options?: {
     failOnError?: boolean;
     severity?: import('./types').LeakSeverity;
@@ -256,13 +424,13 @@ export const integrations = {
       apply: (compiler: any) => {
         compiler.hooks.beforeCompile.tapAsync(
           'MemoryLeakDetection',
-          async (params: any, callback: any) => {
+          async (_params: any, callback: any) => {
             try {
               const detector = createMemoryLeakDetector();
               const report = await detector.scanProject();
 
               if (report.totalLeaks > 0) {
-                const message = `Found ${report.totalLeaks} potential memory leaks`;
+                const message = `Found ${ report.totalLeaks } potential memory leaks`;
 
                 if (options?.failOnError) {
                   callback(new Error(message));
@@ -272,7 +440,7 @@ export const integrations = {
                 }
               }
 
-              callback();
+              callback(null);
             } catch (error) {
               callback(error);
             }
@@ -282,7 +450,20 @@ export const integrations = {
     };
   },
 
-  // Jest integration helper
+  /**
+   * Creates Jest matchers for testing memory leak prevention.
+   * 
+   * @returns Object containing Jest matcher functions
+   * 
+   * @example
+   * ```typescript
+  * const matchers = integrations.createJestMatcher();
+   * expect.extend(matchers);
+   * 
+   * // In your tests
+   * await expect('src/MyComponent.tsx').toHaveNoMemoryLeaks();
+   * ```
+   */
   createJestMatcher: () => {
     return {
       toHaveNoMemoryLeaks: async function (filePath: string) {
@@ -294,15 +475,17 @@ export const integrations = {
         if (pass) {
           return {
             message: () =>
-              `Expected ${filePath} to have memory leaks, but none were found`,
+              `Expected ${ filePath } to have memory leaks, but none were found`,
             pass: true,
           };
         } else {
           return {
             message: () =>
-              `Expected ${filePath} to have no memory leaks, but found ${reports.length}:\n${reports
-                .map(r => `  - ${r.description} at line ${r.line}`)
-                .join('\n')}`,
+              `Expected ${ filePath } to have no memory leaks, but found ${ reports.length }: \n${
+  reports
+    .map(r => `  - ${r.description} at line ${r.line}`)
+    .join('\n')
+} `,
             pass: false,
           };
         }
@@ -311,10 +494,31 @@ export const integrations = {
   },
 };
 
-// Version information
+/**
+ * Version information for the memory leak detection system.
+ */
 export const version = '1.0.0';
 
-// Default export for convenience
+/**
+ * Default export providing convenient access to all main functions.
+ * 
+ * This object provides a single import point for the most commonly used
+ * functions in the memory leak detection system.
+ * 
+ * @example
+ * ```typescript
+  * import memoryLeakDetection from '@/lib/memory-leak-detection';
+ * 
+ * // Create detector
+ * const detector = memoryLeakDetection.createDetector();
+ * 
+ * // Quick scan
+ * const leaks = await memoryLeakDetection.quickScan();
+ * 
+ * // Development scan
+ * await memoryLeakDetection.devScan();
+ * ```
+ */
 export default {
   createDetector: createMemoryLeakDetector,
   quickScan,

@@ -41,7 +41,10 @@ export async function generateWithOpenRouter(options: LLMGenerationOptions) {
   return withRetry(
     async () => {
       // Make the API call to OpenRouter
-      const response = await openaiClient!.chat.completions.create({
+      if (!openaiClient) {
+        throw new Error('OpenAI client not initialized');
+      }
+      const response = await openaiClient.chat.completions.create({
         model: options.model,
         messages: options.messages,
         temperature: options.temperature || 0.7,

@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -50,6 +50,11 @@ export function CachePreloaderDashboard() {
   } = usePreloadRecommendations();
 
   const [activeTab, setActiveTab] = useState('overview');
+
+  // Optimized tab change handler
+  const handleTabChange = useCallback((value: string) => {
+    setActiveTab(value);
+  }, []);
 
   if (!isInitialized && !error) {
     return (
@@ -112,7 +117,7 @@ export function CachePreloaderDashboard() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList>
           <TabsTrigger value='overview'>Overview</TabsTrigger>
           <TabsTrigger value='patterns'>Navigation Patterns</TabsTrigger>
@@ -244,7 +249,7 @@ export function CachePreloaderDashboard() {
             </CardHeader>
             <CardContent>
               {stats?.timeBasedRecommendations &&
-              stats.timeBasedRecommendations.length > 0 ? (
+                stats.timeBasedRecommendations.length > 0 ? (
                 <div className='flex flex-wrap gap-2'>
                   {stats.timeBasedRecommendations.map((path, index) => (
                     <Badge key={index} variant='secondary'>

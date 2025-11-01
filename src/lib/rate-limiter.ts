@@ -43,7 +43,10 @@ export class RateLimiter {
      * Check if request is within rate limit using sliding window algorithm
      */
     async checkLimit(identifier: string): Promise<RateLimitResult> {
-        const key = this.config.keyGenerator!(identifier);
+        if (!this.config.keyGenerator) {
+            throw new Error('Rate limiter keyGenerator not configured');
+        }
+        const key = this.config.keyGenerator(identifier);
         const now = Date.now();
         const windowStart = now - this.config.windowMs;
 
@@ -146,7 +149,10 @@ export class RateLimiter {
      * Reset rate limit for identifier
      */
     async reset(identifier: string): Promise<void> {
-        const key = this.config.keyGenerator!(identifier);
+        if (!this.config.keyGenerator) {
+            throw new Error('Rate limiter keyGenerator not configured');
+        }
+        const key = this.config.keyGenerator(identifier);
         try {
             await RedisCache.del(key);
         } catch (error) {
@@ -284,7 +290,10 @@ class InMemoryRateLimiter {
     }
 
     checkLimit(identifier: string): RateLimitResult {
-        const key = this.config.keyGenerator!(identifier);
+        if (!this.config.keyGenerator) {
+            throw new Error('Rate limiter keyGenerator not configured');
+        }
+        const key = this.config.keyGenerator(identifier);
         const now = Date.now();
         const windowStart = now - this.config.windowMs;
 

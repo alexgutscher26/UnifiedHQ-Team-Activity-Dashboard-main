@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -63,6 +63,11 @@ export function AISummaryCard({
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Optimized time range change handler
+  const handleTimeRangeChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setTimeRange(e.target.value as '24h' | '7d' | '30d');
+  }, []);
 
   useEffect(() => {
     fetchSummary();

@@ -61,13 +61,36 @@ const DEFAULT_CONFIG: MemoryLeakDetectionConfig = {
   },
 };
 
-// Main memory leak detector implementation
+/**
+ * Main implementation of the memory leak detector.
+ * 
+ * This class provides comprehensive memory leak detection capabilities including
+ * static code analysis, runtime monitoring, and fix validation. It integrates
+ * multiple specialized analyzers and provides caching for performance.
+ * 
+ * @example
+ * ```typescript
+ * const detector = new MemoryLeakDetectorImpl({
+ *   detection: {
+ *     severityThreshold: 'medium',
+ *     confidenceThreshold: 0.7
+ *   }
+ * });
+ * 
+ * const leaks = await detector.scanFile('src/MyComponent.tsx');
+ * ```
+ */
 export class MemoryLeakDetectorImpl implements MemoryLeakDetector {
   private config: MemoryLeakDetectionConfig;
-  private staticAnalyzer: StaticCodeAnalyzer;
-  private timerDetector: TimerLeakDetector;
-  private scanCache: Map<string, { reports: LeakReport[]; timestamp: Date }>;
+  private readonly staticAnalyzer: StaticCodeAnalyzer;
+  private readonly timerDetector: TimerLeakDetector;
+  private readonly scanCache: Map<string, { reports: LeakReport[]; timestamp: Date }>;
 
+  /**
+   * Creates a new memory leak detector instance.
+   * 
+   * @param config - Optional partial configuration to override defaults
+   */
   constructor(config?: Partial<MemoryLeakDetectionConfig>) {
     this.config = this.mergeConfig(DEFAULT_CONFIG, config || {});
     this.staticAnalyzer = new StaticCodeAnalyzer();
@@ -75,7 +98,14 @@ export class MemoryLeakDetectorImpl implements MemoryLeakDetector {
     this.scanCache = new Map();
   }
 
-  // Merge configuration with defaults
+  /**
+   * Merges user configuration with default configuration.
+   * 
+   * @private
+   * @param defaultConfig - Default configuration to use as base
+   * @param userConfig - User-provided configuration overrides
+   * @returns Merged configuration with all required properties
+   */
   private mergeConfig(
     defaultConfig: MemoryLeakDetectionConfig,
     userConfig: Partial<MemoryLeakDetectionConfig>
@@ -88,7 +118,23 @@ export class MemoryLeakDetectorImpl implements MemoryLeakDetector {
     };
   }
 
-  // Scan a single file for memory leaks
+  /**
+   * Scans a single file for memory leaks using static analysis.
+   * 
+   * This method performs comprehensive analysis including static code analysis
+   * and timer-specific leak detection. Results are cached for performance.
+   * 
+   * @param filePath - Path to the file to scan
+   * @returns Promise resolving to array of leak reports found in the file
+   * @throws Error if file cannot be read or analyzed
+   * 
+   * @example
+   * ```typescript
+   * const detector = new MemoryLeakDetectorImpl();
+   * const leaks = await detector.scanFile('src/MyComponent.tsx');
+   * console.log(`Found ${leaks.length} potential leaks`);
+   * ```
+   */
   async scanFile(filePath: string): Promise<LeakReport[]> {
     try {
       // Check cache first
@@ -149,7 +195,27 @@ export class MemoryLeakDetectorImpl implements MemoryLeakDetector {
     }
   }
 
-  // Scan entire project for memory leaks
+  /**
+   * Scans the entire project for memory leaks.
+   * 
+   * This method discovers files matching the configured patterns and scans
+   * them for memory leaks. Supports both parallel and sequential scanning
+   * based on configuration.
+   * 
+   * @param options - Optional scan configuration to override defaults
+   * @returns Promise resolving to comprehensive project leak report
+   * @throws Error if project scanning fails
+   * 
+   * @example
+   * ```typescript
+   * const detector = new MemoryLeakDetectorImpl();
+   * const report = await detector.scanProject({
+   *   severity: ['high', 'critical'],
+   *   parallel: true
+   * });
+   * console.log(`Found ${report.totalLeaks} leaks across ${report.files.length} files`);
+   * ```
+   */
   async scanProject(options?: ScanOptions): Promise<ProjectLeakReport> {
     const scanOptions = this.mergeScanOptions(options);
     const startTime = Date.now();
@@ -201,7 +267,24 @@ export class MemoryLeakDetectorImpl implements MemoryLeakDetector {
     }
   }
 
-  // Analyze runtime for memory leaks
+  /**
+   * Analyzes the current runtime environment for memory leaks.
+   * 
+   * This method examines active resources, memory usage patterns, and
+   * long-running processes to identify potential runtime memory leaks.
+   * Requires runtime detection to be enabled in configuration.
+   * 
+   * @returns Promise resolving to runtime leak analysis report
+   * @throws Error if runtime detection is disabled or analysis fails
+   * 
+   * @example
+   * ```typescript
+   * const detector = new MemoryLeakDetectorImpl();
+   * const runtimeReport = await detector.analyzeRuntime();
+   * console.log(`Memory usage: ${runtimeReport.memoryUsage.current}MB`);
+   * console.log(`Active intervals: ${runtimeReport.activeResources.intervals}`);
+   * ```
+   */
   async analyzeRuntime(): Promise<RuntimeLeakReport> {
     if (!this.config.detection.enableRuntimeDetection) {
       throw new Error('Runtime detection is disabled');
@@ -275,7 +358,25 @@ export class MemoryLeakDetectorImpl implements MemoryLeakDetector {
     }
   }
 
-  // Validate fixes before applying
+  /**
+   * Validates proposed fixes before they are applied to source code.
+   * 
+   * This method performs syntax validation, file existence checks, and
+   * risk assessment for each proposed fix. It categorizes fixes as
+   * applied, failed, or skipped based on validation results.
+   * 
+   * @param fixes - Array of fixes to validate
+   * @returns Promise resolving to validation results with categorized fixes
+   * 
+   * @example
+   * ```typescript
+   * const detector = new MemoryLeakDetectorImpl();
+   * const fixes = []; // Array of Fix objects
+   * const validation = await detector.validateFixes(fixes);
+   * console.log(`${validation.fixes.applied.length} fixes ready to apply`);
+   * console.log(`${validation.fixes.failed.length} fixes failed validation`);
+   * ```
+   */
   async validateFixes(fixes: Fix[]): Promise<ValidationResult> {
     const result: ValidationResult = {
       valid: true,
@@ -589,16 +690,42 @@ export class MemoryLeakDetectorImpl implements MemoryLeakDetector {
     return braceCount === 0;
   }
 
-  // Configuration methods
+  /**
+   * Updates the detector configuration with new values.
+   * 
+   * @param newConfig - Partial configuration updates to apply
+   * 
+   * @example
+   * ```typescript
+   * detector.updateConfig({
+   *   detection: { severityThreshold: 'critical' }
+   * });
+   * ```
+   */
   updateConfig(newConfig: Partial<MemoryLeakDetectionConfig>): void {
     this.config = this.mergeConfig(this.config, newConfig);
   }
 
+  /**
+   * Gets a copy of the current detector configuration.
+   * 
+   * @returns Copy of the current configuration
+   */
   getConfig(): MemoryLeakDetectionConfig {
     return { ...this.config };
   }
 
-  // Cleanup
+  /**
+   * Cleans up detector resources and clears caches.
+   * 
+   * Should be called when the detector is no longer needed to free up memory
+   * and stop any background processes.
+   * 
+   * @example
+   * ```typescript
+   * detector.cleanup();
+   * ```
+   */
   cleanup(): void {
     this.timerDetector.cleanup();
     this.scanCache.clear();

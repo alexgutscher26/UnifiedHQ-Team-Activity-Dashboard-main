@@ -144,7 +144,12 @@ export class ConfigManager {
     this.config = this.getDefaultConfig();
   }
 
-  // Get default configuration based on environment
+  /**
+   * Gets the default configuration based on the current environment.
+   * 
+   * @private
+   * @returns Default configuration for the current NODE_ENV
+   */
   private getDefaultConfig(): MemoryLeakDetectionConfig {
     const env = process.env.NODE_ENV || 'development';
 
@@ -157,7 +162,21 @@ export class ConfigManager {
     }
   }
 
-  // Load configuration from file
+  /**
+   * Loads configuration from the configuration file.
+   * 
+   * If no configuration file exists, uses default configuration based on environment.
+   * Merges user configuration with defaults to ensure all required properties are present.
+   * 
+   * @returns Promise resolving to the loaded configuration
+   * @throws Error if configuration file is malformed
+   * 
+   * @example
+   * ```typescript
+   * const manager = new ConfigManager();
+   * const config = await manager.loadConfig();
+   * ```
+   */
   async loadConfig(): Promise<MemoryLeakDetectionConfig> {
     try {
       const configExists = await this.configExists();
@@ -183,7 +202,20 @@ export class ConfigManager {
     }
   }
 
-  // Save configuration to file
+  /**
+   * Saves configuration to the configuration file.
+   * 
+   * @param config - Optional partial configuration to merge and save
+   * @throws Error if unable to write configuration file
+   * 
+   * @example
+   * ```typescript
+   * const manager = new ConfigManager();
+   * await manager.saveConfig({
+   *   detection: { severityThreshold: 'high' }
+   * });
+   * ```
+   */
   async saveConfig(config?: Partial<MemoryLeakDetectionConfig>): Promise<void> {
     try {
       const configToSave = config
@@ -201,7 +233,19 @@ export class ConfigManager {
     }
   }
 
-  // Check if configuration file exists
+  /**
+   * Checks if the configuration file exists.
+   * 
+   * @returns Promise resolving to true if configuration file exists
+   * 
+   * @example
+   * ```typescript
+   * const manager = new ConfigManager();
+   * if (await manager.configExists()) {
+   *   console.log('Configuration file found');
+   * }
+   * ```
+   */
   async configExists(): Promise<boolean> {
     try {
       await fs.access(this.configPath);
@@ -211,13 +255,30 @@ export class ConfigManager {
     }
   }
 
-  // Create default configuration file
+  /**
+   * Creates a default configuration file based on the current environment.
+   * 
+   * @throws Error if unable to create configuration file
+   * 
+   * @example
+   * ```typescript
+   * const manager = new ConfigManager();
+   * await manager.createDefaultConfig();
+   * ```
+   */
   async createDefaultConfig(): Promise<void> {
     const defaultConfig = this.getDefaultConfig();
     await this.saveConfig(defaultConfig);
   }
 
-  // Merge configurations
+  /**
+   * Merges user configuration with base configuration.
+   * 
+   * @private
+   * @param baseConfig - Base configuration to merge into
+   * @param userConfig - User configuration to merge from
+   * @returns Merged configuration with all required properties
+   */
   private mergeConfigs(
     baseConfig: MemoryLeakDetectionConfig,
     userConfig: Partial<MemoryLeakDetectionConfig>
@@ -230,12 +291,35 @@ export class ConfigManager {
     };
   }
 
-  // Get current configuration
+  /**
+   * Gets the current configuration.
+   * 
+   * @returns Copy of the current configuration
+   * 
+   * @example
+   * ```typescript
+   * const manager = new ConfigManager();
+   * const config = manager.getConfig();
+   * console.log('Current severity threshold:', config.detection.severityThreshold);
+   * ```
+   */
   getConfig(): MemoryLeakDetectionConfig {
     return { ...this.config };
   }
 
-  // Update configuration
+  /**
+   * Updates the current configuration with new values.
+   * 
+   * @param updates - Partial configuration updates to apply
+   * 
+   * @example
+   * ```typescript
+   * const manager = new ConfigManager();
+   * manager.updateConfig({
+   *   detection: { severityThreshold: 'critical' }
+   * });
+   * ```
+   */
   updateConfig(updates: Partial<MemoryLeakDetectionConfig>): void {
     this.config = this.mergeConfigs(this.config, updates);
   }
@@ -473,7 +557,18 @@ export class ConfigManager {
 // Singleton instance
 let configManager: ConfigManager | null = null;
 
-// Get global configuration manager
+/**
+ * Gets the global configuration manager instance (singleton pattern).
+ * 
+ * @param configPath - Optional custom path to configuration file
+ * @returns Global ConfigManager instance
+ * 
+ * @example
+ * ```typescript
+ * const manager = getConfigManager();
+ * const config = await manager.loadConfig();
+ * ```
+ */
 export function getConfigManager(configPath?: string): ConfigManager {
   if (!configManager) {
     configManager = new ConfigManager(configPath);
@@ -481,7 +576,24 @@ export function getConfigManager(configPath?: string): ConfigManager {
   return configManager;
 }
 
-// Initialize configuration
+/**
+ * Initializes the configuration system by loading configuration from file.
+ * 
+ * This is a convenience function that gets the global config manager and loads
+ * the configuration. Should be called once at application startup.
+ * 
+ * @param configPath - Optional custom path to configuration file
+ * @returns Promise resolving to the loaded configuration
+ * 
+ * @example
+ * ```typescript
+ * // Initialize with default config file location
+ * const config = await initializeConfig();
+ * 
+ * // Initialize with custom config file
+ * const config = await initializeConfig('./custom-config.json');
+ * ```
+ */
 export async function initializeConfig(
   configPath?: string
 ): Promise<MemoryLeakDetectionConfig> {
@@ -489,7 +601,24 @@ export async function initializeConfig(
   return await manager.loadConfig();
 }
 
-// Create default configuration file
+/**
+ * Creates a default configuration file at the specified location.
+ * 
+ * This is a convenience function for setting up the configuration file
+ * with environment-appropriate defaults.
+ * 
+ * @param configPath - Optional custom path for configuration file
+ * @throws Error if unable to create configuration file
+ * 
+ * @example
+ * ```typescript
+ * // Create default config file
+ * await createDefaultConfigFile();
+ * 
+ * // Create config file at custom location
+ * await createDefaultConfigFile('./config/memory-leak.json');
+ * ```
+ */
 export async function createDefaultConfigFile(
   configPath?: string
 ): Promise<void> {
@@ -497,9 +626,24 @@ export async function createDefaultConfigFile(
   await manager.createDefaultConfig();
 }
 
-// Utility functions for common configuration tasks
+/**
+ * Utility functions for common configuration tasks.
+ * 
+ * This object provides convenient helper functions for modifying configuration
+ * without needing to work with the full configuration structure.
+ */
 export const configUtils = {
-  // Enable/disable specific leak types
+  /**
+   * Enables or disables detection for a specific leak type.
+   * 
+   * @param leakType - The type of leak to toggle
+   * @param enabled - Whether to enable or disable detection
+   * 
+   * @example
+   * ```typescript
+   * configUtils.toggleLeakType('uncleaned-event-listener', false);
+   * ```
+   */
   toggleLeakType: (leakType: LeakType, enabled: boolean) => {
     const manager = getConfigManager();
     const config = manager.getConfig();
@@ -511,7 +655,16 @@ export const configUtils = {
     );
   },
 
-  // Set severity threshold
+  /**
+   * Sets the minimum severity threshold for reporting leaks.
+   * 
+   * @param threshold - Minimum severity level to report
+   * 
+   * @example
+   * ```typescript
+   * configUtils.setSeverityThreshold('high');
+   * ```
+   */
   setSeverityThreshold: (threshold: LeakSeverity) => {
     const manager = getConfigManager();
     manager.updateConfig({
@@ -522,7 +675,17 @@ export const configUtils = {
     });
   },
 
-  // Set confidence threshold
+  /**
+   * Sets the minimum confidence threshold for reporting leaks.
+   * 
+   * @param threshold - Minimum confidence level (0-1)
+   * @throws Error if threshold is not between 0 and 1
+   * 
+   * @example
+   * ```typescript
+   * configUtils.setConfidenceThreshold(0.8);
+   * ```
+   */
   setConfidenceThreshold: (threshold: number) => {
     if (threshold < 0 || threshold > 1) {
       throw new Error('Confidence threshold must be between 0 and 1');
@@ -537,7 +700,16 @@ export const configUtils = {
     });
   },
 
-  // Enable/disable auto-fix for low-risk issues
+  /**
+   * Enables or disables automatic fixing for low-risk issues.
+   * 
+   * @param enabled - Whether to enable automatic fixes
+   * 
+   * @example
+   * ```typescript
+   * configUtils.toggleAutoFix(true);
+   * ```
+   */
   toggleAutoFix: (enabled: boolean) => {
     const manager = getConfigManager();
     manager.updateConfig({

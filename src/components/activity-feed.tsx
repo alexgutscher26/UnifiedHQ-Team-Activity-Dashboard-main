@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Activity } from '@/types/components';
 import {
   IconBrandSlack,
@@ -206,6 +206,11 @@ export function ActivityFeed() {
     }
   };
 
+  // Optimized navigation handler using useCallback
+  const handleNavigateToIntegrations = useCallback(() => {
+    window.location.href = '/integrations';
+  }, []);
+
   // Initial load and setup
   useEffect(() => {
     fetchActivities();
@@ -317,7 +322,7 @@ export function ActivityFeed() {
             <div className='flex gap-2 justify-center'>
               <Button
                 variant='outline'
-                onClick={() => (window.location.href = '/integrations')}
+                onClick={handleNavigateToIntegrations}
               >
                 Go to Integrations
               </Button>
@@ -410,7 +415,7 @@ export function ActivityFeed() {
           <Button
             variant='outline'
             className='w-full'
-            onClick={() => (window.location.href = '/integrations')}
+            onClick={handleNavigateToIntegrations}
           >
             Manage Integrations
           </Button>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -85,6 +85,20 @@ export function AIInsightsContent() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+
+  // Optimized event handlers using useCallback
+  const handleTimeRangeChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setTimeRange(e.target.value as '7d' | '30d' | '90d');
+  }, []);
+
+  const handleCategorySelect = useCallback((category: string) => {
+    setSelectedCategory(category);
+  }, []);
+
+  const handleTrackEvent = useCallback((eventName: string, data: any) => {
+    // track function should be passed as prop or from context
+    console.log('Track event:', eventName, data);
+  }, []);
 
   useEffect(() => {
     fetchInsights();
@@ -424,7 +438,7 @@ export function AIInsightsContent() {
         <div className='flex items-center gap-2'>
           <select
             value={timeRange}
-            onChange={e => setTimeRange(e.target.value as '7d' | '30d' | '90d')}
+            onChange={handleTimeRangeChange}
             className='px-3 py-2 border rounded-md text-sm'
           >
             <option value='7d'>Last 7 days</option>
@@ -552,7 +566,7 @@ export function AIInsightsContent() {
                 key={category}
                 variant={selectedCategory === category ? 'default' : 'outline'}
                 size='sm'
-                onClick={() => setSelectedCategory(category)}
+                onClick={() => handleCategorySelect(category)}
               >
                 {category === 'all' ? 'All' : category}
               </Button>

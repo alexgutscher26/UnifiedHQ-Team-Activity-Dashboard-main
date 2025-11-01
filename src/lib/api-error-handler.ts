@@ -20,7 +20,7 @@ export enum ApiErrorType {
   UNPROCESSABLE_ENTITY = 'UNPROCESSABLE_ENTITY',
 }
 
-export interface ApiError {
+export interface ApiErrorData {
   type: ApiErrorType;
   message: string;
   code: string;
@@ -28,6 +28,43 @@ export interface ApiError {
   details?: any;
   timestamp: string;
   requestId?: string;
+}
+
+export class ApiError extends Error {
+  public readonly type: ApiErrorType;
+  public readonly code: string;
+  public readonly statusCode: number;
+  public readonly details?: any;
+  public readonly timestamp: string;
+  public readonly requestId?: string;
+
+  constructor(data: ApiErrorData) {
+    super(data.message);
+    this.name = 'ApiError';
+    this.type = data.type;
+    this.code = data.code;
+    this.statusCode = data.statusCode;
+    this.details = data.details;
+    this.timestamp = data.timestamp;
+    this.requestId = data.requestId;
+
+    // Maintains proper stack trace for where our error was thrown (only available on V8)
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, ApiError);
+    }
+  }
+
+  toJSON(): ApiErrorData {
+    return {
+      type: this.type,
+      message: this.message,
+      code: this.code,
+      statusCode: this.statusCode,
+      details: this.details,
+      timestamp: this.timestamp,
+      requestId: this.requestId,
+    };
+  }
 }
 
 export interface ApiSuccessResponse<T = any> {
@@ -40,7 +77,7 @@ export interface ApiSuccessResponse<T = any> {
 
 export interface ApiErrorResponse {
   success: false;
-  error: ApiError;
+  error: ApiErrorData;
 }
 
 export type ApiResponse<T = any> = ApiSuccessResponse<T> | ApiErrorResponse;
@@ -85,7 +122,7 @@ export function createApiError(
   details?: any,
   requestId?: string
 ): ApiError {
-  return {
+  return new ApiError({
     type,
     message,
     code: ERROR_CODES[type],
@@ -93,7 +130,7 @@ export function createApiError(
     details,
     timestamp: new Date().toISOString(),
     requestId: requestId || generateRequestId(),
-  };
+  });
 }
 
 // Create success response
@@ -118,7 +155,7 @@ export function createApiErrorResponse(
   return NextResponse.json(
     {
       success: false,
-      error,
+      error: error.toJSON(),
     },
     { status: error.statusCode }
   );
@@ -271,11 +308,11 @@ export function withErrorHandling<T = any>(
 
       const response = options?.retry
         ? await withRetry(
-            executeHandler,
-            typeof options.retry === 'boolean'
-              ? RetryPresets.standard
-              : options.retry
-          ).then(result => result.data)
+          executeHandler,
+          typeof options.retry === 'boolean'
+            ? RetryPresets.standard
+            : options.retry
+        ).then(result => result.data)
         : await executeHandler();
 
       return response;

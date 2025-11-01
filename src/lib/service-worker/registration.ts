@@ -213,9 +213,15 @@ class ServiceWorkerManager {
         resolve(event.data.version || null);
       };
 
-      this.registration!.active!.postMessage({ type: 'GET_VERSION' }, [
-        messageChannel.port2,
-      ]);
+      if (this.registration?.active) {
+        this.registration.active.postMessage({ type: 'GET_VERSION' }, [
+          messageChannel.port2,
+        ]);
+      } else {
+        console.warn('Service worker not active, cannot get version');
+        messageChannel.port1.postMessage({ error: 'Service worker not active' });
+        return;
+      }
 
       // Timeout after 5 seconds
       setTimeout(() => resolve(null), 5000);
@@ -245,10 +251,16 @@ class ServiceWorkerManager {
         }
       };
 
-      this.registration!.active!.postMessage(
-        { type: 'CLEAR_CACHE', payload: { cacheName } },
-        [messageChannel.port2]
-      );
+      if (this.registration?.active) {
+        this.registration.active.postMessage(
+          { type: 'CLEAR_CACHE', payload: { cacheName } },
+          [messageChannel.port2]
+        );
+      } else {
+        console.warn('Service worker not active, cannot clear cache');
+        messageChannel.port1.postMessage({ error: 'Service worker not active' });
+        return;
+      }
 
       // Timeout after 10 seconds
       setTimeout(() => reject(new Error('Cache clear timeout')), 10000);

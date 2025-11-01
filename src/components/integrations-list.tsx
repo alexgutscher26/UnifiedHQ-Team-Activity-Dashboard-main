@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { SidebarMenuButton } from '@/components/ui/sidebar';
 import { IconBrandGithub, IconBrandSlack, IconPlus } from '@tabler/icons-react';
@@ -60,10 +60,10 @@ export function IntegrationsList() {
             prev.map(integration =>
               integration.id === 'github'
                 ? {
-                    ...integration,
-                    connected: data.connected,
-                    status: data.connected ? 'connected' : 'disconnected',
-                  }
+                  ...integration,
+                  connected: data.connected,
+                  status: data.connected ? 'connected' : 'disconnected',
+                }
                 : integration
             )
           );
@@ -90,10 +90,10 @@ export function IntegrationsList() {
             prev.map(integration =>
               integration.id === 'slack'
                 ? {
-                    ...integration,
-                    connected: data.connected,
-                    status: data.connected ? 'connected' : 'disconnected',
-                  }
+                  ...integration,
+                  connected: data.connected,
+                  status: data.connected ? 'connected' : 'disconnected',
+                }
                 : integration
             )
           );
@@ -138,10 +138,17 @@ export function IntegrationsList() {
   /**
    * Navigates to the integrations page.
    */
-  const handleIntegrationClick = (integration: Integration) => {
+  const handleIntegrationClick = useCallback((integration: Integration) => {
     // Navigate to integrations page
     router.push('/integrations');
-  };
+  }, [router]);
+
+  /**
+   * Navigates to the integrations page for adding new integrations.
+   */
+  const handleAddIntegrationClick = useCallback(() => {
+    router.push('/integrations');
+  }, [router]);
 
   const getStatusColor = (status: Integration['status']) => {
     switch (status) {
@@ -219,12 +226,12 @@ export function IntegrationsList() {
       {/* Add Integration Button */}
       <SidebarMenuButton
         asChild
-        onClick={() => router.push('/integrations')}
+        onClick={handleAddIntegrationClick}
         className='group relative cursor-pointer'
       >
         <button
           className='flex items-center gap-3 w-full text-left p-2 rounded-md hover:bg-accent transition-colors border-t pt-3 mt-2 cursor-pointer'
-          onClick={() => router.push('/integrations')}
+          onClick={handleAddIntegrationClick}
         >
           <div className='flex-shrink-0'>
             <IconPlus className='size-4 text-muted-foreground group-hover:text-foreground transition-colors' />

@@ -235,7 +235,7 @@ export class SimpleASTParser {
   }
 
   // Get line number from character index
-  private getLineNumber(index: number): number {
+  public getLineNumber = (index: number): number => {
     let line = 1;
     for (let i = 0; i < index && i < this.code.length; i++) {
       if (this.code[i] === '\n') {
@@ -246,7 +246,7 @@ export class SimpleASTParser {
   }
 
   // Get column number from character index and line number
-  private getColumnNumber(index: number, lineNumber: number): number {
+  public getColumnNumber = (index: number, lineNumber: number): number => {
     const lineStart = this.getLineStartIndex(lineNumber);
     return index - lineStart + 1;
   }
@@ -422,8 +422,8 @@ export class StaticCodeAnalyzer {
 
     while ((match = intervalPattern.exec(code)) !== null) {
       const startIndex = match.index;
-      const line = parser['getLineNumber'](startIndex);
-      const column = parser['getColumnNumber'](startIndex, line);
+      const line = parser.getLineNumber(startIndex);
+      const column = parser.getColumnNumber(startIndex, line);
 
       // Check if there's a corresponding clearInterval
       const hasClearInterval = /clearInterval\s*\(/.test(
@@ -452,8 +452,8 @@ export class StaticCodeAnalyzer {
     const timeoutPattern = /setTimeout\s*\(/g;
     while ((match = timeoutPattern.exec(code)) !== null) {
       const startIndex = match.index;
-      const line = parser['getLineNumber'](startIndex);
-      const column = parser['getColumnNumber'](startIndex, line);
+      const line = parser.getLineNumber(startIndex);
+      const column = parser.getColumnNumber(startIndex, line);
 
       // Check if it's inside a useEffect
       const beforeCode = code.substring(0, startIndex);
@@ -497,8 +497,8 @@ export class StaticCodeAnalyzer {
 
     while ((match = eventSourcePattern.exec(code)) !== null) {
       const startIndex = match.index;
-      const line = parser['getLineNumber'](startIndex);
-      const column = parser['getColumnNumber'](startIndex, line);
+      const line = parser.getLineNumber(startIndex);
+      const column = parser.getColumnNumber(startIndex, line);
 
       // Check if there's a corresponding close() call
       const hasClose = /\.close\s*\(\s*\)/.test(code.substring(startIndex));
@@ -525,8 +525,8 @@ export class StaticCodeAnalyzer {
     const webSocketPattern = /new\s+WebSocket\s*\(/g;
     while ((match = webSocketPattern.exec(code)) !== null) {
       const startIndex = match.index;
-      const line = parser['getLineNumber'](startIndex);
-      const column = parser['getColumnNumber'](startIndex, line);
+      const line = parser.getLineNumber(startIndex);
+      const column = parser.getColumnNumber(startIndex, line);
 
       // Check if there's a corresponding close() call
       const hasClose = /\.close\s*\(\s*\)/.test(code.substring(startIndex));

@@ -95,8 +95,8 @@ export class TimerLeakDetector {
         const severity = this.assessTimerSeverity(usage, context);
 
         if (this.isLeakyTimer(usage, context)) {
-          const line = parser['getLineNumber'](usage.index);
-          const column = parser['getColumnNumber'](usage.index, line);
+          const line = parser.getLineNumber(usage.index);
+          const column = parser.getColumnNumber(usage.index, line);
 
           reports.push(
             this.createTimerLeakReport(
@@ -115,8 +115,8 @@ export class TimerLeakDetector {
       // Analyze timer cleanup patterns
       const cleanupIssues = this.analyzeTimerCleanup(code);
       for (const issue of cleanupIssues) {
-        const line = parser['getLineNumber'](issue.index);
-        const column = parser['getColumnNumber'](issue.index, line);
+        const line = parser.getLineNumber(issue.index);
+        const column = parser.getColumnNumber(issue.index, line);
 
         reports.push(
           this.createCleanupIssueReport(

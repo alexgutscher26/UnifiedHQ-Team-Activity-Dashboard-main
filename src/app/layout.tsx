@@ -38,6 +38,7 @@ import { OfflineProvider } from '@/contexts/offline-context';
 import { OfflineBanner } from '@/components/offline-indicator';
 import { CacheChecker } from '@/components/cache-checker';
 import { ThinkStackChatbot } from '@/components/thinkstack-chatbot';
+import { UserJotProvider } from '@/components/providers/userjot-provider';
 
 import './globals.css';
 
@@ -164,7 +165,7 @@ function GlobalComponents() {
       <ToastContainer />
       <RateLimitOverlay />
       <Analytics />
-      <MemoryMonitor />
+      {/* <MemoryMonitor /> */}
     </>
   );
 }
@@ -179,6 +180,25 @@ function AppContent({ children }: { children: React.ReactNode }) {
     <GlobalErrorBoundary>
       <Suspense fallback={<LoadingScreen />}>{children}</Suspense>
     </GlobalErrorBoundary>
+  );
+}
+
+/**
+ * Application Providers Wrapper
+ * 
+ * Groups all application-level providers and components to reduce nesting.
+ */
+function ApplicationWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <ThemeProviders>
+      <ServiceProviders>
+        <UserJotProvider>
+          <AppContent>{children}</AppContent>
+          <GlobalComponents />
+          {/* <ThinkStackChatbot /> */}
+        </UserJotProvider>
+      </ServiceProviders>
+    </ThemeProviders>
   );
 }
 
@@ -198,13 +218,7 @@ export default function RootLayout({
     <html lang='en' suppressHydrationWarning>
       <head></head>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
-        <ThemeProviders>
-          <ServiceProviders>
-            <AppContent>{children}</AppContent>
-            <GlobalComponents />
-            <ThinkStackChatbot />
-          </ServiceProviders>
-        </ThemeProviders>
+        <ApplicationWrapper>{children}</ApplicationWrapper>
       </body>
     </html>
   );
