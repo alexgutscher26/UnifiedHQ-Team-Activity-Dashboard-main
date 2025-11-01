@@ -33,11 +33,11 @@ import {
 interface AIInsight {
   id: string;
   type:
-  | 'productivity'
-  | 'collaboration'
-  | 'code_quality'
-  | 'trend'
-  | 'recommendation';
+    | 'productivity'
+    | 'collaboration'
+    | 'code_quality'
+    | 'trend'
+    | 'recommendation';
   title: string;
   description: string;
   confidence: number;
@@ -74,8 +74,9 @@ interface ProductivityMetrics {
 /**
  * AI Insights Content Component
  *
- * Displays comprehensive AI-powered insights about team productivity,
- * collaboration patterns, code quality trends, and actionable recommendations.
+ * This component displays comprehensive AI-powered insights regarding team productivity, collaboration patterns, code quality trends, and actionable recommendations. It manages state for insights and metrics, handles user interactions for filtering and generating insights, and fetches data from APIs while providing fallback mechanisms. The component also includes loading states and error handling to enhance user experience.
+ *
+ * @returns {JSX.Element} The rendered AI Insights Content component.
  */
 export function AIInsightsContent() {
   const { toast } = useToast();
@@ -87,9 +88,12 @@ export function AIInsightsContent() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   // Optimized event handlers using useCallback
-  const handleTimeRangeChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setTimeRange(e.target.value as '7d' | '30d' | '90d');
-  }, []);
+  const handleTimeRangeChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      setTimeRange(e.target.value as '7d' | '30d' | '90d');
+    },
+    []
+  );
 
   const handleCategorySelect = useCallback((category: string) => {
     setSelectedCategory(category);
@@ -373,9 +377,9 @@ export function AIInsightsContent() {
     selectedCategory === 'all'
       ? insights
       : insights.filter(
-        insight =>
-          insight.category.toLowerCase() === selectedCategory.toLowerCase()
-      );
+          insight =>
+            insight.category.toLowerCase() === selectedCategory.toLowerCase()
+        );
 
   const categories = [
     'all',
