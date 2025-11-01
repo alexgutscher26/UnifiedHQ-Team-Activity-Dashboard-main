@@ -33,11 +33,11 @@ import {
 interface AIInsight {
   id: string;
   type:
-  | 'productivity'
-  | 'collaboration'
-  | 'code_quality'
-  | 'trend'
-  | 'recommendation';
+    | 'productivity'
+    | 'collaboration'
+    | 'code_quality'
+    | 'trend'
+    | 'recommendation';
   title: string;
   description: string;
   confidence: number;
@@ -88,9 +88,12 @@ export function AIInsightsContent() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   // Optimized event handlers using useCallback
-  const handleTimeRangeChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setTimeRange(e.target.value as '7d' | '30d' | '90d');
-  }, []);
+  const handleTimeRangeChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      setTimeRange(e.target.value as '7d' | '30d' | '90d');
+    },
+    []
+  );
 
   const handleCategorySelect = useCallback((category: string) => {
     setSelectedCategory(category);
@@ -374,9 +377,9 @@ export function AIInsightsContent() {
     selectedCategory === 'all'
       ? insights
       : insights.filter(
-        insight =>
-          insight.category.toLowerCase() === selectedCategory.toLowerCase()
-      );
+          insight =>
+            insight.category.toLowerCase() === selectedCategory.toLowerCase()
+        );
 
   const categories = [
     'all',
