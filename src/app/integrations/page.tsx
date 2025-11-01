@@ -7,6 +7,9 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { getCurrentUser } from '@/lib/get-user';
 
+/**
+ * Renders the main page component, redirecting to authentication if the user is not logged in.
+ */
 export default async function Page() {
   const user = await getCurrentUser();
 
