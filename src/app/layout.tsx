@@ -153,9 +153,7 @@ function ServiceProviders({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Global UI Components
- * 
- * Groups all global UI components that should be rendered at the root level.
+ * Renders all global UI components at the root level.
  */
 function GlobalComponents() {
   return (
@@ -184,9 +182,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Application Providers Wrapper
- * 
- * Groups all application-level providers and components to reduce nesting.
+ * Wraps application-level providers and components.
  */
 function ApplicationWrapper({ children }: { children: React.ReactNode }) {
   return (
@@ -203,11 +199,7 @@ function ApplicationWrapper({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Root Layout Component
- * 
- * The main layout wrapper for the entire UnifiedHQ application.
- * Provides essential providers, error boundaries, and global components
- * that are needed across all pages.
+ * RootLayout component that wraps the entire application.
  */
 export default function RootLayout({
   children,
