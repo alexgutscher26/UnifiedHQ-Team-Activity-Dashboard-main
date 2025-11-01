@@ -74,8 +74,9 @@ interface ProductivityMetrics {
 /**
  * AI Insights Content Component
  *
- * Displays comprehensive AI-powered insights about team productivity,
- * collaboration patterns, code quality trends, and actionable recommendations.
+ * This component displays comprehensive AI-powered insights regarding team productivity, collaboration patterns, code quality trends, and actionable recommendations. It manages state for insights and metrics, handles user interactions for filtering and generating insights, and fetches data from APIs while providing fallback mechanisms. The component also includes loading states and error handling to enhance user experience.
+ *
+ * @returns {JSX.Element} The rendered AI Insights Content component.
  */
 export function AIInsightsContent() {
   const { toast } = useToast();
